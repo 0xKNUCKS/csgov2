@@ -1,0 +1,273 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="SDK">
+      <UniqueIdentifier>{497471be-f833-4aa6-9ba0-15f5ae983d21}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dx9">
+      <UniqueIdentifier>{e7094edb-357c-49ad-80ba-b342d158661e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SDK\interface">
+      <UniqueIdentifier>{46739a0f-7387-4cc1-b2e3-021a7d346c4f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SDK\netvars">
+      <UniqueIdentifier>{903efce7-31dd-4757-96c7-59a7761e5814}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dx9\Drawing">
+      <UniqueIdentifier>{d320cc01-28f4-4dd8-936d-83edcc4f2408}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SDK\Classes">
+      <UniqueIdentifier>{f3db4b67-d1eb-4dae-990b-e1ff0a13cf48}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SDK\VirtualMethod">
+      <UniqueIdentifier>{8f955dc4-18c6-4ccc-b141-2462a84d7064}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib">
+      <UniqueIdentifier>{8bc37f32-06d0-47dd-a517-6ac053884136}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\Math">
+      <UniqueIdentifier>{998ddd2a-74fa-46f7-b2a5-aa4e6bf7f417}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="lib\Memory">
+      <UniqueIdentifier>{a702decc-45c1-4fb7-a4ff-406326c42218}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ext">
+      <UniqueIdentifier>{33f21fec-8376-4259-9be6-ac5ceb2999a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\Hooks">
+      <UniqueIdentifier>{7712b87e-bb03-4f9c-ae8e-9e99605c9989}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ext\ImGui">
+      <UniqueIdentifier>{90610042-f106-49cf-9a5a-001e5353fc0e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ext\MinHook">
+      <UniqueIdentifier>{c49e84fc-5e7e-41e8-b592-bfe5a66c00d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules">
+      <UniqueIdentifier>{1a06bb1e-bf51-4711-bb5f-a3b35b3a79df}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SDK\Globals">
+      <UniqueIdentifier>{9e8be7de-7744-4139-92f7-9c2da3540dfe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\utils">
+      <UniqueIdentifier>{982ace78-7762-47ac-9b7e-183a3c1d4d35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SDK\Entity">
+      <UniqueIdentifier>{9c8296b8-23a5-4893-b452-459715be8e72}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\Aimbot">
+      <UniqueIdentifier>{c5808665-a5c9-451a-8cd8-04c34f1c48b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\Configs">
+      <UniqueIdentifier>{aa37c1b0-4a08-4993-a418-cc9ac9b5a908}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\GUI">
+      <UniqueIdentifier>{382393aa-6059-4f6c-a7eb-a8e3c4385654}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\Misc">
+      <UniqueIdentifier>{66952e84-4862-4a2b-ac1f-cba0bc9a2e17}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\Visuals">
+      <UniqueIdentifier>{50f8d9c0-0ebb-4ad2-8805-5472df5aefc3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dllmain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VARS.cpp">
+      <Filter>lib\Resource Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interface.cpp">
+      <Filter>SDK\interface</Filter>
+    </ClCompile>
+    <ClCompile Include="netvars.cpp">
+      <Filter>SDK\netvars</Filter>
+    </ClCompile>
+    <ClCompile Include="drawing.cpp">
+      <Filter>dx9\Drawing</Filter>
+    </ClCompile>
+    <ClCompile Include="entity.cpp">
+      <Filter>SDK\Entity</Filter>
+    </ClCompile>
+    <ClCompile Include="GUI.cpp">
+      <Filter>lib\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="mem.cpp">
+      <Filter>lib\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="hook.cpp">
+      <Filter>lib\Hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ext\MinHook\hde\hde32.cpp">
+      <Filter>ext\MinHook</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ext\MinHook\hde\hde64.cpp">
+      <Filter>ext\MinHook</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ext\MinHook\buffer.cpp">
+      <Filter>ext\MinHook</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ext\MinHook\hook.cpp">
+      <Filter>ext\MinHook</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ext\MinHook\trampoline.cpp">
+      <Filter>ext\MinHook</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ext\ImGui\imgui.cpp">
+      <Filter>ext\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ext\ImGui\imgui_demo.cpp">
+      <Filter>ext\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ext\ImGui\imgui_draw.cpp">
+      <Filter>ext\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ext\ImGui\imgui_impl_dx9.cpp">
+      <Filter>ext\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ext\ImGui\imgui_impl_win32.cpp">
+      <Filter>ext\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ext\ImGui\imgui_tables.cpp">
+      <Filter>ext\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ext\ImGui\imgui_widgets.cpp">
+      <Filter>ext\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="utils.cpp">
+      <Filter>lib\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="aimbot.cpp">
+      <Filter>Modules\Aimbot</Filter>
+    </ClCompile>
+    <ClCompile Include="config.cpp">
+      <Filter>lib\Configs</Filter>
+    </ClCompile>
+    <ClCompile Include="Misc.cpp">
+      <Filter>Modules\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="ESP.cpp">
+      <Filter>Modules\Visuals</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="offsets.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="includes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VARS.h">
+      <Filter>lib\Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="interface.h">
+      <Filter>SDK\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="netvars.h">
+      <Filter>SDK\netvars</Filter>
+    </ClInclude>
+    <ClInclude Include="drawing.h">
+      <Filter>dx9\Drawing</Filter>
+    </ClInclude>
+    <ClInclude Include="math.h">
+      <Filter>lib\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="classes.h">
+      <Filter>SDK\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="VirtualMethod.h">
+      <Filter>SDK\VirtualMethod</Filter>
+    </ClInclude>
+    <ClInclude Include="entity.h">
+      <Filter>SDK\Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="GUI.h">
+      <Filter>lib\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="mem.h">
+      <Filter>lib\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="hook.h">
+      <Filter>lib\Hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ext\MinHook\hde\hde32.h">
+      <Filter>ext\MinHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ext\MinHook\hde\hde64.h">
+      <Filter>ext\MinHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ext\MinHook\hde\pstdint.h">
+      <Filter>ext\MinHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ext\MinHook\hde\table32.h">
+      <Filter>ext\MinHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ext\MinHook\hde\table64.h">
+      <Filter>ext\MinHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ext\MinHook\buffer.h">
+      <Filter>ext\MinHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ext\MinHook\MinHook.h">
+      <Filter>ext\MinHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ext\MinHook\trampoline.h">
+      <Filter>ext\MinHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ext\ImGui\imconfig.h">
+      <Filter>ext\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ext\ImGui\imgui.h">
+      <Filter>ext\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ext\ImGui\imgui_impl_dx9.h">
+      <Filter>ext\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ext\ImGui\imgui_impl_win32.h">
+      <Filter>ext\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ext\ImGui\imgui_internal.h">
+      <Filter>ext\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ext\ImGui\imstb_rectpack.h">
+      <Filter>ext\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ext\ImGui\imstb_textedit.h">
+      <Filter>ext\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ext\ImGui\imstb_truetype.h">
+      <Filter>ext\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Globals.h">
+      <Filter>SDK\Globals</Filter>
+    </ClInclude>
+    <ClInclude Include="utils.h">
+      <Filter>lib\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="aimbot.h">
+      <Filter>Modules\Aimbot</Filter>
+    </ClInclude>
+    <ClInclude Include="config.h">
+      <Filter>lib\Configs</Filter>
+    </ClInclude>
+    <ClInclude Include="Misc.h">
+      <Filter>Modules\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="ESP.h">
+      <Filter>Modules\Visuals</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

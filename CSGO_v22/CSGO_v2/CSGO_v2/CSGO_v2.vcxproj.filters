@@ -82,6 +82,12 @@
     <Filter Include="Modules\Visuals">
       <UniqueIdentifier>{50f8d9c0-0ebb-4ad2-8805-5472df5aefc3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ext\MD5">
+      <UniqueIdentifier>{953cca25-9e8c-4fff-88d8-68e29d816085}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\Menu">
+      <UniqueIdentifier>{e3edd557-bd4e-4f49-94e9-238e9d305d52}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -161,6 +167,12 @@
     </ClCompile>
     <ClCompile Include="ESP.cpp">
       <Filter>Modules\Visuals</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ext\MD5\MD5.cpp">
+      <Filter>ext\MD5</Filter>
+    </ClCompile>
+    <ClCompile Include="UI.cpp">
+      <Filter>lib\Menu</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -268,6 +280,12 @@
     </ClInclude>
     <ClInclude Include="ESP.h">
       <Filter>Modules\Visuals</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ext\MD5\MD5.h">
+      <Filter>ext\MD5</Filter>
+    </ClInclude>
+    <ClInclude Include="UI.h">
+      <Filter>lib\Menu</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

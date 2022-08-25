@@ -35,6 +35,14 @@ void Render::FilledCircle(float x, float y, float rad, ImColor color)
 	ImGui::GetBackgroundDrawList()->AddCircleFilled(ImVec2(x, y), rad, color, 360);
 }
 
+void Render::OutLinedText(const char* text, float x, float y, ImDrawList* drawList, ImColor color)
+{
+	ImColor Shade;
+	Shade.Value = ImVec4(color.Value.x * 0.25, color.Value.y * 0.25, color.Value.z * 0.25, color.Value.w * 0.75);
+	drawList->AddText(ImVec2(x + 1, y + 1), Shade, text);
+	drawList->AddText(ImVec2(x, y), color, text);
+}
+
 void Render::ESP::DrawBox(math::Vector top, math::Vector bot, ImColor color, eBoxType Type)
 {
 	float Height = ABS(bot.y - top.y);

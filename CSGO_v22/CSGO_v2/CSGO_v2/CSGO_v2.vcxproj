@@ -170,6 +170,7 @@
     <ClCompile Include="..\ext\ImGui\imgui_impl_win32.cpp" />
     <ClCompile Include="..\ext\ImGui\imgui_tables.cpp" />
     <ClCompile Include="..\ext\ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="..\ext\MD5\MD5.cpp" />
     <ClCompile Include="..\ext\MinHook\buffer.cpp" />
     <ClCompile Include="..\ext\MinHook\hde\hde32.cpp" />
     <ClCompile Include="..\ext\MinHook\hde\hde64.cpp" />
@@ -187,6 +188,7 @@
     <ClCompile Include="interface.cpp" />
     <ClCompile Include="Misc.cpp" />
     <ClCompile Include="netvars.cpp" />
+    <ClCompile Include="UI.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="VARS.cpp" />
   </ItemGroup>
@@ -199,6 +201,7 @@
     <ClInclude Include="..\ext\ImGui\imstb_rectpack.h" />
     <ClInclude Include="..\ext\ImGui\imstb_textedit.h" />
     <ClInclude Include="..\ext\ImGui\imstb_truetype.h" />
+    <ClInclude Include="..\ext\MD5\MD5.h" />
     <ClInclude Include="..\ext\MinHook\buffer.h" />
     <ClInclude Include="..\ext\MinHook\hde\hde32.h" />
     <ClInclude Include="..\ext\MinHook\hde\hde64.h" />
@@ -223,6 +226,7 @@
     <ClInclude Include="Misc.h" />
     <ClInclude Include="netvars.h" />
     <ClInclude Include="offsets.hpp" />
+    <ClInclude Include="UI.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="VARS.h" />
     <ClInclude Include="VirtualMethod.h" />

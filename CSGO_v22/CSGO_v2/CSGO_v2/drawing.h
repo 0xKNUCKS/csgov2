@@ -30,6 +30,8 @@ namespace Render
 	void OutLinedCircle			(float x, float y, float rad, ImColor color = ImColor(255,255,255));
 	void FilledCircle			(float x, float y, float rad, ImColor color = ImColor(255, 255, 255));
 
+	void OutLinedText(const  char* text, float x, float y, ImDrawList* drawList, ImColor color = ImColor(255, 255, 255));
+
 	namespace ESP
 	{
 		void DrawBox(math::Vector top, math::Vector bot, ImColor color, eBoxType Type);

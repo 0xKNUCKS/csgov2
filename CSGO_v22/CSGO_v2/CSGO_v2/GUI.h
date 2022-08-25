@@ -16,6 +16,7 @@
 #include "utils.h"
 #include "config.h"
 #include "entity.h"
+#include "UI.h"
 
 typedef uint32_t uint150_t;
 
@@ -56,8 +57,5 @@ namespace gui
 
 	// render our menu
 	void Render() noexcept;
-
-	// menu style/Theme
-	void SetupTheme();
 };
 

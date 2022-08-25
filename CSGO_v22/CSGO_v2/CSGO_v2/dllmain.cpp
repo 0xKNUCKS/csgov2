@@ -2,22 +2,6 @@
 #include <iostream>
 #include "hook.h"
 
-
-#define RGBA(r,g,b,a)\
-D3DCOLOR_RGBA(r,g,b,a)
-#define RGB(r,g,b)\
- D3DCOLOR_RGBA(r,g,b,255)
-
-bool Freeze = false;
-
-#define out(c, m, ...) \
-    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), c); \
-        printf(m); \
-            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
-
-void mb(std::string m, std::string t) { MessageBox(0, m.c_str(), t.c_str(), MB_OK); }
-bool bLineESP = false;
-
     // %c = character
     // %s = string (array of characters) 
     // %f = float
@@ -25,24 +9,18 @@ bool bLineESP = false;
     // %d = integer
     // %.1 = decimal precision
     // %1 = minimum field width
-    // %- = left align
+    // %- = left align  
 
 DWORD WINAPI Main(HMODULE hModule)
 {
-
-    //AllocConsole();
-    //FILE* f;
-    //freopen_s(&f, "CONOUT$", "r", stdout);
-    //SetConsoleTitleA("DBG con");
-    //if (f)
-    //    std::cout << "Allocated a Console!";
-
-    //MessageBox(0, "Starting", "Start...", 0);   
+    while (!GetModuleHandle("serverbrowser.dll")) { Sleep(100); }
 
     if (gui::Setup())
     {
-        if (hooks::Setup())
+        if (hooks::Setup()) {
+            utils::SetupConsole();
             return TRUE;
+        }
     
         hooks::Destroy();
         gui::Destroy();
@@ -66,7 +44,9 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 {
     if (ul_reason_for_call == DLL_PROCESS_ATTACH)
     {
-        CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(Main), hModule, 0, nullptr);
+        if (utils::CheckVersion("54f789490156e0d18aa48671c7180431")) {
+            CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(Main), hModule, 0, nullptr);
+        }
     }
     return TRUE;
 }

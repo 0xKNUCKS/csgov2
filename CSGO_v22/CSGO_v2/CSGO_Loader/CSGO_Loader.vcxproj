@@ -150,6 +150,7 @@
   <ItemGroup>
     <ClInclude Include="color.hpp" />
     <ClInclude Include="Process.h" />
+    <ClInclude Include="utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

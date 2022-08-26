@@ -1,43 +1,102 @@
 #include <iostream>
+#include <filesystem>
+#include <fstream>
+#include <thread>
+#include <algorithm>
+
 #include "Process.h"
 #include "color.hpp"
+#include "utils.h"
 
-int main()
+// Process and DLL info.
+#define PROC_NAME "csgo.exe"
+#define WIND_NAME "Counter-Strike: Global Offensive - Direct3D 9"
+#define CLSS_NAME "Valve001"
+#define DLL_PATH  "E:\\Projects\\C++\\CSGO v3\\Release\\CSGO_v3.dll"
+               // "E:\\Projects\\C++\\CSGO v3\\Release\\CSGO_v3.dll"
+
+// a Y/N choice function.
+bool choice(const char* str, ...)
 {
-    SetConsoleTitleA("cockbalt.solutions");
+    char buf;
+    std::cout << str;
+    std::cin >> buf;
+    return ::tolower(buf) == 'y' ? true : false;
+}
 
-    proc_t csgo;
-    csgo.dllPath = "CSGO_v2.dll"; // C:\Users\96565\source\repos\CSGO_v2\Debug\CSGO_v2.dll
-    csgo.Name = "csgo.exe";
+// CSGO process class
+proc_t csgo(PROC_NAME, DLL_PATH, WIND_NAME, CLSS_NAME);
+bool insecure = false;
+
+// updates every 100ms
+void update()
+{
+    while (true)
+    {
+        csgo.hwnd = FindWindow(csgo.className, csgo.windowName);
+
+#ifdef _DEBUG
+        if (!csgo.isActive()) { printf(" - "); }; // debug purposes
+#endif // _DEBUG
+
+
+        Sleep(100);
+    }
+}
+
+// Main function
+int main(void)
+{
+    SetConsoleTitleA("cockbalt.solutions - (Build: " __DATE__ " - " __TIME__ ")");
+
+    // Choose to start CSGO with -insecure or without.
+    insecure = choice("(recommended) Start %s with '-insecure'? y/n: ", csgo.Name);
+
+    std::thread thUpdate(update);
+    Sleep(200);
 
     while (true)
     {
         system("cls");
-        std::cout << "Welcome to ad.m CSGO Loader.\njust a simple loadlibrary injector for CSGO_v2.\n\n";
-        std::cout << dye::yellow("Press any key to start!\n");
-        system("pause>nul");
+        utils::ascii_art("cockbalt");
+        std::cout << "\nWelcome to ad.m CSGO Loader.\njust a simple loadlibrary injector for my CSGO Project.\n\n";
+
+        if (!csgo.isActive())
+        {
+            std::cout << dye::aqua("\nLaunching CSGO...\n");
+
+            //WinExec("cmd.exe /c powershell.exe Start-Process -FilePath 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Counter-Strike Global Offensive\\csgo.exe' -ArgumentList '-steam -insecure'", SW_HIDE);
+            {
+                // this will always launch CSGO with the ID 730, to get your game's ID check steam.inf in your game folder and grab it from there <3.
+                const char* cmd = insecure ? "\"C:\\Program Files (x86)\\Steam\\steam.exe\" -applaunch 730 -insecure" : "\"C:\\Program Files (x86)\\Steam\\steam.exe\" -applaunch 730";
+                system(cmd);
+            }
+
+            do { Sleep(50); } while (!csgo.isActive());
+        }
 
         if (!Process::GetProcID(csgo))
         {
-            std::cout << dye::aqua("\nWaiting for CSGO...\n");
-
-            while (!Process::GetProcID(csgo))
-            {
-                Process::GetProcID(csgo);
-            }
+            std::cout << dye::red("Getting Process ID Failed! Exiting in 3s...");
+            Sleep(3000);
+            ExitProcess(0);
         }
 
         std::cout << dye::green("injecting...\n");
-        if (!Process::inject(csgo))
+
+        if (!Process::inject(csgo)) // todo: add dll file exists check
         {
             std::cout << dye::red("injection Failed! Exiting in 3s...");
             Sleep(3000);
-            exit(0);
+            ExitProcess(0);
         }
-        
+
         std::cout << dye::purple("injection Completed!\n") << dye::yellow("info:\n");
-        std::cout << ("dll path: " + (const char)csgo.dllPath) << ("\nProc Name: " + (const char)csgo.Name) << ("\npid: " + csgo.pid);
-        
+        printf("Dll path: %s\nProc Name: %s\nPID: %d", csgo.dllPath, csgo.Name, csgo.pid);
+
         system("pause>nul");
+
+        Process::Terminate(csgo);
+        Sleep(1000);
     }
 }

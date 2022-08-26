@@ -1,6 +1,6 @@
 #include "Process.h"
 
-BOOL Process::GetProcID(proc_t &proc)
+bool Process::GetProcID(proc_t &proc)
 {
 	DWORD ProcID = 0;
 	PROCESSENTRY32 procEntry;
@@ -31,7 +31,7 @@ BOOL Process::GetProcID(proc_t &proc)
 	return 1;
 }
 
-BOOL Process::inject(proc_t proc)
+bool Process::inject(proc_t proc)
 {
 	HANDLE pHandle = OpenProcess(PROCESS_ALL_ACCESS, 0, proc.pid);
 
@@ -50,4 +50,20 @@ BOOL Process::inject(proc_t proc)
 	if (pHandle) { CloseHandle(pHandle); }
 
 	return 1;
+}
+
+bool Process::Terminate(proc_t proc)
+{
+	if (proc.isActive())
+	{
+		const auto procTermH = OpenProcess(PROCESS_TERMINATE, false, proc.pid);
+		if (procTermH != INVALID_HANDLE_VALUE) {
+			TerminateProcess(procTermH, 0);
+			CloseHandle(procTermH);
+			return 1;
+		}
+		else return 0;
+	}
+
+	return 0;
 }

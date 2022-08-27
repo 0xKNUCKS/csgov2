@@ -59,17 +59,17 @@ int main(void)
     {
         system("cls");
         utils::ascii_art("cockbalt");
-        std::cout << "\nWelcome to ad.m CSGO Loader.\njust a simple loadlibrary injector for my CSGO Project.\n\n";
+        std::cout << "\nWelcome to ad.m CSGO Loader.\njust a simple LoadLibrary injector for my CSGO V2 Project.\n\n";
 
         if (!csgo.isActive())
         {
-            std::cout << dye::aqua("\nLaunching CSGO...\n");
+            std::cout << dye::aqua(std::format("\nLaunching {}{}...\n", csgo.Name, insecure ? " With -inseucre" : ""));
 
-            //WinExec("cmd.exe /c powershell.exe Start-Process -FilePath 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Counter-Strike Global Offensive\\csgo.exe' -ArgumentList '-steam -insecure'", SW_HIDE);
             {
                 // this will always launch CSGO with the ID 730, to get your game's ID check steam.inf in your game folder and grab it from there <3.
-                const char* cmd = insecure ? "\"C:\\Program Files (x86)\\Steam\\steam.exe\" -applaunch 730 -insecure" : "\"C:\\Program Files (x86)\\Steam\\steam.exe\" -applaunch 730";
-                system(cmd);
+                std::string tmp = insecure ? " -insecure" : "";
+                std::string cmd = "\"C:\\Program Files (x86)\\Steam\\steam.exe\" -applaunch 730" + tmp;
+                system(cmd.c_str());
             }
 
             do { Sleep(50); } while (!csgo.isActive());

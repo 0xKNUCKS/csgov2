@@ -1,8 +1,13 @@
-﻿/CSGO_v22/CSGO_v2/.vs/CSGO_v2
+# This is bad but its only for my project and its perfect :D
+
+# Remove vs uncessary files.
+/.vs/csgov2/v17
+/CSGO_v22/CSGO_v2/.vs/CSGO_v2
+
+# Remove all build/compile files.
 /CSGO_v22/CSGO_v2/CSGO_v2/Debug
 /CSGO_v22/CSGO_v2/CSGO_v2/Release
 /CSGO_v22/CSGO_v2/Debug
 /CSGO_v22/CSGO_v2/Release
-/.vs/csgov2/v17
 /CSGO_v22/CSGO_v2/CSGO_Loader/Debug
 /CSGO_v22/CSGO_v2/CSGO_Loader/Release

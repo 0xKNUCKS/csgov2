@@ -25,13 +25,11 @@ DWORD WINAPI Main(HMODULE hModule)
         hooks::Destroy();
         gui::Destroy();
         FreeLibraryAndExitThread(hModule, 0);
-        return 0;
     }
     else
     {
         gui::Destroy();
         FreeLibraryAndExitThread(hModule, 0);
-        return 0;
     }
     
     return TRUE;

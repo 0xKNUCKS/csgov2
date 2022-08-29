@@ -1,6 +1,7 @@
 #pragma once
 #include <Windows.h>
 #include <TlHelp32.h>
+#include "utils.h"
 
 struct proc_t;
 

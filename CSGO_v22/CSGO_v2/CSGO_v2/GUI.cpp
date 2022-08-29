@@ -226,68 +226,6 @@ void gui::Destroy() noexcept
 	DestroyDirectX();
 }
 
-class Entity
-{
-public:
-	VIRTUAL_METHOD(void, release, 1, (), (this + sizeof(uintptr_t) * 2))
-		VIRTUAL_METHOD(ClientClass*, getClientClass, 2, (), (this + sizeof(uintptr_t) * 2))
-		VIRTUAL_METHOD(void, preDataUpdate, 6, (int updateType), (this + sizeof(uintptr_t) * 2, updateType))
-		VIRTUAL_METHOD(void, postDataUpdate, 7, (int updateType), (this + sizeof(uintptr_t) * 2, updateType))
-		VIRTUAL_METHOD(bool, isDormant, 9, (), (this + sizeof(uintptr_t) * 2))
-		VIRTUAL_METHOD(int, index, 10, (), (this + sizeof(uintptr_t) * 2))
-		VIRTUAL_METHOD(void, setDestroyedOnRecreateEntities, 13, (), (this + sizeof(uintptr_t) * 2))
-
-		VIRTUAL_METHOD(math::Vector&, getRenderOrigin, 1, (), (this + sizeof(uintptr_t)))
-		VIRTUAL_METHOD(bool, shouldDraw, 3, (), (this + sizeof(uintptr_t)))
-		VIRTUAL_METHOD(const math::Matrix3x4&, toWorldTransform, 32, (), (this + sizeof(uintptr_t)))
-
-		VIRTUAL_METHOD(int&, handle, 2, (), (this))
-		VIRTUAL_METHOD(const math::Vector&, getAbsOrigin, 10, (), (this))
-		VIRTUAL_METHOD(const math::Vector&, getAbsAngle, 11, (), (this))
-		VIRTUAL_METHOD(void, setModelIndex, 75, (int index), (this, index))
-		VIRTUAL_METHOD(bool, getAttachment, 84, (int index, math::Vector& origin), (this, index, std::ref(origin)))
-		VIRTUAL_METHOD(int, health, 122, (), (this))
-		VIRTUAL_METHOD(bool, isAlive, 156, (), (this))
-		VIRTUAL_METHOD(bool, isPlayer, 158, (), (this))
-		VIRTUAL_METHOD(bool, isWeapon, 166, (), (this))
-		VIRTUAL_METHOD(void, updateClientSideAnimation, 224, (), (this))
-		VIRTUAL_METHOD(int, getWeaponSubType, 282, (), (this))
-		VIRTUAL_METHOD(float, getSpread, 453, (), (this))
-		VIRTUAL_METHOD(int, getMuzzleAttachmentIndex1stPerson, 468, (Entity* viewModel), (this, viewModel))
-		VIRTUAL_METHOD(int, getMuzzleAttachmentIndex3rdPerson, 469, (), (this))
-		VIRTUAL_METHOD(float, getInaccuracy, 483, (), (this))
-		VIRTUAL_METHOD(void, updateInaccuracyPenalty, 484, (), (this))
-
-		Entity* getObserverTarget() noexcept
-	{
-		Entity* entity = VirtualMethod::call<Entity*, 295>(this);
-		if (entity)
-			return entity->isPlayer() ? entity : nullptr;
-		return nullptr;
-	}
-
-	math::Vector getEyePosition() noexcept
-	{
-		if ((uintptr_t)this == LocalPlayer.Get())
-			return getAbsOrigin() + offsets::m_vecViewOffset;
-
-		math::Vector v;
-		VirtualMethod::call<void, 285>(this, std::ref(v));
-		return v;
-	}
-
-	math::Vector getAimPunch() noexcept
-	{
-		math::Vector v;
-		VirtualMethod::call<void, 346>(this, std::ref(v));
-		return v;
-	}
-
-	math::UtlVector<math::Matrix3x4>& boneCache() noexcept { return *(math::UtlVector<math::Matrix3x4> *)((uintptr_t)this + 0x2914); }
-	math::Vector getBonePosition(int bone) noexcept { return boneCache()[bone].GetVecOrgin(); }
-};
-
-static_assert(sizeof(Entity) == 1);
 
 // render our menu
 void gui::Render() noexcept
@@ -309,13 +247,20 @@ void gui::Render() noexcept
 
 	// Menu Code
 if (gui::bOpen) {
-	ImGui::SetNextWindowSize(ImVec2(500, 250));
 
-	ImGui::Begin(std::format("Cockbalt - Welcome {}!", LocalPlayer.GetName()).c_str(), &gui::bOpen, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
+#ifdef _DEBUG
+	ImGui::Begin("Style Editor");
+	ImGui::ShowStyleEditor();
+	ImGui::End();
+#endif // _DEBUG
+
+	ImGui::SetNextWindowSize(ImVec2(540, 650)); // res/2 = x = 270, y = 325
+
+	ImGui::Begin(std::format("cockbalt.solutions - Welcome {}!", LocalPlayer.GetName()).c_str(), &gui::bOpen, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
 
 	{
 		ImVec2 txtSize = ImGui::CalcTextSize("(Build: " __DATE__ " - " __TIME__ ")");
-		Render::OutLinedText("(Build: " __DATE__ " - " __TIME__ ")", (ImGui::GetWindowPos().x + ImGui::GetWindowSize().x - (txtSize.x)), (ImGui::GetWindowPos().y + ImGui::GetWindowSize().y + 3), ImGui::GetBackgroundDrawList()); //ImColor(51, 64, 74)
+		Render::OutLinedText("(Build: " __DATE__ " - " __TIME__ ")", (ImGui::GetWindowPos().x + ImGui::GetWindowSize().x - (txtSize.x)), (ImGui::GetWindowPos().y + ImGui::GetWindowSize().y + 3), ImGui::GetForegroundDrawList());
 	}
 
 	if (ImGui::BeginTabBar("##TabsBar"))
@@ -377,21 +322,21 @@ if (gui::bOpen) {
 	ImGui::End();
 
 
-	ImGui::Begin("DBG Window");
+	ImGui::Begin("DBG Window##DebugGame", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
-	ImGui::Text("FOV: %.1f\nEntity: %d\nDistance: %.1f", aimbot::Target.fov, aimbot::Target.ent.GetEnt(), aimbot::Target.distance);
-	ImGui::Text("LocalPlayer Name = %s", LocalPlayer.GetName());
-	ImGui::Spacing();
-	ImGui::Text("LocalPlayer.GetTeamId() = %d", LocalPlayer.Get() ? LocalPlayer.GetTeamId() : 99);
-	ImGui::Spacing();
-	ImGui::Text("offsets::m_vecViewOffset = %d", (uintptr_t)globals::g_NetVars.FindOffset("CBasePlayer", "m_vecViewOffset[0]"));
+	//ImGui::Text("FOV: %.1f\nEntity: %d\nDistance: %.1f", aimbot::Target.fov, aimbot::Target.ent.GetEnt(), aimbot::Target.distance);
+	//ImGui::Text("LocalPlayer Name = %s", LocalPlayer.GetName());
 	//ImGui::Spacing();
-	gEntity* enty = (gEntity*)LocalPlayer.Get();
+	//ImGui::Text("LocalPlayer.GetTeamId() = %d", LocalPlayer.Get() ? LocalPlayer.GetTeamId() : 99);
+	//ImGui::Spacing();
+	//ImGui::Text("offsets::m_vecViewOffset = %d", (uintptr_t)globals::g_NetVars.FindOffset("CBasePlayer", "m_vecViewOffset[0]"));
+	////ImGui::Spacing();
+	//gEntity* enty = (gEntity*)LocalPlayer.Get();
+	////math::Vector Pos = LocalPlayer.Get() ? LocalPlayer.GetBonePos(8) : math::Vector{0, 0, 0};
 	//math::Vector Pos = LocalPlayer.Get() ? LocalPlayer.GetBonePos(8) : math::Vector{0, 0, 0};
-	math::Vector Pos = LocalPlayer.Get() ? LocalPlayer.GetBonePos(8) : math::Vector{0, 0, 0};
-	ImGui::Text("Local Head Pos: x.%.1f, y.%.1f, z.%.1f", Pos.x, Pos.y, Pos.z);
-	ImGui::Spacing();
-	math::Vector Orgin = LocalPlayer.Get() ? LocalPlayer.GetPos() : math::Vector{0, 0, 0};
+	//ImGui::Text("Local Head Pos: x.%.1f, y.%.1f, z.%.1f", Pos.x, Pos.y, Pos.z);
+	//ImGui::Spacing();
+	math::Vector Orgin = LocalPlayer.Get() ? LocalPlayer.GetPos() : math::Vector{ 0, 0, 0 };
 	ImGui::Text("Local Player Orgin: x.%.1f, y.%.1f, z.%.1f", Orgin.x, Orgin.y, Orgin.z);
 	ImGui::Spacing();
 	ImGui::Text("g_interfaces.Engine->GetLocalPlayerIdx() = %d", globals::g_interfaces.Engine->GetLocalPlayerIdx());
@@ -405,6 +350,11 @@ if (gui::bOpen) {
 	ImGui::Text("g_interfaces.DebugOverlay = 0x%d", globals::g_interfaces.DebugOverlay);
 	ImGui::Spacing();
 	ImGui::Text("g_interfaces.Engine = 0x%d", globals::g_interfaces.Engine);
+	ImGui::Spacing();
+	//ImGui::Text("g_interfaces.Engine->GetClientVersion() = %d", globals::g_interfaces.Engine->GetClientVersion());
+
+	ImGui::Spacing();
+	ImGui::Text("WindowPos[%f, %f], WindowSize[%f, %f]", ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowSize().x, ImGui::GetWindowSize().y);
 
 	ImGui::End();
 }

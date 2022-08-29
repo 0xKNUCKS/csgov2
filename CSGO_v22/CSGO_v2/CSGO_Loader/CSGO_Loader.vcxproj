@@ -150,6 +150,7 @@
   <ItemGroup>
     <ClCompile Include="CSGO_Loader.cpp" />
     <ClCompile Include="Process.cpp" />
+    <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="color.hpp" />

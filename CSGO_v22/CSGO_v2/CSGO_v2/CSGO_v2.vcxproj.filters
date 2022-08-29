@@ -73,9 +73,6 @@
     <Filter Include="lib\Configs">
       <UniqueIdentifier>{aa37c1b0-4a08-4993-a418-cc9ac9b5a908}</UniqueIdentifier>
     </Filter>
-    <Filter Include="lib\GUI">
-      <UniqueIdentifier>{382393aa-6059-4f6c-a7eb-a8e3c4385654}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Modules\Misc">
       <UniqueIdentifier>{66952e84-4862-4a2b-ac1f-cba0bc9a2e17}</UniqueIdentifier>
     </Filter>
@@ -87,6 +84,9 @@
     </Filter>
     <Filter Include="lib\Menu">
       <UniqueIdentifier>{e3edd557-bd4e-4f49-94e9-238e9d305d52}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\Hooks\GUI">
+      <UniqueIdentifier>{382393aa-6059-4f6c-a7eb-a8e3c4385654}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -109,7 +109,7 @@
       <Filter>SDK\Entity</Filter>
     </ClCompile>
     <ClCompile Include="GUI.cpp">
-      <Filter>lib\GUI</Filter>
+      <Filter>lib\Hooks\GUI</Filter>
     </ClCompile>
     <ClCompile Include="mem.cpp">
       <Filter>lib\Memory</Filter>
@@ -207,7 +207,7 @@
       <Filter>SDK\Entity</Filter>
     </ClInclude>
     <ClInclude Include="GUI.h">
-      <Filter>lib\GUI</Filter>
+      <Filter>lib\Hooks\GUI</Filter>
     </ClInclude>
     <ClInclude Include="mem.h">
       <Filter>lib\Memory</Filter>

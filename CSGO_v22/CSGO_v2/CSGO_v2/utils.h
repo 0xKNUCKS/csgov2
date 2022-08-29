@@ -11,4 +11,6 @@ namespace utils
     const char* GetFileMD5(const char* file);
     bool CheckVersion(const char* MD5Hash);
     void SetupConsole();
+
+    int SlideVal(int x, int max, float mp);
 }

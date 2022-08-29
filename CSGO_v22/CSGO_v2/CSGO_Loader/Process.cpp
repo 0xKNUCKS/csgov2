@@ -33,6 +33,10 @@ bool Process::GetProcID(proc_t &proc)
 
 bool Process::inject(proc_t proc)
 {
+	/*ToDo: better error handling (throwing runtime errors)*/
+	if (!utils::FileExists(proc.dllPath))
+		return 0;
+
 	HANDLE pHandle = OpenProcess(PROCESS_ALL_ACCESS, 0, proc.pid);
 
 	if (!pHandle || pHandle == INVALID_HANDLE_VALUE)

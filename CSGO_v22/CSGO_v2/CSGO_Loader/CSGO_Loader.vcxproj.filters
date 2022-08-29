@@ -21,6 +21,9 @@
     <ClCompile Include="Process.cpp">
       <Filter>Resource Files</Filter>
     </ClCompile>
+    <ClCompile Include="utils.cpp">
+      <Filter>Resource Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Process.h">

@@ -36,7 +36,5 @@ namespace Render
 	{
 		void DrawBox(math::Vector top, math::Vector bot, ImColor color, eBoxType Type);
 	}
-
-	bool WolrdToScreen(math::Vector& in, math::Vector& out);
 };
 

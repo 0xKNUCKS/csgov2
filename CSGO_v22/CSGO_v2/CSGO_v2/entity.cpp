@@ -46,13 +46,11 @@ bool ent_t::isValidState()
 
 	if (!globals::g_interfaces.ClientEntity->GetClientEntity(globals::g_interfaces.Engine->GetLocalPlayerIdx()))
 		return 0;
-	if (!ent_t::GetEnt())
+	if (!reinterpret_cast<uintptr_t*>(ent_t::GetEnt()))
 		return 0;
 	if (ent_t::GetEnt() == (uintptr_t)globals::g_interfaces.ClientEntity->GetClientEntity(globals::g_interfaces.Engine->GetLocalPlayerIdx()))
 		return 0;
 	if (ent_t::GetHealth() <= 0)
-		return 0;
-	if (ent_t::isDormant())
 		return 0;
 	if (!ent_t::isAlive())
 		return 0;
@@ -63,7 +61,7 @@ bool ent_t::isValidState()
 math::Vector ent_t::GetPos()
 {
 	enty = (gEntity*)GetEnt();
-	return (math::Vector)enty->getAbsOrigin();
+	return enty->getAbsOrigin();
 }
 
 int ent_t::GetTeamId()

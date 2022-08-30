@@ -197,6 +197,11 @@ namespace math
 			return (*this - v).lengthSquared();
 		}
 
+		auto floor() const noexcept
+		{
+			return Vector{ (float)(int)x, (float)(int)y, (float)(int)z };
+		}
+
 		auto snapTo4() const noexcept
 		{
 			const float l = length2D();
@@ -214,11 +219,6 @@ namespace math
 
 			return Vector{};
 		}
-
-		//auto toScreen(Vector& out)
-		//{
-		//	return false;
-		//}
 
 		constexpr static auto up() noexcept
 		{

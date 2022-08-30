@@ -12,5 +12,5 @@ namespace utils
     bool CheckVersion(const char* MD5Hash);
     void SetupConsole();
 
-    int SlideVal(int x, int max, float mp);
+    bool WolrdToScreen(math::Vector Pos, math::Vector& ScreenPos);
 }

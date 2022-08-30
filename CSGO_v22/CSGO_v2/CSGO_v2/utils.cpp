@@ -1,5 +1,6 @@
 #include "utils.h"
 #include <chrono>
+#pragma warning(disable : 4996)
 
 std::string utils::RandomString(const int len) {
     srand(_Xtime_get_ticks());
@@ -53,7 +54,7 @@ std::string utils::GetGameSumHashMD5()
 {
     std::string client = GetFileMD5("csgo\\bin\\client.dll");
     std::string engine = GetFileMD5("bin\\engine.dll");
-    std::string csgo =   GetFileMD5("csgo.exe");
+    std::string csgo = GetFileMD5("csgo.exe");
     auto finalMD5 = md5(client + engine + csgo);
 
 #ifdef _DEBUG
@@ -63,10 +64,35 @@ std::string utils::GetGameSumHashMD5()
     return finalMD5;
 }
 
+// source: https://stackoverflow.com/questions/7400418/writing-a-log-file-in-c-c
+inline std::string getCurrentDateTime(std::string s) {
+    time_t now = time(0);
+    struct tm  tstruct;
+    char  buf[80];
+    tstruct = *localtime(&now);
+    if (s == "now")
+        strftime(buf, sizeof(buf), "%Y-%m-%d %X", &tstruct);
+    else if (s == "date")
+        strftime(buf, sizeof(buf), "%Y-%m-%d", &tstruct);
+    return std::string(buf);
+};
+inline void Log(std::string logMsg) {
+
+    std::string filePath = "C:\\CSGOv2\\Logs\\log_" + getCurrentDateTime("date") + ".txt";
+    std::string now = getCurrentDateTime("now");
+    std::ofstream ofs(filePath.c_str(), std::ios_base::out | std::ios_base::app);
+    ofs << now << '\t' << logMsg << '\n';
+    ofs.close();
+}
+
 /* Checks Game Version using HASH CHECK SUM checking */
 bool utils::CheckVersion(const char* MD5Hash)
 {
-    return !strcmp(MD5Hash, GetGameSumHashMD5().c_str());
+    // if Hash dosent check out, it prints to a file located at "C:\CSGOv2\\Logs\"
+    if (strcmp(MD5Hash, GetGameSumHashMD5().c_str())) {
+        Log(std::format("CheckVersion Failed with the hash [{}]\nNew Hash [{}]\n", MD5Hash, GetGameSumHashMD5().data()));
+    }
+    else return true;
 }
 
 void utils::SetupConsole()
@@ -78,4 +104,18 @@ void utils::SetupConsole()
     if (f)
         std::cout << "Allocated a Console!\n";
     system("echo %cd%");
+}
+
+bool utils::WolrdToScreen(math::Vector Pos, math::Vector& ScreenPos)
+{
+    const auto w = globals::game::viewMatrix._41 * Pos.x + globals::game::viewMatrix._42 * Pos.y + globals::game::viewMatrix._43 * Pos.z + globals::game::viewMatrix._44;
+    if (w < 0.001f)
+        return false;
+
+    ScreenPos = math::Vector(ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y) / 2.0f;
+    ScreenPos.x *= 1.0f + (globals::game::viewMatrix._11 * Pos.x + globals::game::viewMatrix._12 * Pos.y + globals::game::viewMatrix._13 * Pos.z + globals::game::viewMatrix._14) / w;
+    ScreenPos.y *= 1.0f - (globals::game::viewMatrix._21 * Pos.x + globals::game::viewMatrix._22 * Pos.y + globals::game::viewMatrix._23 * Pos.z + globals::game::viewMatrix._24) / w;
+
+    ScreenPos.floor();
+    return true;
 }

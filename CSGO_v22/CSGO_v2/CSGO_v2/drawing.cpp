@@ -64,20 +64,3 @@ void Render::ESP::DrawBox(math::Vector top, math::Vector bot, ImColor color, eBo
 		break;
 	}
 }
-
-bool Render::WolrdToScreen(math::Vector& in, math::Vector& out)
-{
-	const math::Matrix4x4& worldToScreen = globals::g_interfaces.Engine->WorldToScreenMatrix();
-
-	float w = worldToScreen.m[3][0] * in.x + worldToScreen.m[3][1] * in.y + worldToScreen.m[3][2] * in.z + worldToScreen.m[3][3];
-	out.z = 0;
-	if (w > 0.01)
-	{
-		float inverseWidth = 1 / w;
-		out.x = (ImGui::GetIO().DisplaySize.x / 2) + (0.5 * ((worldToScreen.m[0][0] * in.x + worldToScreen.m[0][1] * in.y + worldToScreen.m[0][2] * in.z + worldToScreen.m[0][3]) * inverseWidth) * ImGui::GetIO().DisplaySize.x + 0.5);
-		out.y = (ImGui::GetIO().DisplaySize.y / 2) - (0.5 * ((worldToScreen.m[1][0] * in.x + worldToScreen.m[1][1] * in.y + worldToScreen.m[1][2] * in.z + worldToScreen.m[1][3]) * inverseWidth) * ImGui::GetIO().DisplaySize.y + 0.5);
-		return true;
-	}
-	return false;
-}
-

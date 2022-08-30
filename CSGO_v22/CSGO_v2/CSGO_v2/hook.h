@@ -12,6 +12,7 @@
 #include "Misc.h"
 #include "ESP.h"
 
+/*ToDo: Make a proper Hooking class*/
 namespace hooks
 {
 	// Hooking.
@@ -25,10 +26,10 @@ namespace hooks
 	}
 
 	// Functions Declarations
-	using tCreateMove = bool(__thiscall*)(void*, float, CUserCmd*) noexcept;
-	//using tEndScene = long(__thiscall*)(void*, IDirect3DDevice9*) noexcept;
-	typedef long(__stdcall* tEndScene)(LPDIRECT3DDEVICE9);
-	using tReset = HRESULT(__thiscall*)(void*, IDirect3DDevice9*, D3DPRESENT_PARAMETERS*) noexcept;
+	using tCreateMove =		  bool(__thiscall*)(void*, float, CUserCmd*) noexcept;
+	using tEndScene =		  long(__thiscall*)(void*, LPDIRECT3DDEVICE9) noexcept;
+	using tReset =		   HRESULT(__thiscall*)(void*, IDirect3DDevice9*, D3DPRESENT_PARAMETERS*) noexcept;
+	using tFrameStageNotify = void(__thiscall*)(void*, ClientFrameStage_t) noexcept;
 
 	// Hooks Declarations
 	inline tCreateMove oCreateMove = nullptr;
@@ -37,31 +38,11 @@ namespace hooks
 	inline tEndScene oEndScene = nullptr;
 	inline tReset oReset = nullptr;
 
-	// Hooked Functions Declarations
-    long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept;
-	HRESULT __stdcall hkReset(IDirect3DDevice9* Device, D3DPRESENT_PARAMETERS* params) noexcept;
-	bool __stdcall hkCreateMove(float frametime, CUserCmd* cmd) noexcept;
-}
+	inline tFrameStageNotify oFrameStageNotify = nullptr;
 
-//void initialize(HMODULE hModule)
-//{
-//	try
-//	{
-//		gui::Setup();
-//		hooks::Setup();
-//	}
-//	catch (const std::exception error)
-//	{
-//		MessageBoxA(
-//			0,
-//			error.what(),
-//			"initialization error",
-//			MB_OK | MB_ICONEXCLAMATION
-//		);
-//
-//		hooks::Destroy();
-//		gui::Destroy();
-//
-//		FreeLibraryAndExitThread(hModule, 0);
-//	}
-//}
+	// Hooked Functions Declarations
+    long __stdcall	  hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept;
+	HRESULT __stdcall hkReset(IDirect3DDevice9* Device, D3DPRESENT_PARAMETERS* params) noexcept;
+	bool __stdcall	  hkCreateMove(float frametime, CUserCmd* cmd) noexcept;
+	void __stdcall	  hkFrameStageNotify(ClientFrameStage_t curStage);
+}

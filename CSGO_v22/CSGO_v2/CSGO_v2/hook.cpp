@@ -28,6 +28,13 @@ bool hooks::Setup()
 		reinterpret_cast<void**>(&oCreateMove)
 	)) return 0;//throw std::runtime_error("Unable to hook CreateMove");
 
+	// FrameStageNotify hook
+	if (MH_CreateHook(
+		VirtualFunction(globals::g_interfaces.BaseClient , 37),
+		&hkFrameStageNotify,
+		reinterpret_cast<void**>(&oFrameStageNotify)
+	)) return 0;// throw std::runtime_error("Unable to FrameStageNotify");
+
 	// Actually hook
 	if (MH_EnableHook(MH_ALL_HOOKS))
 		return 0;//throw std::runtime_error("Unable to enable hooks");
@@ -48,6 +55,7 @@ void hooks::Destroy() noexcept
 
 long __stdcall hooks::hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept
 {
+	const auto result = oEndScene(&pDevice, pDevice);
 	if (cfg.settings.StreamProof)
 	{
 		// Stream proof using steam's Game Overlay
@@ -66,7 +74,7 @@ long __stdcall hooks::hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept
 		}
 
 		if (GameOverlayRetAdr != (uintptr_t)(_ReturnAddress()))
-			return oEndScene(pDevice);
+			return result;
 	}
 
 
@@ -75,7 +83,7 @@ long __stdcall hooks::hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept
 
 	gui::Render();
 
-	return oEndScene(pDevice);
+	return result;
 }
 
 HRESULT __stdcall hooks::hkReset(IDirect3DDevice9* Device, D3DPRESENT_PARAMETERS* params) noexcept
@@ -88,7 +96,7 @@ HRESULT __stdcall hooks::hkReset(IDirect3DDevice9* Device, D3DPRESENT_PARAMETERS
 
 bool __stdcall hooks::hkCreateMove(float frametime, CUserCmd* cmd) noexcept
 {
-	const bool result = hooks::oCreateMove(hooks::g_ClientMode, frametime, cmd);
+	const auto result = oCreateMove(hooks::g_ClientMode, frametime, cmd);
 
 	if (!cmd || !cmd->command_number)
 		return result;
@@ -100,4 +108,14 @@ bool __stdcall hooks::hkCreateMove(float frametime, CUserCmd* cmd) noexcept
 	misc::BunnyHop(cmd);
 
 	return result;
+}
+
+void __stdcall hooks::hkFrameStageNotify(ClientFrameStage_t curStage)
+{
+	if (curStage == ClientFrameStage_t::FRAME_START) {
+		// to be used for WorldToScreen.
+		globals::game::viewMatrix = globals::g_interfaces.Engine->WorldToScreenMatrix();
+	}
+
+	return oFrameStageNotify(globals::g_interfaces.BaseClient, curStage);
 }

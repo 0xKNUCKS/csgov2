@@ -35,7 +35,59 @@ class IClientThinkable;
 class IClientModelRenderable;
 class IClientAlphaProperty;
 
-typedef enum
+enum ClientFrameStage_t
+{
+	FRAME_UNDEFINED = -1,			// (haven't run any frames yet)
+	FRAME_START,
+
+	// A network packet is being recieved
+	FRAME_NET_UPDATE_START,
+	// Data has been received and we're going to start calling PostDataUpdate
+	FRAME_NET_UPDATE_POSTDATAUPDATE_START,
+	// Data has been received and we've called PostDataUpdate on all data recipients
+	FRAME_NET_UPDATE_POSTDATAUPDATE_END,
+	// We've received all packets, we can now do interpolation, prediction, etc..
+	FRAME_NET_UPDATE_END,
+
+	// We're about to start rendering the scene
+	FRAME_RENDER_START,
+	// We've finished rendering the scene.
+	FRAME_RENDER_END,
+
+	FRAME_NET_FULL_FRAME_UPDATE_ON_REMOVE
+};
+
+enum CommandButtons : int
+{
+	IN_ATTACK = (1 << 0),
+	IN_JUMP = (1 << 1),
+	IN_DUCK = (1 << 2),
+	IN_FORWARD = (1 << 3),
+	IN_BACK = (1 << 4),
+	IN_USE = (1 << 5),
+	IN_CANCEL = (1 << 6),
+	IN_LEFT = (1 << 7),
+	IN_RIGHT = (1 << 8),
+	IN_MOVELEFT = (1 << 9),
+	IN_MOVERIGHT = (1 << 10),
+	IN_SECOND_ATTACK = (1 << 11),
+	IN_RUN = (1 << 12),
+	IN_RELOAD = (1 << 13),
+	IN_LEFT_ALT = (1 << 14),
+	IN_RIGHT_ALT = (1 << 15),
+	IN_SCORE = (1 << 16),
+	IN_SPEED = (1 << 17),
+	IN_WALK = (1 << 18),
+	IN_ZOOM = (1 << 19),
+	IN_FIRST_WEAPON = (1 << 20),
+	IN_SECOND_WEAPON = (1 << 21),
+	IN_BULLRUSH = (1 << 22),
+	IN_FIRST_GRENADE = (1 << 23),
+	IN_SECOND_GRENADE = (1 << 24),
+	IN_MIDDLE_ATTACK = (1 << 25)
+};
+
+typedef enum ButtonCode_t
 {
 	BUTTON_CODE_INVALID = -1,
 	BUTTON_CODE_NONE = 0,
@@ -167,36 +219,6 @@ typedef enum
 	MOUSE_LAST = MOUSE_WHEEL_DOWN,
 	MOUSE_COUNT = MOUSE_LAST - MOUSE_FIRST + 1,
 } ButtonCode_t;
-
-enum CommandButtons : int
-{
-	IN_ATTACK = (1 << 0),
-	IN_JUMP = (1 << 1),
-	IN_DUCK = (1 << 2),
-	IN_FORWARD = (1 << 3),
-	IN_BACK = (1 << 4),
-	IN_USE = (1 << 5),
-	IN_CANCEL = (1 << 6),
-	IN_LEFT = (1 << 7),
-	IN_RIGHT = (1 << 8),
-	IN_MOVELEFT = (1 << 9),
-	IN_MOVERIGHT = (1 << 10),
-	IN_SECOND_ATTACK = (1 << 11),
-	IN_RUN = (1 << 12),
-	IN_RELOAD = (1 << 13),
-	IN_LEFT_ALT = (1 << 14),
-	IN_RIGHT_ALT = (1 << 15),
-	IN_SCORE = (1 << 16),
-	IN_SPEED = (1 << 17),
-	IN_WALK = (1 << 18),
-	IN_ZOOM = (1 << 19),
-	IN_FIRST_WEAPON = (1 << 20),
-	IN_SECOND_WEAPON = (1 << 21),
-	IN_BULLRUSH = (1 << 22),
-	IN_FIRST_GRENADE = (1 << 23),
-	IN_SECOND_GRENADE = (1 << 24),
-	IN_MIDDLE_ATTACK = (1 << 25)
-};
 
 
 // This is the client's version of IUnknown. We may want to use a QueryInterface-like

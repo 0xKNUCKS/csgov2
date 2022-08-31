@@ -101,13 +101,15 @@ bool __stdcall hooks::hkCreateMove(float frametime, CUserCmd* cmd) noexcept
 	if (!cmd || !cmd->command_number)
 		return result;
 
-	if (GetAsyncKeyState(VK_F9))
+	if (GetAsyncKeyState(VK_F9)) {
 		cmd->viewangles.x = 0;
+	}
 
 	aimbot::Run(cmd);
 	misc::BunnyHop(cmd);
 
-	return result;
+	// if returned false CreateMove will not change the local viewAngles
+	return 0;
 }
 
 void __stdcall hooks::hkFrameStageNotify(ClientFrameStage_t curStage)

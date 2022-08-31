@@ -85,14 +85,36 @@ inline void Log(std::string logMsg) {
     ofs.close();
 }
 
-/* Checks Game Version using HASH CHECK SUM checking */
+/* Checks Game Version using HASH CHECK SUM checking. aka: cryptographic checksum */
 bool utils::CheckVersion(const char* MD5Hash)
 {
     // if Hash dosent check out, it prints to a file located at "C:\CSGOv2\\Logs\"
     if (strcmp(MD5Hash, GetGameSumHashMD5().c_str())) {
-        Log(std::format("CheckVersion Failed with the hash [{}]\nNew Hash [{}]\n", MD5Hash, GetGameSumHashMD5().data()));
+        Log(std::format("//////////////\nCheckVersion Failed!\nOld Hash [{}]\nNew Hash [{}]\n", MD5Hash, GetGameSumHashMD5().data()));
+        /*
+        * Example Preview:
+        * //////////////
+        *
+        * 2022-08-30 20:19:33	CheckVersion Failed!
+        * Old Hash [54f789490156e0d18aa48671c7180431]
+        * New Hash [5184af3992d8916fa71e524f0bc32d8f]
+        * 
+        * //////////////
+        * 
+        * 2022-08-30 20:23:32	CheckVersion Failed!
+        * Old Hash [54f789490156e0d18aa48671c7180431]
+        * New Hash [5184af3992d8916fa71e524f0bc32d8f]
+        * 
+        * //////////////
+        * 
+        * 2022-08-30 20:25:29	CheckVersion Failed!
+        * Old Hash [54f789490156e0d18aa48671c7180431]
+        * New Hash [5184af3992d8916fa71e524f0bc32d8f]
+        */
+        return false;
     }
-    else return true;
+    else
+        return true;
 }
 
 void utils::SetupConsole()

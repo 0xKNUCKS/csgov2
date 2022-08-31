@@ -81,7 +81,7 @@ inline void Log(std::string logMsg) {
     std::string filePath = "C:\\CSGOv2\\Logs\\log_" + getCurrentDateTime("date") + ".txt";
     std::string now = getCurrentDateTime("now");
     std::ofstream ofs(filePath.c_str(), std::ios_base::out | std::ios_base::app);
-    ofs << now << '\t' << logMsg << '\n';
+    ofs << "//////////////\n\n" << now << '\t' << logMsg << '\n';
     ofs.close();
 }
 
@@ -90,25 +90,25 @@ bool utils::CheckVersion(const char* MD5Hash)
 {
     // if Hash dosent check out, it prints to a file located at "C:\CSGOv2\\Logs\"
     if (strcmp(MD5Hash, GetGameSumHashMD5().c_str())) {
-        Log(std::format("//////////////\nCheckVersion Failed!\nOld Hash [{}]\nNew Hash [{}]\n", MD5Hash, GetGameSumHashMD5().data()));
+        Log(std::format("CheckVersion Failed!\nOld Hash [{}]\nNew Hash [{}]\n", MD5Hash, GetGameSumHashMD5().data()));
         /*
         * Example Preview:
         * //////////////
         *
-        * 2022-08-30 20:19:33	CheckVersion Failed!
-        * Old Hash [54f789490156e0d18aa48671c7180431]
+        * 2022-08-31 13:05:03	CheckVersion Failed!
+        * Old Hash [123]
         * New Hash [5184af3992d8916fa71e524f0bc32d8f]
         * 
         * //////////////
         * 
-        * 2022-08-30 20:23:32	CheckVersion Failed!
-        * Old Hash [54f789490156e0d18aa48671c7180431]
+        * 2022-08-31 13:05:10	CheckVersion Failed!
+        * Old Hash [123]
         * New Hash [5184af3992d8916fa71e524f0bc32d8f]
         * 
         * //////////////
         * 
-        * 2022-08-30 20:25:29	CheckVersion Failed!
-        * Old Hash [54f789490156e0d18aa48671c7180431]
+        * 2022-08-31 13:05:15	CheckVersion Failed!
+        * Old Hash [123]
         * New Hash [5184af3992d8916fa71e524f0bc32d8f]
         */
         return false;

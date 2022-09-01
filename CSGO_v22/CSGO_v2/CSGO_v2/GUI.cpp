@@ -291,7 +291,8 @@ if (gui::bOpen) {
 			ui::EndGroup();
 
 			ui::BeginGroup(ImVec2(270, 150), "Misc");
-			ImGui::Checkbox("Draw FOV Circle", &cfg.aimbot.DrawFov);
+			ImGui::Checkbox("FOV Circle", &cfg.aimbot.DrawFov);
+			ImGui::SliderFloat("##AspectRatio", &cfg.visuals.misc.AspectRatio, 0.0f, 10.0f, "Aspect Ratio %.2f");
 			ui::EndGroup();
 
 			ImGui::EndTabItem();
@@ -299,7 +300,9 @@ if (gui::bOpen) {
 
 		if (ImGui::BeginTabItem("Misc"))
 		{
+			ui::BeginGroup(ImVec2(270, 150), "Movement");
 			ImGui::Checkbox("Bunny Hop", &cfg.misc.movement.BunnyHop);
+			ui::EndGroup();
 			ImGui::Spacing();
 			if (ImGui::Button("UNLOAD"))
 			{
@@ -323,6 +326,12 @@ if (gui::bOpen) {
 
 
 	ImGui::Begin("DBG Window##DebugGame", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+
+	if (ImGui::Button("Use globals::g_interfaces.Engine->ClientCmdUnrestricted"))
+	{
+		globals::g_interfaces.Engine->ClientCmdUnrestricted("say Hello World!");
+		globals::g_interfaces.Engine->ClientCmdUnrestricted("echo [Info] Hit Miss Wowowow!!");
+	}
 
 	//ImGui::Text("FOV: %.1f\nEntity: %d\nDistance: %.1f", aimbot::Target.fov, aimbot::Target.ent.GetEnt(), aimbot::Target.distance);
 	//ImGui::Text("LocalPlayer Name = %s", LocalPlayer.GetName());

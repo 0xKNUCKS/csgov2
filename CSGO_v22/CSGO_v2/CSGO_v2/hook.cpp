@@ -33,7 +33,14 @@ bool hooks::Setup()
 		VirtualFunction(globals::g_interfaces.BaseClient , 37),
 		&hkFrameStageNotify,
 		reinterpret_cast<void**>(&oFrameStageNotify)
-	)) return 0;// throw std::runtime_error("Unable to FrameStageNotify");
+	)) return 0;// throw std::runtime_error("Unable to hook FrameStageNotify");
+
+	// Engine::GetScreenAspectRatio hook
+	if (MH_CreateHook(
+		VirtualFunction(globals::g_interfaces.Engine, 101),
+		&hkGetScreenAspectRatio,
+		reinterpret_cast<void**>(&oGetScreenAspectRatio)
+	)) return 0;// throw std::runtime_error("Unable to hook GetScreenAspectRatio");
 
 	// Actually hook
 	if (MH_EnableHook(MH_ALL_HOOKS))
@@ -112,7 +119,7 @@ bool __stdcall hooks::hkCreateMove(float frametime, CUserCmd* cmd) noexcept
 	return 0;
 }
 
-void __stdcall hooks::hkFrameStageNotify(ClientFrameStage_t curStage)
+void __stdcall hooks::hkFrameStageNotify(ClientFrameStage_t curStage) noexcept
 {
 	if (curStage == ClientFrameStage_t::FRAME_START) {
 		// to be used for WorldToScreen.
@@ -120,4 +127,13 @@ void __stdcall hooks::hkFrameStageNotify(ClientFrameStage_t curStage)
 	}
 
 	return oFrameStageNotify(globals::g_interfaces.BaseClient, curStage);
+}
+
+float __stdcall hooks::hkGetScreenAspectRatio(int viewportWidth, int viewportHeight) noexcept
+{
+	if (cfg.visuals.misc.AspectRatio != 0.0f) {
+		return cfg.visuals.misc.AspectRatio;
+	}
+
+	return oGetScreenAspectRatio(globals::g_interfaces.Engine, viewportWidth, viewportHeight);
 }

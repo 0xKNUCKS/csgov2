@@ -24,6 +24,10 @@ public:
 			//eBoxType boxType = eBoxType::Outlined;
 			ImColor color = ImColor(255,255,255);
 		} esp;
+		struct Misc
+		{
+			float AspectRatio = 0.f;
+		} misc;
 	} visuals;
 
 	struct Misc

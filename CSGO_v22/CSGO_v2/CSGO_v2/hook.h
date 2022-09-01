@@ -30,6 +30,7 @@ namespace hooks
 	using tEndScene =		  long(__thiscall*)(void*, LPDIRECT3DDEVICE9) noexcept;
 	using tReset =		   HRESULT(__thiscall*)(void*, IDirect3DDevice9*, D3DPRESENT_PARAMETERS*) noexcept;
 	using tFrameStageNotify = void(__thiscall*)(void*, ClientFrameStage_t) noexcept;
+	using tGetScreenAspectRatio = float(__thiscall*)(void*, int viewportWidth, int viewportHeight) noexcept;
 
 	// Hooks Declarations
 	inline tCreateMove oCreateMove = nullptr;
@@ -39,10 +40,12 @@ namespace hooks
 	inline tReset oReset = nullptr;
 
 	inline tFrameStageNotify oFrameStageNotify = nullptr;
+	inline tGetScreenAspectRatio oGetScreenAspectRatio = nullptr;
 
 	// Hooked Functions Declarations
     long __stdcall	  hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept;
 	HRESULT __stdcall hkReset(IDirect3DDevice9* Device, D3DPRESENT_PARAMETERS* params) noexcept;
 	bool __stdcall	  hkCreateMove(float frametime, CUserCmd* cmd) noexcept;
-	void __stdcall	  hkFrameStageNotify(ClientFrameStage_t curStage);
+	void __stdcall	  hkFrameStageNotify(ClientFrameStage_t curStage) noexcept;
+	float __stdcall	  hkGetScreenAspectRatio(int viewportWidth, int viewportHeight) noexcept;
 }

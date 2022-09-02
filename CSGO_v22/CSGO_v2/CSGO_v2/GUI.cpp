@@ -292,7 +292,8 @@ if (gui::bOpen) {
 
 			ui::BeginGroup(ImVec2(270, 150), "Misc");
 			ImGui::Checkbox("FOV Circle", &cfg.aimbot.DrawFov);
-			ImGui::SliderFloat("##AspectRatio", &cfg.visuals.misc.AspectRatio, 0.0f, 10.0f, "Aspect Ratio %.2f");
+			ImGui::SliderFloat("##AspectRatio", &cfg.visuals.misc.AspectRatio, 0.0f, 3.0f, "Aspect Ratio %.2f");
+			ImGui::SliderFloat("##ViewModelFOV", &cfg.visuals.misc.ViewModelFOV, 60, 140.0f, "View Model FOV %.2f"); // all ui will be managed later so i dont have to do this ugly stuff.
 			ui::EndGroup();
 
 			ImGui::EndTabItem();

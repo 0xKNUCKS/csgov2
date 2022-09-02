@@ -26,7 +26,8 @@ public:
 		} esp;
 		struct Misc
 		{
-			float AspectRatio = 0.f;
+			float AspectRatio = 0.0f;
+			float ViewModelFOV = 60.0f;
 		} misc;
 	} visuals;
 

@@ -19,28 +19,36 @@ bool hooks::Setup()
 		reinterpret_cast<void**>(&oReset)
 	)) return 0;// throw std::runtime_error("Unable to hook Reset");
 
-	// CreateMove Hook
+	// Get ClientMode global pointer
 	g_ClientMode = **reinterpret_cast<void***>((*reinterpret_cast<unsigned int**>(globals::g_interfaces.BaseClient))[10] + 5);
 	
+	// CreateMove Hook
 	if (MH_CreateHook(
 		(*static_cast<void***>(g_ClientMode))[24],
 		&hkCreateMove,
 		reinterpret_cast<void**>(&oCreateMove)
 	)) return 0;//throw std::runtime_error("Unable to hook CreateMove");
 
+	// GetViewModelFOV Hook
+	if (MH_CreateHook(
+		(*static_cast<void***>(g_ClientMode))[35],
+		&hkGetViewModelFOV,
+		reinterpret_cast<void**>(&oGetViewModelFOV)
+	)) return 0;//throw std::runtime_error("Unable to hook GetViewModelFOV");
+
 	// FrameStageNotify hook
 	if (MH_CreateHook(
 		VirtualFunction(globals::g_interfaces.BaseClient , 37),
 		&hkFrameStageNotify,
 		reinterpret_cast<void**>(&oFrameStageNotify)
-	)) return 0;// throw std::runtime_error("Unable to hook FrameStageNotify");
+	)) return 0;//throw std::runtime_error("Unable to hook FrameStageNotify");
 
 	// Engine::GetScreenAspectRatio hook
 	if (MH_CreateHook(
 		VirtualFunction(globals::g_interfaces.Engine, 101),
 		&hkGetScreenAspectRatio,
 		reinterpret_cast<void**>(&oGetScreenAspectRatio)
-	)) return 0;// throw std::runtime_error("Unable to hook GetScreenAspectRatio");
+	)) return 0;//throw std::runtime_error("Unable to hook GetScreenAspectRatio");
 
 	// Actually hook
 	if (MH_EnableHook(MH_ALL_HOOKS))
@@ -103,7 +111,7 @@ HRESULT __stdcall hooks::hkReset(IDirect3DDevice9* Device, D3DPRESENT_PARAMETERS
 
 bool __stdcall hooks::hkCreateMove(float frametime, CUserCmd* cmd) noexcept
 {
-	const auto result = oCreateMove(hooks::g_ClientMode, frametime, cmd);
+	const auto result = oCreateMove(g_ClientMode, frametime, cmd);
 
 	if (!cmd || !cmd->command_number)
 		return result;
@@ -136,4 +144,9 @@ float __stdcall hooks::hkGetScreenAspectRatio(int viewportWidth, int viewportHei
 	}
 
 	return oGetScreenAspectRatio(globals::g_interfaces.Engine, viewportWidth, viewportHeight);
+}
+
+float __stdcall hooks::hkGetViewModelFOV() noexcept
+{
+	return cfg.visuals.misc.ViewModelFOV;
 }

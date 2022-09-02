@@ -26,15 +26,19 @@ namespace hooks
 	}
 
 	// Functions Declarations
-	using tCreateMove =		  bool(__thiscall*)(void*, float, CUserCmd*) noexcept;
-	using tEndScene =		  long(__thiscall*)(void*, LPDIRECT3DDEVICE9) noexcept;
-	using tReset =		   HRESULT(__thiscall*)(void*, IDirect3DDevice9*, D3DPRESENT_PARAMETERS*) noexcept;
-	using tFrameStageNotify = void(__thiscall*)(void*, ClientFrameStage_t) noexcept;
+	using tCreateMove =			  bool(__thiscall*)(void*, float, CUserCmd*) noexcept;
+	using tEndScene =			  long(__thiscall*)(void*, LPDIRECT3DDEVICE9) noexcept;
+	using tReset =				  HRESULT(__thiscall*)(void*, IDirect3DDevice9*, D3DPRESENT_PARAMETERS*) noexcept;
+	using tFrameStageNotify =	  void(__thiscall*)(void*, ClientFrameStage_t) noexcept;
 	using tGetScreenAspectRatio = float(__thiscall*)(void*, int viewportWidth, int viewportHeight) noexcept;
+	using tGetViewModelFOV	=	  float(__thiscall*)(void*) noexcept;
 
-	// Hooks Declarations
-	inline tCreateMove oCreateMove = nullptr;
+	// globals
 	inline void* g_ClientMode = nullptr;
+
+	// Original Functions Declarations
+	inline tCreateMove oCreateMove = nullptr;
+	inline tGetViewModelFOV oGetViewModelFOV = nullptr;
 
 	inline tEndScene oEndScene = nullptr;
 	inline tReset oReset = nullptr;
@@ -48,4 +52,5 @@ namespace hooks
 	bool __stdcall	  hkCreateMove(float frametime, CUserCmd* cmd) noexcept;
 	void __stdcall	  hkFrameStageNotify(ClientFrameStage_t curStage) noexcept;
 	float __stdcall	  hkGetScreenAspectRatio(int viewportWidth, int viewportHeight) noexcept;
+	float __stdcall	  hkGetViewModelFOV() noexcept;
 }

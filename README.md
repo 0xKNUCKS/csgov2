@@ -15,8 +15,9 @@ For helping me with this project <3.
 # Features
 1. Game Hash Sum Check (a simple way for anti-cracking in a way)
 1. AimBot (getting bones needs updating)
-1. ESP (WorldToScreen needs updating)
+1. ESP
 1. Bunny Hop
+more to come soon
 
 # ToDo's
 There are alot of ToDo's atm but i will mention one thing.

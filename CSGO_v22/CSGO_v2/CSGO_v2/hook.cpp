@@ -139,11 +139,8 @@ void __stdcall hooks::hkFrameStageNotify(ClientFrameStage_t curStage) noexcept
 
 float __stdcall hooks::hkGetScreenAspectRatio(int viewportWidth, int viewportHeight) noexcept
 {
-	if (cfg.visuals.misc.AspectRatio != 0.0f) {
-		return cfg.visuals.misc.AspectRatio;
-	}
-
-	return oGetScreenAspectRatio(globals::g_interfaces.Engine, viewportWidth, viewportHeight);
+	auto aspectRatio = cfg.visuals.misc.AspectRatio > 0.f ? cfg.visuals.misc.AspectRatio : oGetScreenAspectRatio(globals::g_interfaces.Engine, viewportWidth, viewportHeight);
+	return aspectRatio;
 }
 
 float __stdcall hooks::hkGetViewModelFOV() noexcept

@@ -426,11 +426,11 @@ public:
 
 class CInputSystem {
 public:
-	VIRTUAL_METHOD(void, enableInput, 11, (bool enable), (this, enable))
+	VIRTUAL_METHOD(void, EnableInput, 11, (bool enable), (this, enable))
 	VIRTUAL_METHOD(bool, IsButtonDown, 15, (ButtonCode_t code), (this, code))
-	VIRTUAL_METHOD(void, resetInputState, 39, (), (this))
+	VIRTUAL_METHOD(void, ResetInputState, 39, (), (this))
 	VIRTUAL_METHOD(const char*, ButtonCodeToString, 40, (ButtonCode_t code), (this, code)) // use for get Key Buttons
-	VIRTUAL_METHOD(ButtonCode_t, VirtualKeyToButtonCode, 43, (int nVirtualKey), (this, nVirtualKey))
+	VIRTUAL_METHOD(ButtonCode_t, VirtualKeyToButtonCode, 44, (int nVirtualKey), (this, nVirtualKey))
 };
 
 class IClientRenderable

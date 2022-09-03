@@ -334,6 +334,8 @@ if (gui::bOpen) {
 		globals::g_interfaces.Engine->ClientCmdUnrestricted("echo [Info] Hit Miss Wowowow!!");
 	}
 
+	ImGui::Text(globals::g_interfaces.InputSystem->ButtonCodeToString(ButtonCode_t::KEY_INSERT));
+
 	//ImGui::Text("FOV: %.1f\nEntity: %d\nDistance: %.1f", aimbot::Target.fov, aimbot::Target.ent.GetEnt(), aimbot::Target.distance);
 	//ImGui::Text("LocalPlayer Name = %s", LocalPlayer.GetName());
 	//ImGui::Spacing();
@@ -374,6 +376,8 @@ if (gui::bOpen) {
 	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 }
 
+using namespace globals;
+
 LRESULT CALLBACK WindowProcess(
 	HWND hWnd,
 	UINT msg,
@@ -384,14 +388,17 @@ LRESULT CALLBACK WindowProcess(
 	// toggle menu wewe
 	if (GetAsyncKeyState(gui::menuKey) & 1)
 		gui::bOpen = !gui::bOpen;
+	
+	// Disable Game input if menu is open
+	g_interfaces.InputSystem->EnableInput(!gui::bOpen);
 
 	// pass messages to imgui, to be able to click and stuff
-	if (gui::bOpen && ImGui_ImplWin32_WndProcHandler( // we only want to do it if the menu is open.
+	ImGui_ImplWin32_WndProcHandler(
 		hWnd,
 		msg,
 		wParam,
 		lParam
-	)) return 1L;
+	);
 
 		return CallWindowProc(
 			gui::oWindowProc,

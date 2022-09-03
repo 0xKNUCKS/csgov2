@@ -75,11 +75,13 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(SolutionDir)ext\MinHook;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(DXSDK_DIR)Include</IncludePath>
     <LibraryPath>$(SolutionDir)ext\MinHook\lib\$(Configuration);$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)$(DXSDK_DIR)Lib\x86</LibraryPath>
+    <TargetName>$(ProjectName)_Debug</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir)ext\MinHook;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(DXSDK_DIR)Include</IncludePath>
     <LibraryPath>$(SolutionDir)ext\MinHook\lib\$(Configuration);$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)$(DXSDK_DIR)Lib\x86</LibraryPath>
+    <TargetName>$(ProjectName)_Release</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>

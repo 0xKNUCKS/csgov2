@@ -18,4 +18,5 @@ void interfaces_t::init()
     BaseClient = (IBaseClientDLL*)FindInterface("client.dll", "VClient018");
     Engine = (IVEngineClient*)FindInterface("engine.dll", "VEngineClient014");
     DebugOverlay = (IVDebugOverlay*)FindInterface("engine.dll", "VDebugOverlay004");
+    InputSystem = (CInputSystem*)FindInterface("inputsystem.dll", "InputSystemVersion001");
 }

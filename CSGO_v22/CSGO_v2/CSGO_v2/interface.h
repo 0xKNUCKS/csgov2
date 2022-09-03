@@ -15,6 +15,7 @@ public:
     IBaseClientDLL* BaseClient; // = (IBaseClientDLL*)FindInterface("client.dll", "VClient018");
     IVEngineClient* Engine;
     IVDebugOverlay* DebugOverlay;
+    CInputSystem* InputSystem;
 
     void init();
 

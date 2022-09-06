@@ -24,14 +24,14 @@ bool hooks::Setup()
 	
 	// CreateMove Hook
 	if (MH_CreateHook(
-		(*static_cast<void***>(g_ClientMode))[24],
+		VirtualFunction(g_ClientMode, 24),
 		&hkCreateMove,
 		reinterpret_cast<void**>(&oCreateMove)
 	)) return 0;//throw std::runtime_error("Unable to hook CreateMove");
 
 	// GetViewModelFOV Hook
 	if (MH_CreateHook(
-		(*static_cast<void***>(g_ClientMode))[35],
+		VirtualFunction(g_ClientMode, 35),
 		&hkGetViewModelFOV,
 		reinterpret_cast<void**>(&oGetViewModelFOV)
 	)) return 0;//throw std::runtime_error("Unable to hook GetViewModelFOV");
@@ -118,6 +118,18 @@ bool __stdcall hooks::hkCreateMove(float frametime, CUserCmd* cmd) noexcept
 
 	if (GetAsyncKeyState(VK_F9)) {
 		cmd->viewangles.x = 0;
+	}
+
+	static bool side = 0;
+	if (!side) {
+		side = 1;
+		cmd->viewangles.y = -80;
+		cmd->viewangles.x = 100;
+	}
+	else {
+		side = 0;
+		cmd->viewangles.y = -80;
+		cmd->viewangles.x = 120;
 	}
 
 	aimbot::Run(cmd);

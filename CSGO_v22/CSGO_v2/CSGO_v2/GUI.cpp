@@ -359,8 +359,6 @@ if (gui::bOpen) {
 	ImGui::Spacing();
 	ImGui::Text("g_interfaces.ClientEntity = 0x%d", globals::g_interfaces.ClientEntity);
 	ImGui::Spacing();
-	ImGui::Text("g_interfaces.DebugOverlay = 0x%d", globals::g_interfaces.DebugOverlay);
-	ImGui::Spacing();
 	ImGui::Text("g_interfaces.Engine = 0x%d", globals::g_interfaces.Engine);
 	ImGui::Spacing();
 	//ImGui::Text("g_interfaces.Engine->GetClientVersion() = %d", globals::g_interfaces.Engine->GetClientVersion());

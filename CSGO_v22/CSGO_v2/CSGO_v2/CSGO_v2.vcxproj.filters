@@ -27,9 +27,6 @@
     <Filter Include="SDK\Classes">
       <UniqueIdentifier>{f3db4b67-d1eb-4dae-990b-e1ff0a13cf48}</UniqueIdentifier>
     </Filter>
-    <Filter Include="SDK\VirtualMethod">
-      <UniqueIdentifier>{8f955dc4-18c6-4ccc-b141-2462a84d7064}</UniqueIdentifier>
-    </Filter>
     <Filter Include="lib">
       <UniqueIdentifier>{8bc37f32-06d0-47dd-a517-6ac053884136}</UniqueIdentifier>
     </Filter>
@@ -87,6 +84,18 @@
     </Filter>
     <Filter Include="lib\Hooks\GUI">
       <UniqueIdentifier>{382393aa-6059-4f6c-a7eb-a8e3c4385654}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SDK\CRC">
+      <UniqueIdentifier>{621374eb-5317-426f-a1d9-a3897349eef9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SDK\Macros">
+      <UniqueIdentifier>{8f955dc4-18c6-4ccc-b141-2462a84d7064}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SDK\UserCmd">
+      <UniqueIdentifier>{90f89f9b-7945-4081-a68c-12f54d9cb49c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SDK\Input">
+      <UniqueIdentifier>{96826800-64b5-481b-993b-b1c76b9897b2}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -174,6 +183,15 @@
     <ClCompile Include="UI.cpp">
       <Filter>lib\Menu</Filter>
     </ClCompile>
+    <ClCompile Include="CRC.cpp">
+      <Filter>SDK\CRC</Filter>
+    </ClCompile>
+    <ClCompile Include="UserCmd.cpp">
+      <Filter>SDK\UserCmd</Filter>
+    </ClCompile>
+    <ClCompile Include="Input.cpp">
+      <Filter>SDK\Input</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="offsets.hpp">
@@ -201,7 +219,7 @@
       <Filter>SDK\Classes</Filter>
     </ClInclude>
     <ClInclude Include="VirtualMethod.h">
-      <Filter>SDK\VirtualMethod</Filter>
+      <Filter>SDK\Macros</Filter>
     </ClInclude>
     <ClInclude Include="entity.h">
       <Filter>SDK\Entity</Filter>
@@ -286,6 +304,18 @@
     </ClInclude>
     <ClInclude Include="UI.h">
       <Filter>lib\Menu</Filter>
+    </ClInclude>
+    <ClInclude Include="CRC.h">
+      <Filter>SDK\CRC</Filter>
+    </ClInclude>
+    <ClInclude Include="Pad.h">
+      <Filter>SDK\Macros</Filter>
+    </ClInclude>
+    <ClInclude Include="UserCmd.h">
+      <Filter>SDK\UserCmd</Filter>
+    </ClInclude>
+    <ClInclude Include="Input.h">
+      <Filter>SDK\Input</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

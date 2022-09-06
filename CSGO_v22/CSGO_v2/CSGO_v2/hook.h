@@ -11,6 +11,7 @@
 #include "aimbot.h"
 #include "Misc.h"
 #include "ESP.h"
+#include "Input.h"
 
 /*ToDo: Make a proper Hooking class*/
 namespace hooks
@@ -35,6 +36,7 @@ namespace hooks
 
 	// globals
 	inline void* g_ClientMode = nullptr;
+	inline CInput* input = nullptr;
 
 	// Original Functions Declarations
 	inline tCreateMove oCreateMove = nullptr;

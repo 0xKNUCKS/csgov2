@@ -182,17 +182,20 @@
     <ClCompile Include="..\ext\MinHook\trampoline.cpp" />
     <ClCompile Include="aimbot.cpp" />
     <ClCompile Include="config.cpp" />
+    <ClCompile Include="CRC.cpp" />
     <ClCompile Include="entity.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="drawing.cpp" />
     <ClCompile Include="ESP.cpp" />
     <ClCompile Include="GUI.cpp" />
     <ClCompile Include="hook.cpp" />
+    <ClCompile Include="Input.cpp" />
     <ClCompile Include="mem.cpp" />
     <ClCompile Include="interface.cpp" />
     <ClCompile Include="Misc.cpp" />
     <ClCompile Include="netvars.cpp" />
     <ClCompile Include="UI.cpp" />
+    <ClCompile Include="UserCmd.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="VARS.cpp" />
   </ItemGroup>
@@ -217,12 +220,14 @@
     <ClInclude Include="aimbot.h" />
     <ClInclude Include="classes.h" />
     <ClInclude Include="config.h" />
+    <ClInclude Include="CRC.h" />
     <ClInclude Include="entity.h" />
     <ClInclude Include="drawing.h" />
     <ClInclude Include="ESP.h" />
     <ClInclude Include="Globals.h" />
     <ClInclude Include="GUI.h" />
     <ClInclude Include="hook.h" />
+    <ClInclude Include="Input.h" />
     <ClInclude Include="mem.h" />
     <ClInclude Include="includes.h" />
     <ClInclude Include="interface.h" />
@@ -230,7 +235,9 @@
     <ClInclude Include="Misc.h" />
     <ClInclude Include="netvars.h" />
     <ClInclude Include="offsets.hpp" />
+    <ClInclude Include="Pad.h" />
     <ClInclude Include="UI.h" />
+    <ClInclude Include="UserCmd.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="VARS.h" />
     <ClInclude Include="VirtualMethod.h" />

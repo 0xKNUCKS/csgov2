@@ -6,6 +6,8 @@
 
 #include "VirtualMethod.h"
 #include "math.h"
+#include "Pad.h"
+#include "UserCmd.h"
 
 #ifdef VECTOR_PARANOIA
 #define CHECK_VALID( _v)	Assert( (_v).IsValid() )
@@ -55,36 +57,6 @@ enum ClientFrameStage_t
 	FRAME_RENDER_END,
 
 	FRAME_NET_FULL_FRAME_UPDATE_ON_REMOVE
-};
-
-enum CommandButtons : int
-{
-	IN_ATTACK = (1 << 0),
-	IN_JUMP = (1 << 1),
-	IN_DUCK = (1 << 2),
-	IN_FORWARD = (1 << 3),
-	IN_BACK = (1 << 4),
-	IN_USE = (1 << 5),
-	IN_CANCEL = (1 << 6),
-	IN_LEFT = (1 << 7),
-	IN_RIGHT = (1 << 8),
-	IN_MOVELEFT = (1 << 9),
-	IN_MOVERIGHT = (1 << 10),
-	IN_SECOND_ATTACK = (1 << 11),
-	IN_RUN = (1 << 12),
-	IN_RELOAD = (1 << 13),
-	IN_LEFT_ALT = (1 << 14),
-	IN_RIGHT_ALT = (1 << 15),
-	IN_SCORE = (1 << 16),
-	IN_SPEED = (1 << 17),
-	IN_WALK = (1 << 18),
-	IN_ZOOM = (1 << 19),
-	IN_FIRST_WEAPON = (1 << 20),
-	IN_SECOND_WEAPON = (1 << 21),
-	IN_BULLRUSH = (1 << 22),
-	IN_FIRST_GRENADE = (1 << 23),
-	IN_SECOND_GRENADE = (1 << 24),
-	IN_MIDDLE_ATTACK = (1 << 25)
 };
 
 typedef enum ButtonCode_t
@@ -686,13 +658,6 @@ private:
 	unsigned char _color[4];
 };
 
-class IVDebugOverlay
-{
-public:
-	//virtual int ScreenPosition(const Vector& point, Vector& screen) = 0;
-	VIRTUAL_METHOD(int, ScreenPosition, 12, (const math::Vector& point, math::Vector& screen), (this, point, screen))
-};
-
 // fuck this shit idek wtf is this, pasted from NEPS. sad.
 class gEntity
 {
@@ -742,57 +707,3 @@ public:
 };
 
 static_assert(sizeof(gEntity) == 1);
-
-struct CUserCmd
-{
-	enum
-	{
-		Button_Attack = 1 << 0,
-		Button_Jump = 1 << 1,
-		Button_Duck = 1 << 2,
-		Button_Forward = 1 << 3,
-		Button_Back = 1 << 4,
-		Button_Use = 1 << 5,
-		Button_MoveLeft = 1 << 9,
-		Button_MoveRight = 1 << 10,
-		Button_Attack2 = 1 << 11,
-		Button_Score = 1 << 16,
-		Button_Bullrush = 1 << 22
-	};
-
-	void* vmt;
-	// For matching server and client commands for debugging
-	std::int32_t		command_number;
-
-	// the tick the client created this command
-	std::int32_t		tick_count;
-
-	// Player instantaneous view angles.
-	math::Vector	viewangles;
-	math::Vector	aimdirection;	// For pointing devices. 
-	// Intended velocities
-	//	forward velocity.
-	float	forwardmove;
-	//  sideways velocity.
-	float	sidemove;
-	//  upward velocity.
-	float	upmove;
-	// Attack button states
-	std::int32_t		buttons;
-	// Impulse command issued.
-	byte    impulse;
-	// Current weapon id
-	std::int32_t		weaponselect;
-	std::int32_t		weaponsubtype;
-
-	std::int32_t		random_seed;	// For shared random functions
-
-	short	mousedx;		// mouse accum in x from create move
-	short	mousedy;		// mouse accum in y from create move
-
-	// Client only, tracks whether we've predicted this command at least once
-	bool	hasbeenpredicted;
-	// TrackIR
-	math::Vector headangles;
-	math::Vector headoffset;
-};

@@ -2,6 +2,10 @@
 
 bool hooks::Setup()
 {
+	// Globals Initialization
+	g_ClientMode = **reinterpret_cast<void***>((*reinterpret_cast<unsigned int**>(globals::g_interfaces.BaseClient))[10] + 5);
+	input = *reinterpret_cast<CInput**>((*reinterpret_cast<uintptr_t**>(globals::g_interfaces.BaseClient))[16] + 1);
+
 	if (MH_Initialize())
 		return 0;//throw std::runtime_error("Unable to initialize Hooks");
 
@@ -18,9 +22,6 @@ bool hooks::Setup()
 		&hkReset,
 		reinterpret_cast<void**>(&oReset)
 	)) return 0;// throw std::runtime_error("Unable to hook Reset");
-
-	// Get ClientMode global pointer
-	g_ClientMode = **reinterpret_cast<void***>((*reinterpret_cast<unsigned int**>(globals::g_interfaces.BaseClient))[10] + 5);
 	
 	// CreateMove Hook
 	if (MH_CreateHook(

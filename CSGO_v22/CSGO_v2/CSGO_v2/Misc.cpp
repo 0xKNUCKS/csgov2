@@ -8,7 +8,7 @@ void misc::BunnyHop(CUserCmd* cmd)
 	if (!LocalPlayer.Get())
 		return;
 
-	if ((cmd->buttons & CUserCmd::Button_Jump) && !((LocalPlayer.Flags() & PlayerFlag_OnGround) || (LocalPlayer.Flags() & PlayerFlag_PartialGround))) {
-		cmd->buttons &= ~CUserCmd::Button_Jump;
+	if ((cmd->buttons & CUserCmd::IN_JUMP) && !((LocalPlayer.Flags() & PlayerFlag_OnGround) || (LocalPlayer.Flags() & PlayerFlag_PartialGround))) {
+		cmd->buttons &= ~CUserCmd::IN_JUMP;
 	}
 }

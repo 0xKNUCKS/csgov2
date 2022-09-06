@@ -120,18 +120,6 @@ bool __stdcall hooks::hkCreateMove(float frametime, CUserCmd* cmd) noexcept
 		cmd->viewangles.x = 0;
 	}
 
-	static bool side = 0;
-	if (!side) {
-		side = 1;
-		cmd->viewangles.y = -80;
-		cmd->viewangles.x = 100;
-	}
-	else {
-		side = 0;
-		cmd->viewangles.y = -80;
-		cmd->viewangles.x = 120;
-	}
-
 	aimbot::Run(cmd);
 	misc::BunnyHop(cmd);
 

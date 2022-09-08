@@ -245,6 +245,8 @@ void gui::Render() noexcept
 
 	ESP::Render();
 
+	ImVec2 curWndSize(0, 5);
+
 	// Menu Code
 if (gui::bOpen) {
 
@@ -254,7 +256,12 @@ if (gui::bOpen) {
 	ImGui::End();
 #endif // _DEBUG
 
-	ImGui::SetNextWindowSize(ImVec2(540, 650)); // res/2 = x = 270, y = 325
+	static math::Vector WndSize(540, 650);
+	int i = 0; i++;
+	
+	{
+		ImGui::SetNextWindowSize(curWndSize); // res/2 = x = 270, y = 325
+	}
 
 	ImGui::Begin(std::format("cockbalt.solutions - Welcome {}!", LocalPlayer.GetName()).c_str(), &gui::bOpen, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
 
@@ -328,6 +335,17 @@ if (gui::bOpen) {
 
 	ImGui::Begin("DBG Window##DebugGame", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
+	static float speed;
+	ImGui::SliderFloat("Speed", &speed, 0.1, 20);
+	if (ImGui::Button("Animate"))
+	{
+		curWndSize = ImVec2(0, 0);
+		if (curWndSize.x != WndSize.x)
+			curWndSize.x = utils::SlideVal(curWndSize.x, WndSize.x, i *speed /*ToDo: Add GlobalVars->FrameTime*/);
+		else if (curWndSize.y != WndSize.y)
+			curWndSize.y = utils::SlideVal(curWndSize.y, WndSize.y, i *speed /*ToDo: Add GlobalVars->FrameTime*/);
+	}
+
 	if (ImGui::Button("Use globals::g_interfaces.Engine->ClientCmdUnrestricted"))
 	{
 		globals::g_interfaces.Engine->ClientCmdUnrestricted("say Hello World!");
@@ -390,9 +408,6 @@ LRESULT CALLBACK WindowProcess(
 	// toggle menu wewe
 	if (GetAsyncKeyState(gui::menuKey) & 1)
 		gui::bOpen = !gui::bOpen;
-	
-	// Disable Game input if menu is open
-	g_interfaces.InputSystem->EnableInput(!gui::bOpen);
 
 	// pass messages to imgui, to be able to click and stuff
 	ImGui_ImplWin32_WndProcHandler(

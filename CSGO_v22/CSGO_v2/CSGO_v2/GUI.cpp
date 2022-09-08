@@ -257,9 +257,13 @@ if (gui::bOpen) {
 #endif // _DEBUG
 
 	static math::Vector WndSize(540, 650);
-	int i = 0; i++;
+	static float speed;
 	
 	{
+		if (curWndSize.x != WndSize.x)
+			curWndSize.x = utils::SlideVal(curWndSize.x, WndSize.x, hooks::GlobalVars->frametime * speed);
+		else if (curWndSize.y != WndSize.y)
+			curWndSize.y = utils::SlideVal(curWndSize.y, WndSize.y, hooks::GlobalVars->frametime * speed);
 		ImGui::SetNextWindowSize(curWndSize); // res/2 = x = 270, y = 325
 	}
 
@@ -335,15 +339,10 @@ if (gui::bOpen) {
 
 	ImGui::Begin("DBG Window##DebugGame", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
-	static float speed;
 	ImGui::SliderFloat("Speed", &speed, 0.1, 20);
 	if (ImGui::Button("Animate"))
 	{
 		curWndSize = ImVec2(0, 0);
-		if (curWndSize.x != WndSize.x)
-			curWndSize.x = utils::SlideVal(curWndSize.x, WndSize.x, hooks::GlobalVars->frametime *speed );
-		else if (curWndSize.y != WndSize.y)
-			curWndSize.y = utils::SlideVal(curWndSize.y, WndSize.y, hooks::GlobalVars->frametime *speed );
 	}
 
 	if (ImGui::Button("Use globals::g_interfaces.Engine->ClientCmdUnrestricted"))
@@ -384,6 +383,9 @@ if (gui::bOpen) {
 	if (ImGui::Button("Enable/Disable Third Person"))
 		hooks::input->isCameraInThirdPerson = !hooks::input->isCameraInThirdPerson;
 	ImGui::SliderFloat("Camera Z axis", &hooks::input->cameraOffset.z, 0, 800);
+	ImGui::Text("GlobalVars debug");
+	ImGui::Text("hooks::GlobalVars->absoluteframetime = %f\nhooks::GlobalVars->curtime = %f\nhooks::GlobalVars->framecount = %f\nhooks::GlobalVars->frametime = %f\nhooks::GlobalVars->maxClients %d\n",
+					hooks::GlobalVars->absoluteframetime,	   hooks::GlobalVars->curtime,		 hooks::GlobalVars->framecount,		hooks::GlobalVars->frametime,	    hooks::GlobalVars->maxClients);
 
 	ImGui::Spacing();
 	ImGui::Text("WindowPos[%f, %f], WindowSize[%f, %f]", ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowSize().x, ImGui::GetWindowSize().y);

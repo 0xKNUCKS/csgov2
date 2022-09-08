@@ -42,4 +42,4 @@ struct CGlobalVarsBase
 	int				simTicksThisFrame;
 
 	int				network_protocol;
-}
+};

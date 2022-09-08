@@ -128,6 +128,14 @@ void utils::SetupConsole()
     system("echo %cd%");
 }
 
+float utils::SlideVal(float curVal, float Max, float fraction)
+{
+    float delta = Max - curVal;
+    fraction = std::clamp(fraction, 0.0f, 1.0f);
+    delta *= fraction;
+    return curVal + delta;
+}
+
 bool utils::WolrdToScreen(math::Vector Pos, math::Vector& ScreenPos)
 {
     const auto w = globals::game::viewMatrix._41 * Pos.x + globals::game::viewMatrix._42 * Pos.y + globals::game::viewMatrix._43 * Pos.z + globals::game::viewMatrix._44;

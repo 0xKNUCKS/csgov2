@@ -257,13 +257,13 @@ if (gui::bOpen) {
 #endif // _DEBUG
 
 	static math::Vector WndSize(540, 650);
-	static float speed;
+	static float speed = 0.5;
 	
 	{
-		if (curWndSize.x != WndSize.x)
-			curWndSize.x = utils::SlideVal(curWndSize.x, WndSize.x, hooks::GlobalVars->frametime * speed);
-		else if (curWndSize.y != WndSize.y)
-			curWndSize.y = utils::SlideVal(curWndSize.y, WndSize.y, hooks::GlobalVars->frametime * speed);
+		curWndSize.x = utils::SlideVal(curWndSize.x, WndSize.x, hooks::GlobalVars->curtime * speed);
+		if (curWndSize.x == WndSize.x) {
+			curWndSize.y = utils::SlideVal(curWndSize.y, WndSize.y, hooks::GlobalVars->curtime * speed);
+		}
 		ImGui::SetNextWindowSize(curWndSize); // res/2 = x = 270, y = 325
 	}
 
@@ -344,6 +344,7 @@ if (gui::bOpen) {
 	{
 		curWndSize = ImVec2(0, 0);
 	}
+	ImGui::Text("CurWnd [%f, %f], MainWnd [%f, %f]", curWndSize.x, curWndSize.y, WndSize.x, WndSize.y);
 
 	if (ImGui::Button("Use globals::g_interfaces.Engine->ClientCmdUnrestricted"))
 	{

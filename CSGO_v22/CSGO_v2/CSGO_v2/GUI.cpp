@@ -361,7 +361,11 @@ if (gui::bOpen) {
 	ImGui::Spacing();
 	ImGui::Text("g_interfaces.Engine = 0x%d", globals::g_interfaces.Engine);
 	ImGui::Spacing();
-	//ImGui::Text("g_interfaces.Engine->GetClientVersion() = %d", globals::g_interfaces.Engine->GetClientVersion());
+	ImGui::Text("input->cameraOffset = %.1f, %.1f, %.1f", hooks::input->cameraOffset.x, hooks::input->cameraOffset.y, hooks::input->cameraOffset.z);
+	ImGui::Text("input->isCameraInThirdPerson = %d", hooks::input->isCameraInThirdPerson);
+	if (ImGui::Button("Enable/Disable Third Person"))
+		hooks::input->isCameraInThirdPerson = !hooks::input->isCameraInThirdPerson;
+	ImGui::SliderFloat("Camera Z axis", &hooks::input->cameraOffset.z, 0, 800);
 
 	ImGui::Spacing();
 	ImGui::Text("WindowPos[%f, %f], WindowSize[%f, %f]", ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowSize().x, ImGui::GetWindowSize().y);

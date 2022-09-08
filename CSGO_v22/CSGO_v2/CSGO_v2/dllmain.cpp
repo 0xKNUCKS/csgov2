@@ -3,7 +3,7 @@
 #include "hook.h"
 
 // Macros
-#define GAME_HASHSUM "846b9223bed47816671d150e2aa93113"
+#define GAME_HASHSUM "5184af3992d8916fa71e524f0bc32d8f"
 
 // Main thread
 DWORD WINAPI Main(HMODULE hModule)

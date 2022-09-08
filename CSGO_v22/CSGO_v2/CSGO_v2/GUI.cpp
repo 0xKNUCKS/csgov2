@@ -341,9 +341,9 @@ if (gui::bOpen) {
 	{
 		curWndSize = ImVec2(0, 0);
 		if (curWndSize.x != WndSize.x)
-			curWndSize.x = utils::SlideVal(curWndSize.x, WndSize.x, i *speed /*ToDo: Add GlobalVars->FrameTime*/);
+			curWndSize.x = utils::SlideVal(curWndSize.x, WndSize.x, hooks::GlobalVars->frametime *speed );
 		else if (curWndSize.y != WndSize.y)
-			curWndSize.y = utils::SlideVal(curWndSize.y, WndSize.y, i *speed /*ToDo: Add GlobalVars->FrameTime*/);
+			curWndSize.y = utils::SlideVal(curWndSize.y, WndSize.y, hooks::GlobalVars->frametime *speed );
 	}
 
 	if (ImGui::Button("Use globals::g_interfaces.Engine->ClientCmdUnrestricted"))

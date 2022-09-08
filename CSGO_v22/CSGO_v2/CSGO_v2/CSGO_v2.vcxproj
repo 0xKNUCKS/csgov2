@@ -225,6 +225,7 @@
     <ClInclude Include="drawing.h" />
     <ClInclude Include="ESP.h" />
     <ClInclude Include="Globals.h" />
+    <ClInclude Include="GlobalVars.h" />
     <ClInclude Include="GUI.h" />
     <ClInclude Include="hook.h" />
     <ClInclude Include="Input.h" />

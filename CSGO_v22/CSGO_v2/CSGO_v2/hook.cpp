@@ -5,6 +5,7 @@ bool hooks::Setup()
 	// Globals Initialization
 	g_ClientMode = **reinterpret_cast<void***>((*reinterpret_cast<unsigned int**>(globals::g_interfaces.BaseClient))[10] + 5);
 	input = *reinterpret_cast<CInput**>((*reinterpret_cast<uintptr_t**>(globals::g_interfaces.BaseClient))[16] + 1);
+	GlobalVars = **reinterpret_cast<CGlobalVarsBase***>((*reinterpret_cast<uintptr_t**>(globals::g_interfaces.BaseClient))[11] + 10);
 
 	if (MH_Initialize())
 		return 0;//throw std::runtime_error("Unable to initialize Hooks");

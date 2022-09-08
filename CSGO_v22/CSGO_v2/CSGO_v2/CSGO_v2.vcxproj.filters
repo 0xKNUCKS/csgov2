@@ -91,11 +91,14 @@
     <Filter Include="SDK\Macros">
       <UniqueIdentifier>{8f955dc4-18c6-4ccc-b141-2462a84d7064}</UniqueIdentifier>
     </Filter>
-    <Filter Include="SDK\UserCmd">
+    <Filter Include="SDK\Classes\UserCmd">
       <UniqueIdentifier>{90f89f9b-7945-4081-a68c-12f54d9cb49c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="SDK\Input">
+    <Filter Include="SDK\Classes\Input">
       <UniqueIdentifier>{96826800-64b5-481b-993b-b1c76b9897b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SDK\Classes\GlobalVars">
+      <UniqueIdentifier>{b3d5ce79-f736-4528-af53-159f3b9549e3}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -187,10 +190,10 @@
       <Filter>SDK\CRC</Filter>
     </ClCompile>
     <ClCompile Include="UserCmd.cpp">
-      <Filter>SDK\UserCmd</Filter>
+      <Filter>SDK\Classes\UserCmd</Filter>
     </ClCompile>
     <ClCompile Include="Input.cpp">
-      <Filter>SDK\Input</Filter>
+      <Filter>SDK\Classes\Input</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -312,10 +315,13 @@
       <Filter>SDK\Macros</Filter>
     </ClInclude>
     <ClInclude Include="UserCmd.h">
-      <Filter>SDK\UserCmd</Filter>
+      <Filter>SDK\Classes\UserCmd</Filter>
     </ClInclude>
     <ClInclude Include="Input.h">
-      <Filter>SDK\Input</Filter>
+      <Filter>SDK\Classes\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="GlobalVars.h">
+      <Filter>SDK\Classes\GlobalVars</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

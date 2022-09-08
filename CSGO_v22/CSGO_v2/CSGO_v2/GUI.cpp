@@ -245,6 +245,8 @@ void gui::Render() noexcept
 
 	ESP::Render();
 
+	ImVec2 curWndSize(0, 5);
+
 	// Menu Code
 if (gui::bOpen) {
 
@@ -254,7 +256,16 @@ if (gui::bOpen) {
 	ImGui::End();
 #endif // _DEBUG
 
-	ImGui::SetNextWindowSize(ImVec2(540, 650)); // res/2 = x = 270, y = 325
+	static math::Vector WndSize(540, 650);
+	static float speed = 0.5;
+	
+	{
+		curWndSize.x = utils::SlideVal(curWndSize.x, WndSize.x, hooks::GlobalVars->curtime * speed);
+		if (curWndSize.x == WndSize.x) {
+			curWndSize.y = utils::SlideVal(curWndSize.y, WndSize.y, hooks::GlobalVars->curtime * speed);
+		}
+		ImGui::SetNextWindowSize(curWndSize); // res/2 = x = 270, y = 325
+	}
 
 	ImGui::Begin(std::format("cockbalt.solutions - Welcome {}!", LocalPlayer.GetName()).c_str(), &gui::bOpen, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
 
@@ -328,6 +339,13 @@ if (gui::bOpen) {
 
 	ImGui::Begin("DBG Window##DebugGame", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
+	ImGui::SliderFloat("Speed", &speed, 0.1, 20);
+	if (ImGui::Button("Animate"))
+	{
+		curWndSize = ImVec2(0, 0);
+	}
+	ImGui::Text("CurWnd [%f, %f], MainWnd [%f, %f]", curWndSize.x, curWndSize.y, WndSize.x, WndSize.y);
+
 	if (ImGui::Button("Use globals::g_interfaces.Engine->ClientCmdUnrestricted"))
 	{
 		globals::g_interfaces.Engine->ClientCmdUnrestricted("say Hello World!");
@@ -361,7 +379,14 @@ if (gui::bOpen) {
 	ImGui::Spacing();
 	ImGui::Text("g_interfaces.Engine = 0x%d", globals::g_interfaces.Engine);
 	ImGui::Spacing();
-	//ImGui::Text("g_interfaces.Engine->GetClientVersion() = %d", globals::g_interfaces.Engine->GetClientVersion());
+	ImGui::Text("input->cameraOffset = %.1f, %.1f, %.1f", hooks::input->cameraOffset.x, hooks::input->cameraOffset.y, hooks::input->cameraOffset.z);
+	ImGui::Text("input->isCameraInThirdPerson = %d", hooks::input->isCameraInThirdPerson);
+	if (ImGui::Button("Enable/Disable Third Person"))
+		hooks::input->isCameraInThirdPerson = !hooks::input->isCameraInThirdPerson;
+	ImGui::SliderFloat("Camera Z axis", &hooks::input->cameraOffset.z, 0, 800);
+	ImGui::Text("GlobalVars debug");
+	ImGui::Text("hooks::GlobalVars->absoluteframetime = %f\nhooks::GlobalVars->curtime = %f\nhooks::GlobalVars->framecount = %f\nhooks::GlobalVars->frametime = %f\nhooks::GlobalVars->maxClients %d\n",
+					hooks::GlobalVars->absoluteframetime,	   hooks::GlobalVars->curtime,		 hooks::GlobalVars->framecount,		hooks::GlobalVars->frametime,	    hooks::GlobalVars->maxClients);
 
 	ImGui::Spacing();
 	ImGui::Text("WindowPos[%f, %f], WindowSize[%f, %f]", ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowSize().x, ImGui::GetWindowSize().y);

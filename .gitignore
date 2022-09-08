@@ -3,6 +3,7 @@
 # Remove vs uncessary files.
 /.vs/csgov2/v17
 /CSGO_v22/CSGO_v2/.vs/CSGO_v2
+/CSGO_v22/CSGO_v2/Output-Build.txt
 
 # Remove all build/compile files.
 /CSGO_v22/CSGO_v2/CSGO_v2/Debug

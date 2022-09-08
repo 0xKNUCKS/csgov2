@@ -5,6 +5,7 @@ bool hooks::Setup()
 	// Globals Initialization
 	g_ClientMode = **reinterpret_cast<void***>((*reinterpret_cast<unsigned int**>(globals::g_interfaces.BaseClient))[10] + 5);
 	input = *reinterpret_cast<CInput**>((*reinterpret_cast<uintptr_t**>(globals::g_interfaces.BaseClient))[16] + 1);
+	GlobalVars = **reinterpret_cast<CGlobalVarsBase***>((*reinterpret_cast<uintptr_t**>(globals::g_interfaces.BaseClient))[11] + 10);
 
 	if (MH_Initialize())
 		return 0;//throw std::runtime_error("Unable to initialize Hooks");
@@ -22,13 +23,6 @@ bool hooks::Setup()
 		&hkReset,
 		reinterpret_cast<void**>(&oReset)
 	)) return 0;// throw std::runtime_error("Unable to hook Reset");
-	
-	// CreateMove Hook
-	if (MH_CreateHook(
-		VirtualFunction(g_ClientMode, 24),
-		&hkCreateMove,
-		reinterpret_cast<void**>(&oCreateMove)
-	)) return 0;//throw std::runtime_error("Unable to hook CreateMove");
 
 	// GetViewModelFOV Hook
 	if (MH_CreateHook(
@@ -36,6 +30,13 @@ bool hooks::Setup()
 		&hkGetViewModelFOV,
 		reinterpret_cast<void**>(&oGetViewModelFOV)
 	)) return 0;//throw std::runtime_error("Unable to hook GetViewModelFOV");
+
+	// CreateMove Hook
+	if (MH_CreateHook(
+		VirtualFunction(globals::g_interfaces.BaseClient, 22),
+		&hkCreateMoveProxy,
+		reinterpret_cast<void**>(&oCreateMove)
+	)) return 0;//throw std::runtime_error("Unable to hook CreateMove");
 
 	// FrameStageNotify hook
 	if (MH_CreateHook(
@@ -110,12 +111,17 @@ HRESULT __stdcall hooks::hkReset(IDirect3DDevice9* Device, D3DPRESENT_PARAMETERS
 	return result;
 }
 
-bool __stdcall hooks::hkCreateMove(float frametime, CUserCmd* cmd) noexcept
+void __stdcall hooks::hkCreateMove(int sequence_number, float input_sample_frametime, bool active, bool* bSendPacket) noexcept
 {
-	const auto result = oCreateMove(g_ClientMode, frametime, cmd);
+	oCreateMove(globals::g_interfaces.BaseClient, sequence_number, input_sample_frametime, active);
+
+	if (!bSendPacket)
+		return;
+
+	CUserCmd* cmd = input->getUserCmd(0, sequence_number);
 
 	if (!cmd || !cmd->command_number)
-		return result;
+		return;
 
 	if (GetAsyncKeyState(VK_F9)) {
 		cmd->viewangles.x = 0;
@@ -124,8 +130,29 @@ bool __stdcall hooks::hkCreateMove(float frametime, CUserCmd* cmd) noexcept
 	aimbot::Run(cmd);
 	misc::BunnyHop(cmd);
 
-	// if returned false CreateMove will not change the local viewAngles
-	return 0;
+	VerifiedUserCmd* verified = input->getVerifiedUserCmd(sequence_number);
+	if (verified)
+		*verified = VerifiedUserCmd(*cmd);
+}
+
+__declspec(naked) void __stdcall hooks::hkCreateMoveProxy(int sequenceNumber, float inputSampleTime, bool active) noexcept
+{
+	// Create move Proxy to be able to retrieve "bSendPacket" pointer
+	__asm {
+		push ebp
+		mov ebp, esp
+		push ebx
+		lea ecx, [esp]; load stack pointer to ecx(bSendPacket)
+		push ecx; push bSendPacket to the stack 
+		movzx edx, active
+		push edx
+		push inputSampleTime
+		push sequenceNumber
+		call hooks::hkCreateMove
+		pop ebx
+		pop ebp
+		ret 0Ch
+	}
 }
 
 void __stdcall hooks::hkFrameStageNotify(ClientFrameStage_t curStage) noexcept

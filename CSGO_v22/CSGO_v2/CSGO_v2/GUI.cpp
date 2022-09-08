@@ -386,9 +386,6 @@ LRESULT CALLBACK WindowProcess(
 	// toggle menu wewe
 	if (GetAsyncKeyState(gui::menuKey) & 1)
 		gui::bOpen = !gui::bOpen;
-	
-	// Disable Game input if menu is open
-	g_interfaces.InputSystem->EnableInput(!gui::bOpen);
 
 	// pass messages to imgui, to be able to click and stuff
 	ImGui_ImplWin32_WndProcHandler(

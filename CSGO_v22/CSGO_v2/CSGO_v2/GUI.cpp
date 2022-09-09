@@ -314,7 +314,13 @@ if (gui::bOpen) {
 		{
 			ui::BeginGroup(ImVec2(270, 150), "Movement");
 			ImGui::Checkbox("Bunny Hop", &cfg.misc.movement.BunnyHop);
+			ImGui::Checkbox("Air Duck", &cfg.misc.movement.AirDuck);
 			ui::EndGroup();
+
+			ui::BeginGroup(ImVec2(270, 80), "Movement");
+			ImGui::Checkbox("Infinite Duck", &cfg.misc.exploits.InfDuck);
+			ui::EndGroup();
+
 			ImGui::Spacing();
 			if (ImGui::Button("UNLOAD"))
 			{
@@ -368,6 +374,8 @@ if (gui::bOpen) {
 	//ImGui::Spacing();
 	math::Vector Orgin = LocalPlayer.Get() ? LocalPlayer.GetPos() : math::Vector{ 0, 0, 0 };
 	ImGui::Text("Local Player Orgin: x.%.1f, y.%.1f, z.%.1f", Orgin.x, Orgin.y, Orgin.z);
+	bool Flag = LocalPlayer.Get() ? LocalPlayer.Flags() & PlayerFlag_Crouched : 0;
+	ImGui::Text("Local Player Crouch Flag: %d", Flag);
 	ImGui::Spacing();
 	ImGui::Text("g_interfaces.Engine->GetLocalPlayerIdx() = %d", globals::g_interfaces.Engine->GetLocalPlayerIdx());
 	ImGui::Spacing();

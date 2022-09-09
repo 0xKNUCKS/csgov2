@@ -36,8 +36,12 @@ public:
 		struct Movement
 		{
 			bool BunnyHop = false;
-			unsigned int bhopMode = 1;
+			bool AirDuck = false;
 		} movement;
+		struct Exploits
+		{
+			bool InfDuck = false; // to do
+		} exploits;
 	} misc;
 
 	struct Settings

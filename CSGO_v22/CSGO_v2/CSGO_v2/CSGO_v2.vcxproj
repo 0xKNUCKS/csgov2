@@ -186,6 +186,7 @@
     <ClCompile Include="entity.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="drawing.cpp" />
+    <ClCompile Include="entitylist.cpp" />
     <ClCompile Include="ESP.cpp" />
     <ClCompile Include="GUI.cpp" />
     <ClCompile Include="hook.cpp" />
@@ -223,6 +224,7 @@
     <ClInclude Include="CRC.h" />
     <ClInclude Include="entity.h" />
     <ClInclude Include="drawing.h" />
+    <ClInclude Include="entitylist.h" />
     <ClInclude Include="ESP.h" />
     <ClInclude Include="Globals.h" />
     <ClInclude Include="GlobalVars.h" />

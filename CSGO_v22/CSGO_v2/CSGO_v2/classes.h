@@ -702,8 +702,13 @@ public:
 			return v;
 		}
 
+	bool SetupBones(math::Matrix3x4* out, int maxBones, int boneMask, float currentTime) noexcept
+	{
+		return VirtualMethod::call<bool, 13>(this + 4, out, maxBones, boneMask, currentTime);
+	}
+
 		math::UtlVector<math::Matrix3x4>& boneCache() noexcept { return *(math::UtlVector<math::Matrix3x4> *)((uintptr_t)this + 0x2914); }
-		math::Vector GetBonePos(int bone) noexcept { return boneCache()[bone].GetVecOrgin(); }
+		math::Vector GetBonePosFromChache(int bone) noexcept { return boneCache()[bone].GetVecOrgin(); }
 };
 
 static_assert(sizeof(gEntity) == 1);

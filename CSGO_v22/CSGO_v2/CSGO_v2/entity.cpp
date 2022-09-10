@@ -79,7 +79,7 @@ bool ent_t::isTeammate()
 math::Vector ent_t::GetBonePos(int boneId)
 {
 	enty = (gEntity*)GetEnt();
-	return enty->GetBonePos(boneId);
+	return enty->GetBonePosFromChache(boneId);
 	//return ent_t::Get_CN()->GetIClientUnknown()->GetClientRenderable()->SetupBones();
 }
 

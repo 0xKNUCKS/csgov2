@@ -100,6 +100,9 @@
     <Filter Include="SDK\Classes\GlobalVars">
       <UniqueIdentifier>{b3d5ce79-f736-4528-af53-159f3b9549e3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="SDK\Entity List">
+      <UniqueIdentifier>{7b69e57e-1275-49a7-8d69-93e1c2c256f9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -194,6 +197,9 @@
     </ClCompile>
     <ClCompile Include="Input.cpp">
       <Filter>SDK\Classes\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="entitylist.cpp">
+      <Filter>SDK\Entity List</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -322,6 +328,9 @@
     </ClInclude>
     <ClInclude Include="GlobalVars.h">
       <Filter>SDK\Classes\GlobalVars</Filter>
+    </ClInclude>
+    <ClInclude Include="entitylist.h">
+      <Filter>SDK\Entity List</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

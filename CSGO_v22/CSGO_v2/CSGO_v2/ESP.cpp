@@ -1,4 +1,5 @@
 #include "ESP.h"
+#include "hook.h"
 
 void ESP::Render()
 {
@@ -8,10 +9,9 @@ void ESP::Render()
 	if (!globals::g_interfaces.Engine->IsInGame())
 		return;
 
-	Render::OutLinedCircle(ImGui::GetIO().DisplaySize.x / 2, ImGui::GetIO().DisplaySize.y / 2, 25, ImColor(255, 0, 0));
 
 	math::Vector sOrgin;
-	for (int i = 1; i <= globals::g_interfaces.Engine->GetMaxClients(); i++)
+	for (int i = 1; i <= hooks::GlobalVars->maxClients; i++)
 	{
 		ent_t ent(i);
 

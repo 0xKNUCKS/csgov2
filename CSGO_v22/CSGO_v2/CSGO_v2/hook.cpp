@@ -168,9 +168,18 @@ __declspec(naked) void __stdcall hooks::hkCreateMoveProxy(int sequenceNumber, fl
 
 void __stdcall hooks::hkFrameStageNotify(ClientFrameStage_t curStage) noexcept
 {
-	if (curStage == ClientFrameStage_t::FRAME_START) {
+	using enum ClientFrameStage_t;
+
+
+	switch (curStage)
+	{
+	case FRAME_START:
 		// to be used for WorldToScreen.
 		globals::game::viewMatrix = globals::g_interfaces.Engine->WorldToScreenMatrix();
+		break;
+	case FRAME_NET_UPDATE_END:
+		//globals::EntList.Update(); // C++ is taking a shit so ToDo once i fix it
+		break;
 	}
 
 	return oFrameStageNotify(globals::g_interfaces.BaseClient, curStage);

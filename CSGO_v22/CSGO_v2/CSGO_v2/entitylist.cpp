@@ -12,13 +12,13 @@ CEntityList::CEntityList()
 
 ent_t& CEntityList::operator[](int idx)
 {
-    return Entities.at(idx);
+    return Entities.at(idx-1); // - 1 because it starts at 0.
 }
 
 void CEntityList::Clear() noexcept
 {
     if (!Entities.empty())
-        memset(&Entities, 0, sizeof(ent_t) * 0x100);
+        Entities.clear();
 }
 
 void CEntityList::Update() noexcept
@@ -27,13 +27,11 @@ void CEntityList::Update() noexcept
 
     for (int i = 1; i <= MaxClients; i++)
     {
-        this->this_index = i;
-        this->GetEnt();
+        ent_t ent(i);
 
-        // note: BoneMatrix is from ent_t which is protected
-        if (!this->enty->SetupBones(this->BoneMatrix, 128, 0x100, 0.f))
-            memset(&this->BoneMatrix, 0, sizeof(math::Matrix3x4) * 128);
+        if (!reinterpret_cast<gEntity*>(ent.GetEnt())->SetupBones(ent.BoneMatrix, 128, 0x100, 0.f))
+            memset(&ent.BoneMatrix, 0, sizeof(math::Matrix3x4) * 128);
 
-        this->Entities.at(i) = this->GetEnt();
+        this->Entities.push_back(ent);
     }
 }

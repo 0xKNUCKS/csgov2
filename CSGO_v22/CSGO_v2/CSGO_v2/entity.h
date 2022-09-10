@@ -102,13 +102,14 @@ public:
 
     void init();
 
+    math::Matrix3x4 BoneMatrix[128];
+
 private:
     uintptr_t this_ent;
     IClientNetworkable* Get_CN(int index);
 
 protected:
     gEntity* enty;
-    math::Matrix3x4 BoneMatrix[128];
 };
 
 class localplayer_t : public ent_t

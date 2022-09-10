@@ -178,7 +178,7 @@ void __stdcall hooks::hkFrameStageNotify(ClientFrameStage_t curStage) noexcept
 		globals::game::viewMatrix = globals::g_interfaces.Engine->WorldToScreenMatrix();
 		break;
 	case FRAME_NET_UPDATE_END:
-		//globals::EntList.Update(); // C++ is taking a shit so ToDo once i fix it
+		globals::EntList.Update();
 		break;
 	}
 

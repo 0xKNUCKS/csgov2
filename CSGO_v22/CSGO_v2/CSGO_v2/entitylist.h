@@ -1,8 +1,9 @@
 #pragma once
-#include <array>
-#include "entity.h"
+#include <vector>
 
-struct CEntityList : ent_t
+class ent_t;
+
+struct CEntityList
 {
     CEntityList();
     ~CEntityList();
@@ -15,5 +16,5 @@ struct CEntityList : ent_t
     ent_t& operator[](int);
 
 protected:
-    std::array<ent_t, 0x100> Entities;
+    std::vector<ent_t> Entities;
 };

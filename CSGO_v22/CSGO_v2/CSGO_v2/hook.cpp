@@ -123,8 +123,19 @@ void __stdcall hooks::hkCreateMove(int sequence_number, float input_sample_frame
 	if (!cmd || !cmd->command_number)
 		return;
 
-	if (GetAsyncKeyState(VK_F9)) {
-		cmd->viewangles.x = 0;
+	static bool sides = 0;
+
+	if (viewRealAngles)
+	{
+		*bSendPacket = false;
+		cmd->viewangles.y = 130.f;
+		sides = !sides;
+		cmd->viewangles.x = 89.f;
+
+		*bSendPacket = true;
+		cmd->viewangles.y = 100.f;
+		sides = !sides;
+		cmd->viewangles.x = 89.f;
 	}
 
 	aimbot::Run(cmd);

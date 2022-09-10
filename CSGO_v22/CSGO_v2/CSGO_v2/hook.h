@@ -17,6 +17,7 @@
 /*ToDo: Make a proper Hooking class*/
 namespace hooks
 {
+	inline bool viewRealAngles = false;
 	// Hooking.
 	bool Setup();
 

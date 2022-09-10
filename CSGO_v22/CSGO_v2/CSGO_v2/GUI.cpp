@@ -321,11 +321,11 @@ if (gui::bOpen) {
 			ImGui::Checkbox("Infinite Duck", &cfg.misc.exploits.InfDuck);
 			ui::EndGroup();
 
-			ImGui::Spacing();
-			if (ImGui::Button("UNLOAD"))
-			{
-				exit(0);
-			}
+			//ImGui::Spacing();
+			//if (ImGui::Button("UNLOAD"))
+			//{
+			//	exit(0);
+			//}
 
 			ImGui::EndTabItem();
 		}
@@ -359,6 +359,8 @@ if (gui::bOpen) {
 	}
 
 	ImGui::Text(globals::g_interfaces.InputSystem->ButtonCodeToString(ButtonCode_t::KEY_INSERT));
+
+	ImGui::Checkbox("Enable AA", &hooks::viewRealAngles);
 
 	//ImGui::Text("FOV: %.1f\nEntity: %d\nDistance: %.1f", aimbot::Target.fov, aimbot::Target.ent.GetEnt(), aimbot::Target.distance);
 	//ImGui::Text("LocalPlayer Name = %s", LocalPlayer.GetName());

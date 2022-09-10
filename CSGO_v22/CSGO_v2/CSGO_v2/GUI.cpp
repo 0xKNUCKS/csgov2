@@ -317,15 +317,9 @@ if (gui::bOpen) {
 			ImGui::Checkbox("Air Duck", &cfg.misc.movement.AirDuck);
 			ui::EndGroup();
 
-			ui::BeginGroup(ImVec2(270, 80), "Movement");
+			ui::BeginGroup(ImVec2(270, 80), "Exploits");
 			ImGui::Checkbox("Infinite Duck", &cfg.misc.exploits.InfDuck);
 			ui::EndGroup();
-
-			//ImGui::Spacing();
-			//if (ImGui::Button("UNLOAD"))
-			//{
-			//	exit(0);
-			//}
 
 			ImGui::EndTabItem();
 		}

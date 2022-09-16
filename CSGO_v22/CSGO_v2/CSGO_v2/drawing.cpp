@@ -1,4 +1,5 @@
 #include "drawing.h"
+#pragma warning( disable : 4244)
 
 void Render::Line(float fromX, float fromY, float toX, float toY, float thickness, ImColor color)
 {

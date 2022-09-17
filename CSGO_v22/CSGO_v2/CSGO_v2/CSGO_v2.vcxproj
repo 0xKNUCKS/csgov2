@@ -236,6 +236,7 @@
     <ClInclude Include="interface.h" />
     <ClInclude Include="math.h" />
     <ClInclude Include="Misc.h" />
+    <ClInclude Include="Model.h" />
     <ClInclude Include="netvars.h" />
     <ClInclude Include="offsets.hpp" />
     <ClInclude Include="Pad.h" />

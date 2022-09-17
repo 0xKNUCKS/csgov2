@@ -8,6 +8,7 @@
 #include "math.h"
 #include "Pad.h"
 #include "UserCmd.h"
+#include "Model.h"
 
 #ifdef VECTOR_PARANOIA
 #define CHECK_VALID( _v)	Assert( (_v).IsValid() )
@@ -672,7 +673,7 @@ public:
 
 		VIRTUAL_METHOD(math::Vector&, getRenderOrigin, 1, (), (this + sizeof(uintptr_t)))
 		VIRTUAL_METHOD(bool, shouldDraw, 3, (), (this + sizeof(uintptr_t)))
-		VIRTUAL_METHOD(const void*, getModel, 8, (), (this + sizeof(uintptr_t)))
+		VIRTUAL_METHOD(const model_t*, getModel, 8, (), (this + sizeof(uintptr_t)))
 		VIRTUAL_METHOD(const math::Matrix3x4&, toWorldTransform, 32, (), (this + sizeof(uintptr_t)))
 
 		VIRTUAL_METHOD(int&, handle, 2, (), (this))

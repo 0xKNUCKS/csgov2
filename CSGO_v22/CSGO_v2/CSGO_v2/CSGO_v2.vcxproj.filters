@@ -103,6 +103,9 @@
     <Filter Include="SDK\Entity List">
       <UniqueIdentifier>{7b69e57e-1275-49a7-8d69-93e1c2c256f9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="SDK\Models">
+      <UniqueIdentifier>{3371c4ab-aaba-43d0-bce7-b59dc92c3103}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -331,6 +334,9 @@
     </ClInclude>
     <ClInclude Include="entitylist.h">
       <Filter>SDK\Entity List</Filter>
+    </ClInclude>
+    <ClInclude Include="Model.h">
+      <Filter>SDK\Models</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

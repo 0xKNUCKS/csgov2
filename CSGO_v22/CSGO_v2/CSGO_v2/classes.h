@@ -696,19 +696,19 @@ public:
 		VIRTUAL_METHOD(void, updateInaccuracyPenalty, 484, (), (this))
 
 		auto getEyePosition() noexcept
-		{
-			math::Vector v;
-			VirtualMethod::call<void, 285>(this, std::ref(v));
-			return v;
-		}
+	{
+		math::Vector v;
+		VirtualMethod::call<void, 285>(this, std::ref(v));
+		return v;
+	}
 
 	bool SetupBones(math::Matrix3x4* out, int maxBones, int boneMask, float currentTime) noexcept
 	{
-		return VirtualMethod::call<bool, 13>(this + 4, out, maxBones, boneMask, currentTime);
+		return VirtualMethod::call<bool, 13>(this + sizeof(uintptr_t), out, maxBones, boneMask, currentTime);
 	}
 
-		math::UtlVector<math::Matrix3x4>& boneCache() noexcept { return *(math::UtlVector<math::Matrix3x4> *)((uintptr_t)this + 0x2914); }
-		math::Vector GetBonePosFromChache(int bone) noexcept { return boneCache()[bone].GetVecOrgin(); }
+	math::Matrix3x4& boneCache() noexcept { return *(math::Matrix3x4*)((uintptr_t)this + 0x2914); }
+	math::Vector GetBonePosFromChache(int bone) noexcept { math::UtlVector<math::Matrix3x4> b = (math::UtlVector<math::Matrix3x4>&)boneCache(); return b[bone].GetVecOrgin(); }
 };
 
 static_assert(sizeof(gEntity) == 1);

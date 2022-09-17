@@ -1,6 +1,11 @@
 #pragma once
 #pragma warning (disable : 4430) 
 #include "classes.h"
+#include "Model.h"
+
+// Macros
+#define DLL_ENGINE "engine.dll"
+#define DLL_CLIENT "client.dll"
 
 class interfaces_t
 {
@@ -15,6 +20,7 @@ public:
     IBaseClientDLL* BaseClient; // = (IBaseClientDLL*)FindInterface("client.dll", "VClient018");
     IVEngineClient* Engine;
     CInputSystem* InputSystem;
+    IVModelInfo* ModelInfo;
 
     void init();
 

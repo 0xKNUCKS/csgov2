@@ -18,5 +18,5 @@ struct CEntityList
 
 protected:
     std::vector<ent_t> Entities;
-    bool Update(ent_t ent) noexcept;
+    bool Update(gEntity* ent) noexcept;
 };

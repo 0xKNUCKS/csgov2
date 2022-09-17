@@ -46,7 +46,7 @@ void CEntityList::Update() noexcept
         
         if (ent.isValidState())
         {
-            if (!Update(ent))
+            if (!Update((gEntity*)ent.GetEnt()))
                 continue;
         }
 
@@ -54,7 +54,7 @@ void CEntityList::Update() noexcept
     }
 }
 
-bool CEntityList::Update(ent_t ent) noexcept
+bool CEntityList::Update(gEntity* ent) noexcept
 {
-    // to be continued
+    // To Be Continued
 }

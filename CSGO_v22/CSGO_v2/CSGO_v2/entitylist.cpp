@@ -12,7 +12,7 @@ CEntityList::CEntityList()
 
 ent_t& CEntityList::operator[](int idx)
 {
-    return Entities.at(idx-1); // - 1 because it starts at 0.
+    return Entities.at(idx);
 }
 
 void CEntityList::Clear() noexcept
@@ -21,17 +21,40 @@ void CEntityList::Clear() noexcept
         Entities.clear();
 }
 
+int CEntityList::Size() noexcept
+{
+    return Entities.size() - 1; // -1 because size() will return the number of items, eg 64, but we will start from 0 and go to 63
+}
+
 void CEntityList::Update() noexcept
 {
-    MaxClients = hooks::GlobalVars->maxClients;
+    if (!globals::g_interfaces.Engine->IsInGame()) {
+        Clear(); // Clear if not in game
+        return;
+    }
 
-    for (int i = 1; i <= MaxClients; i++)
+    MaxClients = hooks::GlobalVars->maxClients;
+    if (Entities.size() != MaxClients) {
+        if (abs(MaxClients) > Entities.max_size())
+            return;
+        Entities.resize(MaxClients); // Resize the container to avoid over complex code
+    }
+
+    for (int i = 1; i <= Entities.size(); i++)
     {
         ent_t ent(i);
+        
+        if (ent.isValidState())
+        {
+            if (!Update(ent))
+                continue;
+        }
 
-        if (!reinterpret_cast<gEntity*>(ent.GetEnt())->SetupBones(ent.BoneMatrix, 128, 0x100, 0.f))
-            memset(&ent.BoneMatrix, 0, sizeof(math::Matrix3x4) * 128);
-
-        this->Entities.push_back(ent);
+        this->Entities[i - 1] = ent; // -1 because the vector index starts at 0
     }
+}
+
+bool CEntityList::Update(ent_t ent) noexcept
+{
+    // to be continued
 }

@@ -12,9 +12,11 @@ struct CEntityList
 
     void Clear() noexcept;
     void Update() noexcept;
+    int Size() noexcept;
 
     ent_t& operator[](int);
 
 protected:
     std::vector<ent_t> Entities;
+    bool Update(ent_t ent) noexcept;
 };

@@ -46,7 +46,7 @@ void CEntityList::Update() noexcept
         
         if (ent.isValidState())
         {
-            if (!Update((gEntity*)ent.GetEnt()))
+            if (!Update(ent))
                 continue;
         }
 
@@ -54,7 +54,28 @@ void CEntityList::Update() noexcept
     }
 }
 
-bool CEntityList::Update(gEntity* ent) noexcept
+bool CEntityList::Update(ent_t& ent) noexcept
 {
-    // To Be Continued
+    const model_t* Model = reinterpret_cast<gEntity*>(ent.GetEnt())->getModel();
+    if (!Model)
+        return 0;
+
+    const auto StudioModel = globals::g_interfaces.ModelInfo->GetStudioModel(Model);
+    if (!StudioModel)
+        return 0;
+
+    ent.BoneMatrix = reinterpret_cast<gEntity*>(ent.GetEnt())->boneCache();
+
+    ent.Bones.clear();
+    ent.Bones.reserve(20); // 20 Max HitBoxes
+
+    for (int i = 0; i < StudioModel->numbones; i++)
+    {
+        const mstudiobone_t* Bone = StudioModel->pBone(i);
+
+        if (!Bone || Bone->parent < 0 || !(Bone->flags & BONE_USED_BY_HITBOX))
+            continue;
+
+        ent.Bones.emplace_back(ent.BoneMatrix[i].GetVecOrgin(), ent.BoneMatrix[Bone->parent].GetVecOrgin());
+    }
 }

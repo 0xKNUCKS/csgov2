@@ -102,8 +102,9 @@ public:
 
     void init();
 
-    math::Matrix3x4 BoneMatrix[128];
-
+    math::UtlVector<math::Matrix3x4> BoneMatrix;
+    std::vector<std::pair<math::Vector, math::Vector>> Bones;
+ // Containder            Bone Pos      Bone Parent Pos
 private:
     uintptr_t this_ent;
     IClientNetworkable* Get_CN(int index);

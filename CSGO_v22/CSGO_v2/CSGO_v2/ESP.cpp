@@ -9,16 +9,13 @@ void ESP::Render()
 	if (!globals::g_interfaces.Engine->IsInGame())
 		return;
 
-
 	math::Vector sOrgin;
-	for (int i = 1; i <= hooks::GlobalVars->maxClients; i++)
+	for (int i = 0; i <= globals::EntList.Size(); i++)
 	{
-		ent_t ent(i);
-
-		if (!ent.isValidState())
+		if (!globals::EntList[i].isValidState() || !globals::EntList[i].GetPos().notNull())
 			continue;
 
-		math::Vector pos = ent.GetPos();
+		math::Vector pos = globals::EntList[i].GetPos();
 		if (!utils::WolrdToScreen(pos, sOrgin))
 			continue;
 

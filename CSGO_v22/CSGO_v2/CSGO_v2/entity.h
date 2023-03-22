@@ -67,6 +67,10 @@ namespace offsets
 class ent_t
 {
 public:
+    gEntity* operator->() {
+        return enty;
+    }
+
     int this_index = 1;
 
     bool isDormant();

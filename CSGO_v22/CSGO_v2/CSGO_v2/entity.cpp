@@ -37,18 +37,19 @@ void ent_t::init()
 	offsets::m_iKills =			(uintptr_t)globals::g_NetVars.FindOffset("DT_PlayerResource", "m_iKills");
 	offsets::m_vecViewOffset =	(uintptr_t)globals::g_NetVars.FindOffset("CBasePlayer", "m_vecViewOffset[0]");
 	offsets::m_fFlags =			(uintptr_t)globals::g_NetVars.FindOffset("DT_BasePlayer", "m_fFlags");
-	//offsets::LocalPlayer = (ent_t*)g_interfaces->ClientEntity->GetClientEntity(1);
 }
 
 bool ent_t::isValidState()
 {
-	ent_t::init();
+	// dont do this, NetVars use preformance and doing this constantly will drop your frames to the floor... smh.
+	//ent_t::init();
+	const auto LocalPlayer = globals::g_interfaces.ClientEntity->GetClientEntity(globals::g_interfaces.Engine->GetLocalPlayerIdx());
 
-	if (!globals::g_interfaces.ClientEntity->GetClientEntity(globals::g_interfaces.Engine->GetLocalPlayerIdx()))
+	if (!LocalPlayer)
 		return 0;
 	if (!reinterpret_cast<uintptr_t*>(ent_t::GetEnt()))
 		return 0;
-	if (ent_t::GetEnt() == (uintptr_t)globals::g_interfaces.ClientEntity->GetClientEntity(globals::g_interfaces.Engine->GetLocalPlayerIdx()))
+	if (ent_t::GetEnt() == (uintptr_t)LocalPlayer)
 		return 0;
 	if (ent_t::GetHealth() <= 0)
 		return 0;
@@ -60,15 +61,15 @@ bool ent_t::isValidState()
 
 math::Vector ent_t::GetPos()
 {
-	enty = (gEntity*)GetEnt();
 	return enty->getAbsOrigin();
 }
 
 int ent_t::GetTeamId()
 {
-	ent_t::init();
+	//ent_t::init();
 
-	return *(int*)(ent_t::GetEnt() + offsets::m_iTeamNum);
+	// until we fix the NetVars preformance issue
+	return 1;//*(int*)(ent_t::GetEnt() + offsets::m_iTeamNum);
 }
 
 bool ent_t::isTeammate()
@@ -78,14 +79,12 @@ bool ent_t::isTeammate()
 
 math::Vector ent_t::GetBonePos(int boneId)
 {
-	enty = (gEntity*)GetEnt();
 	return enty->GetBonePosFromChache(boneId);
 	//return ent_t::Get_CN()->GetIClientUnknown()->GetClientRenderable()->SetupBones();
 }
 
 bool ent_t::isAlive()
 {
-	enty = (gEntity*)GetEnt();
 	return enty->isAlive();
 }
 
@@ -124,13 +123,13 @@ float ent_t::DistTo(ent_t ent)
 
 math::Vector ent_t::GetEyePos()
 {
-	enty = (gEntity*)GetEnt();
 	return enty->getEyePosition();
 }
 
 int ent_t::Flags()
 {
-	return *(int*)(ent_t::GetEnt() + offsets::m_fFlags);
+	// until we fix the NetVars preformance issue.
+	return 0;// *(int*)(ent_t::GetEnt() + offsets::m_fFlags);
 }
 
 // Local Player Class

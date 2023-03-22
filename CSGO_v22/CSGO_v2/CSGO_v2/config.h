@@ -21,6 +21,9 @@ public:
 		struct ESP
 		{
 			bool Enabled = false;
+			bool Lines = false;
+			bool BoudningBox = false;
+			bool Skeleton = false;
 			//eBoxType boxType = eBoxType::Outlined;
 			ImColor color = ImColor(255,255,255);
 		} esp;
@@ -47,6 +50,7 @@ public:
 	struct Settings
 	{
 		bool StreamProof = false;
+		bool ShowDebug = false;
 	} settings;
 };
 

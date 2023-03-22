@@ -13,7 +13,7 @@ DWORD WINAPI Main(HMODULE hModule)
     if (gui::Setup())
     {
         if (hooks::Setup()) {
-            utils::SetupConsole();
+            //utils::SetupConsole();
             return TRUE;
         }
 

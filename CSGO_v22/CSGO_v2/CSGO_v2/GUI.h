@@ -57,5 +57,6 @@ namespace gui
 
 	// render our menu
 	void Render() noexcept;
+	void DebugWindow() noexcept;
 };
 

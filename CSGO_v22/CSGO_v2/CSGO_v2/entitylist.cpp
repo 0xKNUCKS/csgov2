@@ -56,7 +56,11 @@ void CEntityList::Update() noexcept
 
 bool CEntityList::Update(ent_t& ent) noexcept
 {
-    const model_t* Model = reinterpret_cast<gEntity*>(ent.GetEnt())->getModel();
+    const auto Entity = reinterpret_cast<gEntity*>(ent.GetEnt());
+    if (!Entity)
+        return 0;
+
+    const model_t* Model = Entity->getModel();
     if (!Model)
         return 0;
 
@@ -64,18 +68,44 @@ bool CEntityList::Update(ent_t& ent) noexcept
     if (!StudioModel)
         return 0;
 
-    ent.BoneMatrix = reinterpret_cast<gEntity*>(ent.GetEnt())->boneCache();
-
-    ent.Bones.clear();
-    ent.Bones.reserve(20); // 20 Max HitBoxes
-
-    for (int i = 0; i < StudioModel->numbones; i++)
+    if (0)
     {
-        const mstudiobone_t* Bone = StudioModel->pBone(i);
+        //Entity->SetupBones(ent.BoneMatrix.memory, MAXSTUDIOBONES, BONE_USED_BY_HITBOX, hooks::GlobalVars->curtime);
 
-        if (!Bone || Bone->parent < 0 || !(Bone->flags & BONE_USED_BY_HITBOX))
-            continue;
+        //ent.Bones.clear();
+        //ent.Bones.reserve(20); // 20 Max HitBoxes
 
-        ent.Bones.emplace_back(ent.BoneMatrix[i].GetVecOrgin(), ent.BoneMatrix[Bone->parent].GetVecOrgin());
+        //for (int i = 0; i < StudioModel->numbones; i++)
+        //{
+        //    const mstudiobone_t* Bone = StudioModel->pBone(i);
+
+        //    if (!Bone || Bone->parent < 0 || !(Bone->flags & BONE_USED_BY_HITBOX))
+        //        continue;
+
+        //    // were having problems here, in the BoneMatrix, its probably just my shit code, im gonna recite it and recode later.
+        //    ent.Bones.emplace_back(ent.BoneMatrix[i].GetVecOrgin(), ent.BoneMatrix[Bone->parent].GetVecOrgin());
+        //}
     }
+
+    // not run it at all (i just dont like commenting it :D (not clean)
+    if (0)
+    {
+        ent.BoneMatrix = Entity->boneCache();
+
+        ent.Bones.clear();
+        ent.Bones.reserve(20); // 20 Max HitBoxes
+
+        for (int i = 0; i < StudioModel->numbones; i++)
+        {
+            const mstudiobone_t* Bone = StudioModel->pBone(i);
+
+            if (!Bone || Bone->parent < 0 || !(Bone->flags & BONE_USED_BY_HITBOX))
+                continue;
+
+            // were having problems here, in the BoneMatrix, its probably just my shit code, im gonna recite it and recode later.
+            ent.Bones.emplace_back(ent.BoneMatrix[i].GetVecOrgin(), ent.BoneMatrix[Bone->parent].GetVecOrgin());
+        }
+    }
+
+    return 1;
 }

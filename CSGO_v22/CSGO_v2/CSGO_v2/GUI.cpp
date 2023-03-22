@@ -226,11 +226,9 @@ void gui::Destroy() noexcept
 	DestroyDirectX();
 }
 
-
 // render our menu
 void gui::Render() noexcept
 {
-
 	ImGui_ImplDX9_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
@@ -239,6 +237,7 @@ void gui::Render() noexcept
 		Render::FilledRect(0, 0, ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y, ImColor(0, 0, 0, 50));
 
 	Render::OutLinedRect(0, 0, 100, 100);
+	Render::OutLinedText(std::format(" [{}fps]", (int)ImGui::GetIO().Framerate).c_str(), 0, 5, ImGui::GetBackgroundDrawList());
 
 	if (cfg.aimbot.DrawFov && cfg.aimbot.Enabled)
 		Render::OutLinedCircle(ImGui::GetIO().DisplaySize.x / 2, ImGui::GetIO().DisplaySize.y / 2, cfg.aimbot.FOV);
@@ -298,7 +297,8 @@ if (gui::bOpen) {
 		{
 			ui::BeginGroup(ImVec2(270, 150), "Player");
 			ImGui::Checkbox("Enabled", &cfg.visuals.Enabled);
-			ImGui::Text("Not yet ;)!!");
+			ImGui::Checkbox("Snap Lines", &cfg.visuals.esp.Lines);
+			ImGui::Checkbox("Bouding Box", &cfg.visuals.esp.BoudningBox);
 			ui::EndGroup();
 
 			ui::BeginGroup(ImVec2(270, 150), "Misc");
@@ -327,6 +327,7 @@ if (gui::bOpen) {
 		if (ImGui::BeginTabItem("Settings"))
 		{
 			ImGui::Checkbox("Stream Proof", &cfg.settings.StreamProof);
+			ImGui::Checkbox("Show Debug Window", &cfg.settings.ShowDebug);
 
 			ImGui::EndTabItem();
 		}
@@ -336,15 +337,20 @@ if (gui::bOpen) {
 
 	ImGui::End();
 
-
-	ImGui::Begin("DBG Window##DebugGame", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-
-	ImGui::SliderFloat("Speed", &speed, 0.1, 20);
-	if (ImGui::Button("Animate"))
-	{
-		curWndSize = ImVec2(0, 0);
+	if (cfg.settings.ShowDebug) {
+		gui::DebugWindow();
 	}
-	ImGui::Text("CurWnd [%f, %f], MainWnd [%f, %f]", curWndSize.x, curWndSize.y, WndSize.x, WndSize.y);
+	
+}
+
+	ImGui::EndFrame();
+	ImGui::Render();
+	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
+}
+
+void gui::DebugWindow() noexcept
+{
+	ImGui::Begin("DBG Window##DebugGame", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
 	if (ImGui::Button("Use globals::g_interfaces.Engine->ClientCmdUnrestricted"))
 	{
@@ -368,10 +374,10 @@ if (gui::bOpen) {
 	//math::Vector Pos = LocalPlayer.Get() ? LocalPlayer.GetBonePos(8) : math::Vector{0, 0, 0};
 	//ImGui::Text("Local Head Pos: x.%.1f, y.%.1f, z.%.1f", Pos.x, Pos.y, Pos.z);
 	//ImGui::Spacing();
-	math::Vector Orgin = LocalPlayer.Get() ? LocalPlayer.GetPos() : math::Vector{ 0, 0, 0 };
+	math::Vector Orgin = LocalPlayer.GetEnt() ? LocalPlayer.GetPos() : math::Vector{0, 0, 0};
 	ImGui::Text("Local Player Orgin: x.%.1f, y.%.1f, z.%.1f", Orgin.x, Orgin.y, Orgin.z);
-	bool Flag = LocalPlayer.Get() ? LocalPlayer.Flags() & PlayerFlag_Crouched : 0;
-	ImGui::Text("Local Player Crouch Flag: %d", Flag);
+	//bool Flag = LocalPlayer.Get() ? LocalPlayer.Flags() & PlayerFlag_Crouched : 0;
+	//ImGui::Text("Local Player Crouch Flag: %d", Flag);
 	ImGui::Spacing();
 	ImGui::Text("g_interfaces.Engine->GetLocalPlayerIdx() = %d", globals::g_interfaces.Engine->GetLocalPlayerIdx());
 	ImGui::Spacing();
@@ -390,17 +396,12 @@ if (gui::bOpen) {
 	ImGui::SliderFloat("Camera Z axis", &hooks::input->cameraOffset.z, 0, 800);
 	ImGui::Text("GlobalVars debug");
 	ImGui::Text("hooks::GlobalVars->absoluteframetime = %f\nhooks::GlobalVars->curtime = %f\nhooks::GlobalVars->framecount = %f\nhooks::GlobalVars->frametime = %f\nhooks::GlobalVars->maxClients %d\n",
-					hooks::GlobalVars->absoluteframetime,	   hooks::GlobalVars->curtime,		 hooks::GlobalVars->framecount,		hooks::GlobalVars->frametime,	    hooks::GlobalVars->maxClients);
+		hooks::GlobalVars->absoluteframetime, hooks::GlobalVars->curtime, hooks::GlobalVars->framecount, hooks::GlobalVars->frametime, hooks::GlobalVars->maxClients);
 
 	ImGui::Spacing();
 	ImGui::Text("WindowPos[%f, %f], WindowSize[%f, %f]", ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowSize().x, ImGui::GetWindowSize().y);
 
 	ImGui::End();
-}
-
-	ImGui::EndFrame();
-	ImGui::Render();
-	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 }
 
 using namespace globals;

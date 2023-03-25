@@ -110,7 +110,6 @@ public:
     std::vector<std::pair<math::Vector, math::Vector>> Bones;
  // Containder            Bone Pos      Bone Parent Pos
 private:
-    uintptr_t this_ent;
     IClientNetworkable* Get_CN(int index);
 
 protected:

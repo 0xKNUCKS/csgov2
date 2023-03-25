@@ -244,8 +244,6 @@ void gui::Render() noexcept
 
 	ESP::Render();
 
-	ImVec2 curWndSize(0, 5);
-
 	// Menu Code
 if (gui::bOpen) {
 
@@ -254,17 +252,6 @@ if (gui::bOpen) {
 	ImGui::ShowStyleEditor();
 	ImGui::End();
 #endif // _DEBUG
-
-	static math::Vector WndSize(540, 650);
-	static float speed = 0.5;
-	
-	{
-		curWndSize.x = utils::SlideVal(curWndSize.x, WndSize.x, hooks::GlobalVars->curtime * speed);
-		if (curWndSize.x == WndSize.x) {
-			curWndSize.y = utils::SlideVal(curWndSize.y, WndSize.y, hooks::GlobalVars->curtime * speed);
-		}
-		ImGui::SetNextWindowSize(curWndSize); // res/2 = x = 270, y = 325
-	}
 
 	ImGui::Begin(std::format("cockbalt.solutions - Welcome {}!", LocalPlayer.GetName()).c_str(), &gui::bOpen, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
 
@@ -277,16 +264,25 @@ if (gui::bOpen) {
 	{
 		if (ImGui::BeginTabItem("Aim"))
 		{
-			ui::BeginGroup(ImVec2(270, 330), "General");
+			ui::BeginGroup(ImVec2(270, 170), "General");
 
 			ImGui::Checkbox("Enabled", &cfg.aimbot.Enabled);
 			ImGui::Spacing();
+			ImGui::Checkbox("Silent", &cfg.aimbot.Silent);
+			ImGui::Spacing();
 			ImGui::SliderFloat("##FOVval", &cfg.aimbot.FOV, 0, 180, "FOV %.1f"); ImGui::SameLine();
 			ImGui::Spacing();
-			ImGui::SliderFloat("Smooth", &cfg.aimbot.Smooth, 0, 10.0f, cfg.aimbot.Smooth ? "%.3f" : "None");
+			ImGui::SliderFloat("##Smoothval", &cfg.aimbot.Smooth, 1, 10.0f, cfg.aimbot.Smooth > 1 ? "Smooth %.2f" : "Smooth None");
 			ImGui::Spacing();
 			ImGui::Checkbox("Aim At Friendly", &cfg.aimbot.FriendlyFire);
 			ImGui::Spacing();
+
+			ui::EndGroup();
+
+			ui::BeginGroup(ImVec2(270, 70), "Performance");
+
+			ImGui::SliderInt("##MaxPlayersScanval", &cfg.aimbot.MaxPlayersInFov, 2, 20, "Max Players Scan %d");
+			ui::HelpMarker("Max Amount of Players Scanned inside of the aim FOV");
 
 			ui::EndGroup();
 

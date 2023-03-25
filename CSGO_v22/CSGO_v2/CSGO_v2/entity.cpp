@@ -23,9 +23,9 @@ uintptr_t ent_t::GetEnt(int index)
 	if (index == -1)
 		index = this_index;
 
-    this_ent = (uintptr_t)globals::g_interfaces.ClientEntity->GetClientEntity(index);
+	enty = reinterpret_cast<gEntity*>(globals::g_interfaces.ClientEntity->GetClientEntity(index));
 
-    return this_ent;
+    return (uintptr_t)enty;
 }
 
 void ent_t::init()
@@ -43,13 +43,13 @@ bool ent_t::isValidState()
 {
 	// dont do this, NetVars use preformance and doing this constantly will drop your frames to the floor... smh.
 	//ent_t::init();
-	const auto LocalPlayer = globals::g_interfaces.ClientEntity->GetClientEntity(globals::g_interfaces.Engine->GetLocalPlayerIdx());
+	//const auto LocalPlayer = globals::g_interfaces.ClientEntity->GetClientEntity(globals::g_interfaces.Engine->GetLocalPlayerIdx());
 
-	if (!LocalPlayer)
+	if (!LocalPlayer.Get())
 		return 0;
 	if (!reinterpret_cast<uintptr_t*>(ent_t::GetEnt()))
 		return 0;
-	if (ent_t::GetEnt() == (uintptr_t)LocalPlayer)
+	if (ent_t::GetEnt() == LocalPlayer.Get())
 		return 0;
 	if (ent_t::GetHealth() <= 0)
 		return 0;
@@ -90,8 +90,8 @@ bool ent_t::isAlive()
 
 math::Vector ent_t::GetAimAtAngles()
 {
-	math::Vector source = LocalPlayer.GetBonePos(8);
-	math::Vector destination = ent_t::GetBonePos(8);
+	math::Vector source = LocalPlayer->getEyePosition();
+	math::Vector destination = GetBonePos(8); // Will add the option to use another bone later
 
 	math::Vector retAngle;
 	math::Vector delta = source - destination;

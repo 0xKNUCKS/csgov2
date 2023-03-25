@@ -9,8 +9,10 @@ public:
 	{
 		unsigned int Key = VK_XBUTTON1;
 		bool Enabled = false;
+		bool Silent = false;
 		float FOV = 10.0f;
 		float Smooth = 10.0f;
+		int MaxPlayersInFov = 4;
 		bool DrawFov = true;
 		bool FriendlyFire = false;
 	} aimbot;

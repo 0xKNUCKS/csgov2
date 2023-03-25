@@ -14,6 +14,6 @@ namespace aimbot
 {
 	inline cTarget Target;
 	void Run(CUserCmd* cmd);
-	void FindBestEnt(Config::Aimbot cfg, CUserCmd* cmd);
+	std::vector < std::pair <float, ent_t >> GetTargetsArr(Config::Aimbot cfg);
 };
 

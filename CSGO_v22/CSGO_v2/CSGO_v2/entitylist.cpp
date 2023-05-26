@@ -88,24 +88,24 @@ bool CEntityList::Update(ent_t& ent) noexcept
     }
 
     // not run it at all (i just dont like commenting it :D (not clean)
-    if (0)
-    {
-        ent.BoneMatrix = Entity->boneCache();
-
-        ent.Bones.clear();
-        ent.Bones.reserve(20); // 20 Max HitBoxes
-
-        for (int i = 0; i < StudioModel->numbones; i++)
-        {
-            const mstudiobone_t* Bone = StudioModel->pBone(i);
-
-            if (!Bone || Bone->parent < 0 || !(Bone->flags & BONE_USED_BY_HITBOX))
-                continue;
-
-            // were having problems here, in the BoneMatrix, its probably just my shit code, im gonna recite it and recode later.
-            ent.Bones.emplace_back(ent.BoneMatrix[i].GetVecOrgin(), ent.BoneMatrix[Bone->parent].GetVecOrgin());
-        }
-    }
+    //if (0)
+    //{
+    //    ent.BoneMatrix = Entity->boneCache();
+    //
+    //    ent.Bones.clear();
+    //    ent.Bones.reserve(20); // 20 Max HitBoxes
+    //
+    //    for (int i = 0; i < StudioModel->numbones; i++)
+    //    {
+    //        const mstudiobone_t* Bone = StudioModel->pBone(i);
+    //
+    //        if (!Bone || Bone->parent < 0 || !(Bone->flags & BONE_USED_BY_HITBOX))
+    //            continue;
+    //
+    //        // were having problems here, in the BoneMatrix, its probably just my shit code, im gonna recite it and recode later.
+    //        ent.Bones.emplace_back(ent.BoneMatrix[i].GetVecOrgin(), ent.BoneMatrix[Bone->parent].GetVecOrgin());
+    //    }
+    //}
 
     return 1;
 }

@@ -1,9 +1,10 @@
 #include "netvars.h"
+#include "Globals.h"
+#include "entity.h"
 
 intptr_t NetVars_t::FindOffset(const char* tablename, const char* netvarName)
 {
-    NetVars_t::pinterf.init();
-    ClientClass* clientclass = (ClientClass*)NetVars_t::pinterf.BaseClient->GetAllClasses();
+    ClientClass* clientclass = globals::g_interfaces.BaseClient->GetAllClasses();
 
     return GetNetVarOffset(tablename, netvarName, clientclass);
 }
@@ -44,4 +45,21 @@ intptr_t NetVars_t::GetNetVarOffset(const char* tablename, const char* netvarNam
     }
 
     return 0;
+}
+
+// Temporary fix
+void NetVars_t::Init()
+{
+    offsets::m_bSpotted = (uintptr_t)globals::g_NetVars.FindOffset("DT_BaseEntity", "m_bSpotted");
+    offsets::m_iTeamNum = (uintptr_t)globals::g_NetVars.FindOffset("DT_BaseEntity", "m_iTeamNum");
+    offsets::m_iKills = (uintptr_t)globals::g_NetVars.FindOffset("DT_PlayerResource", "m_iKills");
+    offsets::m_fFlags = (uintptr_t)globals::g_NetVars.FindOffset("DT_BasePlayer", "m_fFlags");
+    offsets::m_bIsScoped = (uintptr_t)globals::g_NetVars.FindOffset("DT_CSPlayer", "m_bIsScoped");
+    offsets::deadFlag = (uintptr_t)globals::g_NetVars.FindOffset("DT_BasePlayer", "deadflag");
+    offsets::m_vecVelocity = (uintptr_t)globals::g_NetVars.FindOffset("DT_BasePlayer", "m_vecVelocity[0]");
+
+#ifdef _DEBUG
+    PrintNetVars(globals::g_interfaces.BaseClient->GetAllClasses());
+#endif // _DEBUG
+
 }

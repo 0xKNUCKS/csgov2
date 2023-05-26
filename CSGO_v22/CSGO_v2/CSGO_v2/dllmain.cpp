@@ -2,8 +2,9 @@
 #include <iostream>
 #include "hook.h"
 
-// Macros
-#define GAME_HASHSUM "846b9223bed47816671d150e2aa93113"
+/// Macros
+// Hash sum of game files to confirm the game's version
+#define GAME_HASHSUM "de96421a66fa72eed00b6edefcf1948a" // ver: 1566
 
 // Main thread
 DWORD WINAPI Main(HMODULE hModule)
@@ -13,7 +14,6 @@ DWORD WINAPI Main(HMODULE hModule)
     if (gui::Setup())
     {
         if (hooks::Setup()) {
-            //utils::SetupConsole();
             return TRUE;
         }
 
@@ -39,6 +39,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
     if (ul_reason_for_call == DLL_PROCESS_ATTACH)
     {
 #ifdef _DEBUG
+        utils::SetupConsole();
         CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(Main), hModule, 0, nullptr);
 #else
         if (utils::CheckVersion(GAME_HASHSUM)) {

@@ -28,17 +28,6 @@ uintptr_t ent_t::GetEnt(int index)
     return (uintptr_t)enty;
 }
 
-void ent_t::init()
-{
-    offsets::m_iHealth =		(uintptr_t)globals::g_NetVars.FindOffset("CBaseEntity", "m_iHealth"); // "m_iHealth", "DT_BasePlayer"
-    offsets::m_bSpotted =		(uintptr_t)globals::g_NetVars.FindOffset("DT_BaseEntity", "m_bSpotted");
-    offsets::m_iTeamNum =		(uintptr_t)globals::g_NetVars.FindOffset("CBaseEntity", "m_iTeamNum");
-	offsets::m_bAlive =			(uintptr_t)globals::g_NetVars.FindOffset("DT_PlayerResource", "m_bAlive");
-	offsets::m_iKills =			(uintptr_t)globals::g_NetVars.FindOffset("DT_PlayerResource", "m_iKills");
-	offsets::m_vecViewOffset =	(uintptr_t)globals::g_NetVars.FindOffset("CBasePlayer", "m_vecViewOffset[0]");
-	offsets::m_fFlags =			(uintptr_t)globals::g_NetVars.FindOffset("DT_BasePlayer", "m_fFlags");
-}
-
 bool ent_t::isValidState()
 {
 	// dont do this, NetVars use preformance and doing this constantly will drop your frames to the floor... smh.
@@ -64,13 +53,13 @@ math::Vector ent_t::GetPos()
 	return enty->getAbsOrigin();
 }
 
-int ent_t::GetTeamId()
-{
-	//ent_t::init();
-
-	// until we fix the NetVars preformance issue
-	return 1;//*(int*)(ent_t::GetEnt() + offsets::m_iTeamNum);
-}
+//int ent_t::GetTeamId()
+//{
+//	//ent_t::init();
+//
+//	// until we fix the NetVars preformance issue
+//	return *(int*)(enty + offsets::m_iTeamNum);
+//}
 
 bool ent_t::isTeammate()
 {
@@ -108,9 +97,10 @@ math::Vector ent_t::GetAimAtAngles()
 std::string ent_t::GetName()
 {
 	player_info_s pinfo;
-	globals::g_interfaces.Engine->getPlayerInfo(this_index, pinfo);
-
-	return pinfo.name;
+	if (globals::g_interfaces.Engine->getPlayerInfo(this_index, pinfo))
+		return pinfo.name;
+	else
+		return std::string();
 }
 
 float ent_t::DistTo(ent_t ent)
@@ -126,16 +116,28 @@ math::Vector ent_t::GetEyePos()
 	return enty->getEyePosition();
 }
 
-int ent_t::Flags()
-{
-	// until we fix the NetVars preformance issue.
-	return 0;// *(int*)(ent_t::GetEnt() + offsets::m_fFlags);
-}
+//int ent_t::Flags()
+//{
+//	// until we fix the NetVars preformance issue.
+//	return *(int*)(enty + offsets::m_fFlags);
+//}
+//
+//bool ent_t::isScoped()
+//{
+//	return *(bool*)(enty + offsets::m_bIsScoped);
+//}
+//
+//math::Vector& ent_t::GetViewingAngles()
+//{
+//	// LOL: https://github.com/perilouswithadollarsign/cstrike15_src/blob/f82112a2388b841d72cb62ca48ab1846dfcc11c8/public/PlayerState.h#L32
+//	return *(math::Vector*)(enty + offsets::deadFlag + 0x4);
+//}
 
 // Local Player Class
 
 uintptr_t localplayer_t::Get()
 {
+	this_index = globals::g_interfaces.Engine->GetLocalPlayerIdx();
 	localplayer_t::Local = localplayer_t::GetEnt(this_index);
 
 	return localplayer_t::Local;

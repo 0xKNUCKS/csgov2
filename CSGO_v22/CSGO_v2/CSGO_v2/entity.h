@@ -2,6 +2,7 @@
 #include "netvars.h"
 #include "offsets.hpp"
 #include <iostream>
+#include <vector>
 #include "math.h"
 #include "Globals.h"
 
@@ -9,6 +10,13 @@
 #define STR_MERGE(a, b) STR_MERGE_IMPL(a,b)
 #define MAKE_PAD(size) STR_MERGE(_pad, __COUNTER__)[size]
 #define DEFINE_MEMBER_N(type, name, offset) struct {unsigned char MAKE_PAD(offset); type name;}
+
+
+#define NETVAR_DECL(name, type, offset) \
+    type name() \
+{\
+    return *(type*)(enty + offset); \
+}
 
 enum class MoveType
 {
@@ -53,14 +61,13 @@ enum PlayerFlag
 
 namespace offsets
 {
-    inline uintptr_t m_iHealth  ; //=  g_NetVars->FindOffset("m_iHealth", "DT_BasePlayer");
-    inline uintptr_t m_vecOrigin; //=  g_NetVars->FindOffset("DT_BaseEntity", "m_vecOrigin");
     inline uintptr_t m_bSpotted ; //=  g_NetVars->FindOffset("DT_BaseEntity", "m_bSpotted");
     inline uintptr_t m_iTeamNum ; //=  g_NetVars->FindOffset("DT_BaseEntity", "m_iTeamNum");
-    inline uintptr_t m_bAlive;
     inline uintptr_t m_iKills;
-    inline uintptr_t m_vecViewOffset;
     inline uintptr_t m_fFlags;
+    inline uintptr_t m_bIsScoped;
+    inline uintptr_t deadFlag;
+    inline uintptr_t m_vecVelocity;
     constexpr ::std::ptrdiff_t dwBoneMatrix = hazedumper::netvars::m_dwBoneMatrix;
 }
 
@@ -83,8 +90,6 @@ public:
 
     uintptr_t GetEnt(int index = -1);
 
-    int GetTeamId();
-
     bool isTeammate();
 
     bool isAlive();
@@ -99,14 +104,23 @@ public:
 
     float DistTo(ent_t ent);
 
-    int Flags();
+    // NetVars
+    NETVAR_DECL(GetTeamId, int, offsets::m_iTeamNum)
+    NETVAR_DECL(Flags, int, offsets::m_fFlags)
+    NETVAR_DECL(isScoped, bool, offsets::m_bIsScoped)
+    NETVAR_DECL(GetViewingAngles, math::Vector, offsets::deadFlag + 0x4)
+    NETVAR_DECL(GetVelocity, math::Vector, offsets::m_vecVelocity)
+
 
     ent_t(int idx) { ent_t::init(); this_index = idx; enty = (gEntity*)GetEnt(); }
     ent_t() { ent_t::init(); this_index = 1; enty = (gEntity*)GetEnt();}
 
-    void init();
+    void init()
+    {
 
-    math::UtlVector<math::Matrix3x4> BoneMatrix;
+    }
+
+    //math::UtlVector<math::Matrix3x4> BoneMatrix;
     std::vector<std::pair<math::Vector, math::Vector>> Bones;
  // Containder            Bone Pos      Bone Parent Pos
 private:
@@ -123,7 +137,6 @@ public:
 
     localplayer_t()
     {
-        this_index = globals::g_interfaces.Engine->GetLocalPlayerIdx();
         Get();
     }
 

@@ -249,6 +249,13 @@ namespace math
 		{
 			return Vector{ 0.0f, -1.0f, 0.0f };
 		}
+
+		static auto fromAngle(const Vector& angle) noexcept
+		{
+			return Vector{ std::cos((angle.x) * PI / 180) * std::cos((angle.y) * PI / 180),
+						   std::cos((angle.x) * PI / 180) * std::sin((angle.y) * PI / 180),
+						  -std::sin((angle.x) * PI / 180) };
+		}
 	};
 
 	struct vec4

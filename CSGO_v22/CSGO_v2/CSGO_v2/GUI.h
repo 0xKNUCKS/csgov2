@@ -26,8 +26,10 @@ namespace gui
 	inline bool bOpen = true;
 
 	inline bool init = false;
+	inline bool bUnloaded = false;
 
-	static inline unsigned int menuKey = VK_INSERT;
+	inline unsigned const int menuKey = VK_INSERT;
+	inline unsigned const int unloadKey = VK_PAUSE;
 
 	// WinAPI related stuff to make a window
 	inline HWND Window = nullptr;
@@ -58,5 +60,9 @@ namespace gui
 	// render our menu
 	void Render() noexcept;
 	void DebugWindow() noexcept;
+
+	// New Frame and End Frame
+	void NewFrame() noexcept;
+	void EndFrame() noexcept;
 };
 

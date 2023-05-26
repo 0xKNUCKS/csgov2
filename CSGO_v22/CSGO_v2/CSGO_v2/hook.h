@@ -13,6 +13,7 @@
 #include "ESP.h"
 #include "Input.h"
 #include "GlobalVars.h"
+#include "ViewSetup.h"
 
 /*ToDo: Make a proper Hooking class*/
 namespace hooks
@@ -34,12 +35,17 @@ namespace hooks
 	using tReset =				  HRESULT(__thiscall*)(void*, IDirect3DDevice9*, D3DPRESENT_PARAMETERS*) noexcept;
 	using tFrameStageNotify =	  void(__thiscall*)(void*, ClientFrameStage_t) noexcept;
 	using tGetScreenAspectRatio = float(__thiscall*)(void*, int viewportWidth, int viewportHeight) noexcept;
-	using tGetViewModelFOV	=	  float(__thiscall*)(void*) noexcept;
+	using tGetViewModelFOV =	  float(__thiscall*)(void*) noexcept;
+	using tOverrideView =		  void(__thiscall*)(void*, CViewSetup* pSetup) noexcept;
+	using tShouldDrawViewModel =  bool(__thiscall*)(void*) noexcept;
+	using tConVarHook =			  bool(__thiscall*)(void*) noexcept;
 
 	// globals
 	inline void* g_ClientMode = nullptr;
 	inline CInput* input = nullptr;
 	inline CGlobalVarsBase* GlobalVars = nullptr;
+	inline uintptr_t* CAM_THINK = nullptr;
+	inline void* svCheatsCVar = nullptr;
 
 	// Original Functions Declarations
 	inline tCreateMove oCreateMove = nullptr;
@@ -50,13 +56,20 @@ namespace hooks
 
 	inline tFrameStageNotify oFrameStageNotify = nullptr;
 	inline tGetScreenAspectRatio oGetScreenAspectRatio = nullptr;
+	inline tOverrideView oOverrideView = nullptr;
+	inline tShouldDrawViewModel oShouldDrawViewModel = nullptr;
+
+	inline tConVarHook oSvCheatsGetBool = nullptr;
 
 	// Hooked Functions Declarations
     long __stdcall	  hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept;
 	HRESULT __stdcall hkReset(IDirect3DDevice9* Device, D3DPRESENT_PARAMETERS* params) noexcept;
 	void __stdcall	  hkCreateMove(int sequence_number, float input_sample_frametime, bool active, bool* bSendPacket) noexcept;
-	void __stdcall hkCreateMoveProxy(int sequenceNumber, float inputSampleTime, bool active) noexcept;
+	void __stdcall	  hkCreateMoveProxy(int sequenceNumber, float inputSampleTime, bool active) noexcept;
 	void __stdcall	  hkFrameStageNotify(ClientFrameStage_t curStage) noexcept;
 	float __stdcall	  hkGetScreenAspectRatio(int viewportWidth, int viewportHeight) noexcept;
 	float __stdcall	  hkGetViewModelFOV() noexcept;
+	void __stdcall	  hkOverrideView(CViewSetup* pSetup);
+	bool __stdcall	  hkShouldDrawViewModel() noexcept;
+	bool __stdcall	  hkSvCheatsGetBool(void* pConVar) noexcept;
 }

@@ -21,7 +21,8 @@ public:
     IVEngineClient* Engine;
     CInputSystem* InputSystem;
     IVModelInfo* ModelInfo;
-
+    IEngineTrace* EngineTrace;
+    ICvar* Cvar;
     void init();
 
 private:

@@ -11,3 +11,8 @@ its named "cockbalt" after the cheat "[cobalt.solutions](https://cobalt.solution
     * fff
 
 For helping me with this project <3.
+
+# Note
+* This is made for Educational purposed as already said, this was not intended for real official matches, nor was it tested or played in one, it was tested using workshop maps, and bots under '-insecure' conditions.
+* improvments and features are still to come, and far from finished, and please note that im only working on this on my free time.
+* this is a meme and not taken seriously mostly, just a fun little side project :)

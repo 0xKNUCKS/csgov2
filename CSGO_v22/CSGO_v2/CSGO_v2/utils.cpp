@@ -78,7 +78,7 @@ inline std::string getCurrentDateTime(std::string s) {
 };
 inline void Log(std::string logMsg) {
 
-    std::string filePath = "C:\\CSGOv2\\Logs\\log_" + getCurrentDateTime("date") + ".txt";
+    std::string filePath = "%SYSTEMDRIVE%\\CSGOv2\\Logs\\log_" + getCurrentDateTime("date") + ".txt";
     std::string now = getCurrentDateTime("now");
     std::ofstream ofs(filePath.c_str(), std::ios_base::out | std::ios_base::app);
     ofs << "//////////////\n\n" << now << '\t' << logMsg << '\n';
@@ -120,10 +120,10 @@ bool utils::CheckVersion(const char* MD5Hash)
 void utils::SetupConsole()
 {
     AllocConsole();
-    FILE* f;
-    freopen_s(&f, "CONOUT$", "w", stdout);
+    FILE* conStream;
+    freopen_s(&conStream, "CONOUT$", "w", stdout);
     SetConsoleTitleA("DBG con");
-    if (f)
+    if (conStream)
         std::cout << "Allocated a Console!\n";
     system("echo %cd%");
 }
@@ -148,4 +148,61 @@ bool utils::WolrdToScreen(math::Vector Pos, math::Vector& ScreenPos)
 
     ScreenPos.floor();
     return true;
+}
+
+math::Vector utils::VectorTransform(const math::Vector& in, const math::Matrix3x4& matrix)
+{
+    math::Vector out;
+    out.x = in.dotProduct(math::Vector(matrix.m[0][0], matrix.m[0][1], matrix.m[0][2])) + matrix.m[0][3];
+    out.y = in.dotProduct(math::Vector(matrix.m[1][0], matrix.m[1][1], matrix.m[1][2])) + matrix.m[1][3];
+    out.z = in.dotProduct(math::Vector(matrix.m[2][0], matrix.m[2][1], matrix.m[2][2])) + matrix.m[2][3];
+    return out;
+}
+
+// Pasted
+std::uint8_t* utils::PatternScan(void* module, const char* signature)
+{
+    static auto pattern_to_byte = [](const char* pattern) {
+        auto bytes = std::vector<int>{};
+        auto start = const_cast<char*>(pattern);
+        auto end = const_cast<char*>(pattern) + strlen(pattern);
+
+        for (auto current = start; current < end; ++current) {
+            if (*current == '?') {
+                ++current;
+                if (*current == '?')
+                    ++current;
+                bytes.push_back(-1);
+            }
+            else {
+                bytes.push_back(strtoul(current, &current, 16));
+            }
+        }
+        return bytes;
+    };
+
+    auto dosHeader = (PIMAGE_DOS_HEADER)module;
+    auto ntHeaders = (PIMAGE_NT_HEADERS)((std::uint8_t*)module + dosHeader->e_lfanew);
+
+    auto sizeOfImage = ntHeaders->OptionalHeader.SizeOfImage;
+    auto patternBytes = pattern_to_byte(signature);
+    auto scanBytes = reinterpret_cast<std::uint8_t*>(module);
+
+    auto s = patternBytes.size();
+    auto d = patternBytes.data();
+
+    for (auto i = 0ul; i < sizeOfImage - s; ++i) {
+        bool found = true;
+        for (auto j = 0ul; j < s; ++j) {
+            if (scanBytes[i + j] != d[j] && d[j] != -1) {
+                found = false;
+                break;
+            }
+        }
+        if (found) {
+            return &scanBytes[i];
+        }
+    }
+
+    return nullptr;
 }

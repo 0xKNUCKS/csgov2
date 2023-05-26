@@ -3,6 +3,8 @@
 #include "config.h"
 #include "entity.h"
 
+#define norm(x) (float)(int)x
+
 struct cTarget
 {
     float fov = 0.0f;
@@ -13,6 +15,7 @@ struct cTarget
 namespace aimbot
 {
 	inline cTarget Target;
+	inline std::vector<std::pair<float, ent_t>> TargetsArr;
 	void Run(CUserCmd* cmd);
 	std::vector < std::pair <float, ent_t >> GetTargetsArr(Config::Aimbot cfg);
 };

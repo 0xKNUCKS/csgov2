@@ -20,7 +20,7 @@ LRESULT CALLBACK WindowProcess(
 	LPARAM lParam
 );
 
-// dx shit
+// Setup and init the Window Class
 bool gui::SetupWindowClass(const char* windowClassName) noexcept
 {
 	gui::WindowClass.cbSize = sizeof(WNDCLASSEX);
@@ -42,6 +42,7 @@ bool gui::SetupWindowClass(const char* windowClassName) noexcept
 	return 1;
 }
 
+// Destroy the Window Class after finishing from using it
 void gui::DestroyWindowClass() noexcept
 {
 	UnregisterClass(
@@ -50,6 +51,7 @@ void gui::DestroyWindowClass() noexcept
 	);
 }
 
+// Create a dummy window
 bool gui::SetupWindow(const char* windowName) noexcept
 {
 	// create a temp window
@@ -73,12 +75,14 @@ bool gui::SetupWindow(const char* windowName) noexcept
 	return 1;
 }
 
+// Destroy it after finishing from it
 void gui::DestroyWindow() noexcept
 {
 	if (gui::Window)
 		DestroyWindow(gui::Window);
 }
 
+// as it says lol
 bool gui::SetupDirectX() noexcept
 {
 	const auto handle = GetModuleHandle("d3d9.dll");
@@ -151,7 +155,7 @@ void gui::DestroyDirectX() noexcept
 	}
 }
 
-// setup device
+// setup dummy device
 bool gui::Setup()
 {
 	if (!SetupWindowClass("fffheavy001"))
@@ -169,6 +173,7 @@ bool gui::Setup()
 	return 1;
 }
 
+// all callback function to Enumare through windows and find the correct one used for "EnumWindows"
 BOOL CALLBACK EnumWindowsCallback(HWND handle, LPARAM lParam)
 {
 	DWORD wndProcId;
@@ -192,11 +197,11 @@ void gui::SetupMenu(LPDIRECT3DDEVICE9 device) noexcept
 {
 	do
 	{
-		gui::Window = GetProcessWindow();
+		gui::Window = ::FindWindow("Valve001", NULL);
 	} while (gui::Window == NULL);
 
 	gui::oWindowProc = reinterpret_cast<WNDPROC>(
-		SetWindowLongPtr(
+		SetWindowLongA(
 		gui::Window,
 		GWL_WNDPROC,
 		(LONG_PTR)WindowProcess));
@@ -226,24 +231,23 @@ void gui::Destroy() noexcept
 	DestroyDirectX();
 }
 
-// render our menu
-void gui::Render() noexcept
+void gui::NewFrame() noexcept
 {
 	ImGui_ImplDX9_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
+}
 
-	if (gui::bOpen)
-		Render::FilledRect(0, 0, ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y, ImColor(0, 0, 0, 50));
+void gui::EndFrame() noexcept
+{
+	ImGui::EndFrame();
+	ImGui::Render();
+	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
+}
 
-	Render::OutLinedRect(0, 0, 100, 100);
-	Render::OutLinedText(std::format(" [{}fps]", (int)ImGui::GetIO().Framerate).c_str(), 0, 5, ImGui::GetBackgroundDrawList());
-
-	if (cfg.aimbot.DrawFov && cfg.aimbot.Enabled)
-		Render::OutLinedCircle(ImGui::GetIO().DisplaySize.x / 2, ImGui::GetIO().DisplaySize.y / 2, cfg.aimbot.FOV);
-
-	ESP::Render();
-
+// render our menu
+void gui::Render() noexcept
+{
 	// Menu Code
 if (gui::bOpen) {
 
@@ -252,6 +256,11 @@ if (gui::bOpen) {
 	ImGui::ShowStyleEditor();
 	ImGui::End();
 #endif // _DEBUG
+
+	auto xWindowPadding = ImGui::GetStyle().WindowPadding.x * 3;
+	//				    270 because thats the width size i use for my groups
+	auto xWindowSize = (270 * 2) + xWindowPadding;
+	ImGui::SetNextWindowSize(ImVec2(xWindowSize, xWindowSize * 1.25));
 
 	ImGui::Begin(std::format("cockbalt.solutions - Welcome {}!", LocalPlayer.GetName()).c_str(), &gui::bOpen, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
 
@@ -267,40 +276,52 @@ if (gui::bOpen) {
 			ui::BeginGroup(ImVec2(270, 170), "General");
 
 			ImGui::Checkbox("Enabled", &cfg.aimbot.Enabled);
-			ImGui::Spacing();
 			ImGui::Checkbox("Silent", &cfg.aimbot.Silent);
-			ImGui::Spacing();
-			ImGui::SliderFloat("##FOVval", &cfg.aimbot.FOV, 0, 180, "FOV %.1f"); ImGui::SameLine();
-			ImGui::Spacing();
+			ImGui::SliderFloat("##FOVval", &cfg.aimbot.FOV, 0, 180, "FOV %.1f");
 			ImGui::SliderFloat("##Smoothval", &cfg.aimbot.Smooth, 1, 10.0f, cfg.aimbot.Smooth > 1 ? "Smooth %.2f" : "Smooth None");
-			ImGui::Spacing();
 			ImGui::Checkbox("Aim At Friendly", &cfg.aimbot.FriendlyFire);
-			ImGui::Spacing();
-
 			ui::EndGroup();
+
+			ImGui::SameLine();
+
+			// Right Side
+			ui::BeginGroup(ImVec2(270, 70), "Visuals");
+			ImGui::Checkbox("FOV Circle", &cfg.aimbot.DrawFov);
+			ui::EndGroup();
+
+			ImGui::EndTabItem();
 
 			ui::BeginGroup(ImVec2(270, 70), "Performance");
 
 			ImGui::SliderInt("##MaxPlayersScanval", &cfg.aimbot.MaxPlayersInFov, 2, 20, "Max Players Scan %d");
 			ui::HelpMarker("Max Amount of Players Scanned inside of the aim FOV");
-
 			ui::EndGroup();
-
-			ImGui::EndTabItem();
 		}
 
 		if (ImGui::BeginTabItem("Visuals"))
 		{
 			ui::BeginGroup(ImVec2(270, 150), "Player");
 			ImGui::Checkbox("Enabled", &cfg.visuals.Enabled);
+			ImGui::Checkbox("Show Friendly", &cfg.visuals.Friendly);
 			ImGui::Checkbox("Snap Lines", &cfg.visuals.esp.Lines);
 			ImGui::Checkbox("Bouding Box", &cfg.visuals.esp.BoudningBox);
+			ImGui::Checkbox("Health Bar", &cfg.visuals.esp.HealthBar);
 			ui::EndGroup();
 
-			ui::BeginGroup(ImVec2(270, 150), "Misc");
-			ImGui::Checkbox("FOV Circle", &cfg.aimbot.DrawFov);
+			ui::BeginGroup(ImVec2(270, 265), "Misc");
+			ImGui::Checkbox("Third Person", &cfg.visuals.misc.ThirdPerson);
+			ImGui::SliderFloat("##ThirdPersonDistance", &cfg.visuals.misc.TPDistance, 0.0f, 3.0f, "Distance %.2f");
 			ImGui::SliderFloat("##AspectRatio", &cfg.visuals.misc.AspectRatio, 0.0f, 3.0f, "Aspect Ratio %.2f");
-			ImGui::SliderFloat("##ViewModelFOV", &cfg.visuals.misc.ViewModelFOV, 60, 140.0f, "View Model FOV %.2f"); // all ui will be managed later so i dont have to do this ugly stuff.
+			ImGui::SliderFloat("##CAMFOV", &cfg.visuals.misc.camFOV, 40, 160.0f, "Cam Fov %.2f");
+			ImGui::Checkbox("Steady Cam", &cfg.visuals.misc.SteadyCam); ui::HelpMarker("Terminates the shaking effects in your Camera.");
+			ImGui::Checkbox("No Zoom", &cfg.visuals.misc.noZoon); ui::HelpMarker("Eliminates the zoom effect when using Scoping.");
+			ImGui::Spacing();
+
+			ui::BeginOutlineGroup("View Model");
+			ImGui::SliderFloat("##ViewModelFOV", &cfg.visuals.viewmodel.ViewModelFOV, 60, 140.0f, "FOV %.2f");
+			ImGui::Checkbox("Always Draw", &cfg.visuals.viewmodel.AlwaysDraw);
+			ui::EndOutlineGroup();
+
 			ui::EndGroup();
 
 			ImGui::EndTabItem();
@@ -310,6 +331,7 @@ if (gui::bOpen) {
 		{
 			ui::BeginGroup(ImVec2(270, 150), "Movement");
 			ImGui::Checkbox("Bunny Hop", &cfg.misc.movement.BunnyHop);
+			ImGui::Checkbox("Auto-Strafe", &cfg.misc.movement.Strafe);
 			ImGui::Checkbox("Air Duck", &cfg.misc.movement.AirDuck);
 			ui::EndGroup();
 
@@ -322,8 +344,13 @@ if (gui::bOpen) {
 
 		if (ImGui::BeginTabItem("Settings"))
 		{
-			ImGui::Checkbox("Stream Proof", &cfg.settings.StreamProof);
+			//ImGui::Checkbox("Stream Proof", &cfg.settings.StreamProof); // No Work :)
 			ImGui::Checkbox("Show Debug Window", &cfg.settings.ShowDebug);
+			if (ImGui::Button("Unload [Pause]")) // the "Pause" key will also unload it :)
+			{
+				bUnloaded = true;
+				return;
+			}
 
 			ImGui::EndTabItem();
 		}
@@ -338,10 +365,6 @@ if (gui::bOpen) {
 	}
 	
 }
-
-	ImGui::EndFrame();
-	ImGui::Render();
-	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 }
 
 void gui::DebugWindow() noexcept
@@ -372,8 +395,12 @@ void gui::DebugWindow() noexcept
 	//ImGui::Spacing();
 	math::Vector Orgin = LocalPlayer.GetEnt() ? LocalPlayer.GetPos() : math::Vector{0, 0, 0};
 	ImGui::Text("Local Player Orgin: x.%.1f, y.%.1f, z.%.1f", Orgin.x, Orgin.y, Orgin.z);
-	//bool Flag = LocalPlayer.Get() ? LocalPlayer.Flags() & PlayerFlag_Crouched : 0;
-	//ImGui::Text("Local Player Crouch Flag: %d", Flag);
+	bool Flag = LocalPlayer.Get() ? LocalPlayer.Flags() & PlayerFlag_OnGround : 0;
+	ImGui::Text("Local Player OnGround Flag: %d", Flag);
+	bool Flag2 = LocalPlayer.Get() ? LocalPlayer.Flags() & PlayerFlag_Crouched : 0;
+	ImGui::Text("Local Player Crouched Flag: %d", Flag2);
+	bool Flag3 = LocalPlayer.Get() ? LocalPlayer.Flags() & PlayerFlag_PartialGround : 0;
+	ImGui::Text("Local Player PartialGround Flag: %d", Flag2);
 	ImGui::Spacing();
 	ImGui::Text("g_interfaces.Engine->GetLocalPlayerIdx() = %d", globals::g_interfaces.Engine->GetLocalPlayerIdx());
 	ImGui::Spacing();
@@ -391,11 +418,21 @@ void gui::DebugWindow() noexcept
 		hooks::input->isCameraInThirdPerson = !hooks::input->isCameraInThirdPerson;
 	ImGui::SliderFloat("Camera Z axis", &hooks::input->cameraOffset.z, 0, 800);
 	ImGui::Text("GlobalVars debug");
-	ImGui::Text("hooks::GlobalVars->absoluteframetime = %f\nhooks::GlobalVars->curtime = %f\nhooks::GlobalVars->framecount = %f\nhooks::GlobalVars->frametime = %f\nhooks::GlobalVars->maxClients %d\n",
-		hooks::GlobalVars->absoluteframetime, hooks::GlobalVars->curtime, hooks::GlobalVars->framecount, hooks::GlobalVars->frametime, hooks::GlobalVars->maxClients);
+	ImGui::Text("hooks::GlobalVars->absoluteframetime = %f\nhooks::GlobalVars->curtime = %f\nhooks::GlobalVars->frametime = %f\nhooks::GlobalVars->maxClients %d\n",
+		hooks::GlobalVars->absoluteframetime, hooks::GlobalVars->curtime, hooks::GlobalVars->frametime, hooks::GlobalVars->maxClients);
 
 	ImGui::Spacing();
 	ImGui::Text("WindowPos[%f, %f], WindowSize[%f, %f]", ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowSize().x, ImGui::GetWindowSize().y);
+
+	ImGui::Spacing();
+	if (globals::g_cmd)
+	{
+		ImGui::SliderFloat3("cmd->AimDirection", &globals::g_cmd->aimdirection.x, 0, 1000);
+		ImGui::SliderFloat("cmd->SideMove", &globals::g_cmd->sidemove, 0, 1000);
+		ImGui::SliderFloat("cmd->ForwardMove", &globals::g_cmd->forwardmove, 0, 1000);
+		ImGui::Text("globals::g_cmd->tick_count: %d", globals::g_cmd->tick_count);
+		ImGui::SliderFloat3("cmd->viewangles", &globals::g_cmd->viewangles.x, -180, 180);
+	}
 
 	ImGui::End();
 }
@@ -413,6 +450,10 @@ LRESULT CALLBACK WindowProcess(
 	if (GetAsyncKeyState(gui::menuKey) & 1)
 		gui::bOpen = !gui::bOpen;
 
+	// Unload key "wewe"
+	if (GetAsyncKeyState(gui::unloadKey) & 1)
+		gui::bUnloaded = true;
+
 	// pass messages to imgui, to be able to click and stuff
 	ImGui_ImplWin32_WndProcHandler(
 		hWnd,
@@ -421,13 +462,13 @@ LRESULT CALLBACK WindowProcess(
 		lParam
 	);
 
-		return CallWindowProc(
-			gui::oWindowProc,
-			hWnd,
-			msg,
-			wParam,
-			lParam
-		);
+	return CallWindowProc(
+		gui::oWindowProc,
+		hWnd,
+		msg,
+		wParam,
+		lParam
+	);
 }
 
 

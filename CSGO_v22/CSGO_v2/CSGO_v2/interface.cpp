@@ -19,4 +19,6 @@ void interfaces_t::init()
     Engine = (IVEngineClient*)FindInterface(DLL_ENGINE, "VEngineClient014");
     InputSystem = (CInputSystem*)FindInterface("inputsystem.dll", "InputSystemVersion001");
     ModelInfo = (IVModelInfo*)FindInterface(DLL_ENGINE, "VModelInfoClient004");
+    EngineTrace = (IEngineTrace*)FindInterface(DLL_ENGINE, "EngineTraceClient004");
+    Cvar        = (ICvar*)FindInterface("vstdlib.dll", "VEngineCvar007");
 }

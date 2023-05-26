@@ -8,12 +8,12 @@ void Render::Line(float fromX, float fromY, float toX, float toY, float thicknes
 
 void Render::OutLinedRect(float x, float y, int w, int h, float Thickness, ImColor color)
 {
-	ImGui::GetBackgroundDrawList()->AddRect(ImVec2(x, y), ImVec2(w, h), color, 0, ImDrawListFlags_None, Thickness);
+	ImGui::GetBackgroundDrawList()->AddRect(ImVec2(x, y), ImVec2(x + w, y + h), color, 0, ImDrawListFlags_None, Thickness);
 }
 
 void Render::FilledRect(float x, float y, int w, int h, ImColor color)
 {
-	ImGui::GetBackgroundDrawList()->AddRectFilled(ImVec2(x, y), ImVec2(w, h), color);
+	ImGui::GetBackgroundDrawList()->AddRectFilled(ImVec2(x, y), ImVec2(x + w, y + h), color);
 }
 
 void Render::CenteredOutlinedRect(float x, float y, float w, float h, ImColor color)

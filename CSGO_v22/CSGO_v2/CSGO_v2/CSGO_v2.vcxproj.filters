@@ -106,6 +106,12 @@
     <Filter Include="SDK\Models">
       <UniqueIdentifier>{3371c4ab-aaba-43d0-bce7-b59dc92c3103}</UniqueIdentifier>
     </Filter>
+    <Filter Include="SDK\Classes\ViewSetup">
+      <UniqueIdentifier>{0d2fa082-1bd3-4461-8c34-683f3ce5e7be}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SDK\Classes\EngineTrace">
+      <UniqueIdentifier>{a5824f2e-138f-4024-a001-ff62b57bd0f0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -337,6 +343,12 @@
     </ClInclude>
     <ClInclude Include="Model.h">
       <Filter>SDK\Models</Filter>
+    </ClInclude>
+    <ClInclude Include="ViewSetup.h">
+      <Filter>SDK\Classes\ViewSetup</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineTrace.h">
+      <Filter>SDK\Classes\EngineTrace</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

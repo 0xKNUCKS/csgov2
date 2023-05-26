@@ -12,7 +12,6 @@ void aimbot::Run(CUserCmd* cmd)
 	if (!globals::g_interfaces.Engine->IsInGame())
 		return;
 
-	auto TargetsArr = GetTargetsArr(cfg.aimbot);
 	if (TargetsArr.empty())
 		return;
 
@@ -23,9 +22,10 @@ void aimbot::Run(CUserCmd* cmd)
 
 	math::Vector AimAngles = BestEnt.GetAimAtAngles().normalize(); // gonna implement smoothing later :D for now this is pretty good
 
-	cmd->viewangles = AimAngles;
+	if (cmd->buttons & cmd->IN_ATTACK)
+		cmd->viewangles = AimAngles;
 	if (!cfg.aimbot.Silent)
-		globals::g_interfaces.Engine->SetViewAngles(AimAngles);
+		globals::g_interfaces.Engine->SetViewAngles(AimAngles); // TODO: IMPLEMENT SMOOTH BRUH
 }
 
 // Get an array of the best target entities for the aimbot, using the aimbot config settings

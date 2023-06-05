@@ -351,6 +351,7 @@ if (gui::bOpen) {
 				bUnloaded = true;
 				return;
 			}
+			ImGui::SliderFloat("##Animations_Speed", &cfg.settings.AnimSpeed, 0.5f, 4.f, "Animations's Speed %.2f");
 
 			ImGui::EndTabItem();
 		}

@@ -25,7 +25,7 @@ namespace gui
 	// show/hide menu
 	inline bool bOpen = true;
 	inline float bgFade = 0.f;
-	inline const float baseFade = 0.65f;
+	inline const float baseFade = 0.45f;
 
 	inline bool init = false;
 	inline bool bUnloaded = false;

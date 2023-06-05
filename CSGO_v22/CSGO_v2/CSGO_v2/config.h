@@ -65,6 +65,7 @@ public:
 	{
 		bool StreamProof = false;
 		bool ShowDebug = false;
+		float AnimSpeed = 1.f; // Animations speed
 	} settings;
 };
 

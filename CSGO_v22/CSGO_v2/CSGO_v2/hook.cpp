@@ -122,10 +122,9 @@ long __stdcall hooks::hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept
 
 	// Dark BG behind the menu
 	if (gui::bOpen)
-		gui::bgFade = std::clamp(gui::bgFade + ImGui::GetIO().DeltaTime / 0.25f, 0.f, 1.f);
+		gui::bgFade = std::clamp(gui::bgFade + (ImGui::GetIO().DeltaTime * cfg.settings.AnimSpeed) / 0.25f, 0.f, 1.f);
 	else
-		gui::bgFade = std::clamp(gui::bgFade - ImGui::GetIO().DeltaTime / 0.25f, 0.f, 1.f);
-
+		gui::bgFade = std::clamp(gui::bgFade - (ImGui::GetIO().DeltaTime * cfg.settings.AnimSpeed) / 0.25f, 0.f, 1.f);
 	Render::FilledRect(0, 0, ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y, ImColor(0.f, 0.f, 0.f, gui::baseFade * gui::bgFade));
 
 	// show our rendering's FPS

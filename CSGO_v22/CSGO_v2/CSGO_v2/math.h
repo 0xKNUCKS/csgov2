@@ -1,11 +1,12 @@
 #pragma once
 #include <cmath>
+#include <algorithm>
 
 #define ABS(x) ((x < 0) ? (-x) : (x))
 
 #define PI 3.14159265358979f
 
-constexpr auto normalizeDeg = [](float a) noexcept { return isfinite(a) ? remainder(a, 360.0f) : 0.0f; };
+constexpr auto _normalizeDeg = [](float a) noexcept { return isfinite(a) ? remainder(a, 360.0f) : 0.0f; };
 
 namespace math
 {
@@ -144,10 +145,18 @@ namespace math
 			return Vector{ -x, -y, -z };
 		}
 
+		constexpr Vector& normalizeDeg() noexcept
+		{
+			x = _normalizeDeg(x);
+			y = _normalizeDeg(y);
+			z = 0.0f;
+			return *this;
+		}
+
 		constexpr Vector& normalize() noexcept
 		{
-			x = normalizeDeg(x);
-			y = normalizeDeg(y);
+			x = std::clamp(x, -89.0f, 89.0f);
+			y = std::clamp(y, -180.0f, 180.0f);
 			z = 0.0f;
 			return *this;
 		}

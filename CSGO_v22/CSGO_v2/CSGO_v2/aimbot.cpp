@@ -1,5 +1,6 @@
 #include "aimbot.h"
 
+// TODO: Aimbot sometimes aim at incorrect weird stuff pls fix and thanks :) (seems to be worse with smooth too) (its probably because of invalid entites, i need to to do better entity checks) (yep the issue is 100% invalid entites, i just need better entity checks, that will be for the next update ;))
 // Wrap for the aimbot function 
 void aimbot::Run(CUserCmd* cmd)
 {
@@ -20,12 +21,17 @@ void aimbot::Run(CUserCmd* cmd)
 	if (BestEnt.isTeammate() && !cfg.aimbot.FriendlyFire)
 		return;
 
-	math::Vector AimAngles = BestEnt.GetAimAtAngles().normalize(); // gonna implement smoothing later :D for now this is pretty good
+	math::Vector AimAtAngles = BestEnt.GetAimAtAngles().normalize();
+	math::Vector CurrAngles = globals::g_interfaces.Engine->GetViewAngles();
 
+	math::Vector AimDelta = AimAtAngles - CurrAngles;
+	math::Vector AimAngles = CurrAngles + (AimDelta / cfg.aimbot.Smooth);
+
+	bool isSilent = cfg.aimbot.Silent;
 	if (cmd->buttons & cmd->IN_ATTACK)
-		cmd->viewangles = AimAngles;
-	if (!cfg.aimbot.Silent)
-		globals::g_interfaces.Engine->SetViewAngles(AimAngles); // TODO: IMPLEMENT SMOOTH BRUH
+		cmd->viewangles = isSilent ? AimAtAngles : AimAngles; // if its silent aim, aim at target directly without any smooth.
+	if (!isSilent)
+		globals::g_interfaces.Engine->SetViewAngles(AimAngles); // if silent aim isnt on, itll also change engine's viewAngles
 }
 
 // Get an array of the best target entities for the aimbot, using the aimbot config settings

@@ -95,7 +95,7 @@ int main(void)
         Sleep(7500); // wait for the game to fully open. (assuming it wasnt already opened)
         if (!Process::inject(csgo))
         {
-            std::cout << dye::red("injection Failed! Exiting in 3s...");    
+            std::cout << dye::red("\ninjection Failed! Exiting in 3s...");    
             Sleep(3000);
             ExitProcess(0);
         }

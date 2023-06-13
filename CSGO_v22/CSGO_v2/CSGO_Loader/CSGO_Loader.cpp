@@ -52,7 +52,7 @@ int main(void)
         // if the dll path dosent exist
         if (!utils::FileExists(csgo.dllPath)) {
             // make a choice to either enter a new path or shut down the program.
-            if (utils::choice("Could not find the file '%s'!\nWould you like to enter a new dll file path or exit? y/n: ")) {
+            if (utils::choice("Could not find the file '%s'!\nWould you like to enter a new dll file path or exit? y/n: ", csgo.dllPath)) {
                 std::string buf;
                 std::cout << dye::yellow("\nEnter a new dll path file: ");
                 std::cin >> buf;

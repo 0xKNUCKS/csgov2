@@ -2,7 +2,6 @@
 #include <Windows.h>
 #include <TlHelp32.h>
 #include "utils.h"
-#include "color.hpp"
 
 struct proc_t;
 

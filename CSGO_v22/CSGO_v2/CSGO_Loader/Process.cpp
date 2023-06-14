@@ -67,18 +67,18 @@ bool Process::inject(proc_t proc)
 	if (!hThread || hThread == INVALID_HANDLE_VALUE)
 		return 0;
 
-	std::cout << dye::yellow("[Thread] Executing...\n");
+	std::cout << ("[Thread] Executing...\n");
 
 	// this will wait for the thread to finish executing
 	if (WaitForSingleObject(hThread, INFINITE) != WAIT_OBJECT_0)
 	{
-		std::cout << dye::red(std::format("Thread Execution Failed! Error: {}\n", GetLastError()));
+		std::cout << (std::format("Thread Execution Failed! Error: {}\n", GetLastError()));
 		FreeH(hThread);
 		FreeH(pHandle);
 		return 0;
 	}
 
-	std::cout << dye::green(std::format("[Thread] Finished Excecuting!\n"));
+	std::cout << (std::format("[Thread] Finished Excecuting!\n"));
 
 	// for recording the return's result to cleanup handles before returning
 	bool result = 1;
@@ -87,11 +87,11 @@ bool Process::inject(proc_t proc)
 	DWORD dwExitCode = 0;
 	if (!GetExitCodeThread(hThread, &dwExitCode) && !result)
 	{
-		std::cout << dye::red(std::format("Failed to retrieve Thread's return code! Error: {}\n", GetLastError()));
+		std::cout << (std::format("Failed to retrieve Thread's return code! Error: {}\n", GetLastError()));
 		result = 0;
 	}
 	else
-		std::cout << dye::yellow(std::format("[Thread] Exited with code {}!\n", dwExitCode));
+		std::cout << (std::format("[Thread] Exited with code {}!\n", dwExitCode));
 
 	// After were finished from our threads and handles were gonna clean them up
 	FreeH(hThread);

@@ -112,6 +112,9 @@
     <Filter Include="SDK\Classes\EngineTrace">
       <UniqueIdentifier>{a5824f2e-138f-4024-a001-ff62b57bd0f0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ext\AnimationLib">
+      <UniqueIdentifier>{becc9e6b-6497-44c7-bac4-5193841217df}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -209,6 +212,9 @@
     </ClCompile>
     <ClCompile Include="entitylist.cpp">
       <Filter>SDK\Entity List</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ext\AnimationLib\ext\easing.cpp">
+      <Filter>ext\AnimationLib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -349,6 +355,12 @@
     </ClInclude>
     <ClInclude Include="EngineTrace.h">
       <Filter>SDK\Classes\EngineTrace</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ext\AnimationLib\Animation.h">
+      <Filter>ext\AnimationLib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ext\AnimationLib\ext\easing.h">
+      <Filter>ext\AnimationLib</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

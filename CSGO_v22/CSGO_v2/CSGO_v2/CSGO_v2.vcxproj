@@ -167,6 +167,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\ext\AnimationLib\ext\easing.cpp" />
     <ClCompile Include="..\ext\ImGui\imgui.cpp" />
     <ClCompile Include="..\ext\ImGui\imgui_demo.cpp" />
     <ClCompile Include="..\ext\ImGui\imgui_draw.cpp" />
@@ -201,6 +202,8 @@
     <ClCompile Include="VARS.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\ext\AnimationLib\Animation.h" />
+    <ClInclude Include="..\ext\AnimationLib\ext\easing.h" />
     <ClInclude Include="..\ext\ImGui\imconfig.h" />
     <ClInclude Include="..\ext\ImGui\imgui.h" />
     <ClInclude Include="..\ext\ImGui\imgui_impl_dx9.h" />

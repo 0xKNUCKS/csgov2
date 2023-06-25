@@ -5,6 +5,11 @@
 #include <iostream>
 #include <format>
 
+#include "../ext/AnimationLib/Animation.h"
+
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include "../ext/ImGui/imgui_internal.h"
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(
 	HWND hWnd,
 	UINT msg,
@@ -248,8 +253,6 @@ void gui::EndFrame() noexcept
 // render our menu
 void gui::Render() noexcept
 {
-	// Menu Code
-if (gui::bOpen) {
 
 #ifdef _DEBUG
 	ImGui::Begin("Style Editor");
@@ -257,115 +260,161 @@ if (gui::bOpen) {
 	ImGui::End();
 #endif // _DEBUG
 
+	static Animation animPopUp(0.5f, EaseOutBack, EaseOutSine);
+	animPopUp.Update();
+	animPopUp.Switch(gui::bOpen);
+
+	static Animation windowFade(1.f, EaseOutQuart, Linear);
+	windowFade.Update();
+	windowFade.Switch(gui::bOpen);
+
 	auto xWindowPadding = ImGui::GetStyle().WindowPadding.x * 3;
-	//				    270 because thats the width size i use for my groups
-	auto xWindowSize = (270 * 2) + xWindowPadding;
-	ImGui::SetNextWindowSize(ImVec2(xWindowSize, xWindowSize * 1.25));
+	auto xWindowSize = (270 * 2) + xWindowPadding; // 270 because thats the width size i use for my groups, * 2 for 2 collums
+	auto windowSize = ImVec2(xWindowSize, xWindowSize * 1.25f);
+	auto animatedSize = windowSize * animPopUp.getValue();
+	static auto windowPos = ImVec2((ImGui::GetIO().DisplaySize - windowSize) / 2);
+	ImGui::SetNextWindowSize(animatedSize);
 
-	ImGui::Begin(std::format("cockbalt.solutions - Welcome {}!", LocalPlayer.GetName()).c_str(), &gui::bOpen, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
+	ImGui::SetNextWindowPos(windowPos, ImGuiCond_Once); // Only once
 
+	ImGui::Begin(std::format("cockbalt.solutions - Welcome {}!", LocalPlayer.GetName()).c_str(), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
 	{
-		ImVec2 txtSize = ImGui::CalcTextSize("(Build: " __DATE__ " - " __TIME__ ")");
-		Render::OutLinedText("(Build: " __DATE__ " - " __TIME__ ")", (ImGui::GetWindowPos().x + ImGui::GetWindowSize().x - (txtSize.x)), (ImGui::GetWindowPos().y + ImGui::GetWindowSize().y + 3), ImGui::GetForegroundDrawList());
-	}
+		ImGui::GetStyle().Alpha = windowFade.getValue();
 
-	if (ImGui::BeginTabBar("##TabsBar"))
-	{
-		if (ImGui::BeginTabItem("Aim"))
-		{
-			ui::BeginGroup(ImVec2(270, 170), "General");
+		// if the windowPos is updating
+		bool isUpdating = false;
 
-			ImGui::Checkbox("Enabled", &cfg.aimbot.Enabled);
-			ImGui::Checkbox("Silent", &cfg.aimbot.Silent);
-			ImGui::SliderFloat("##FOVval", &cfg.aimbot.FOV, 0, 180, "FOV %.1f");
-			ImGui::SliderFloat("##Smoothval", &cfg.aimbot.Smooth, 1, 10.0f, cfg.aimbot.Smooth > 1 ? "Smooth %.2f" : "Smooth None");
-			ImGui::Checkbox("Aim At Friendly", &cfg.aimbot.FriendlyFire);
-			ui::EndGroup();
-
-			ImGui::SameLine();
-
-			// Right Side
-			ui::BeginGroup(ImVec2(270, 70), "Visuals");
-			ImGui::Checkbox("FOV Circle", &cfg.aimbot.DrawFov);
-			ui::EndGroup();
-
-			ImGui::EndTabItem();
-
-			ui::BeginGroup(ImVec2(270, 70), "Performance");
-
-			ImGui::SliderInt("##MaxPlayersScanval", &cfg.aimbot.MaxPlayersInFov, 2, 20, "Max Players Scan %d");
-			ui::HelpMarker("Max Amount of Players Scanned inside of the aim FOV");
-			ui::EndGroup();
+		// if the menu is closed, and its not animating
+		if (!gui::bOpen && animPopUp.getValue() < 0.2f) {
+			// reset the position back after changing it for animation
+			ImGui::SetWindowPos(windowPos);
+			windowPos = ImGui::GetWindowPos();
+			ImGui::GetStyle().Alpha = 0.f;
+			isUpdating = true;
+		}
+		else if (animPopUp.getValue() == 1.f) { // if the menu is up, and the animation is also finished
+			windowPos = ImGui::GetWindowPos();
+			isUpdating = true;
 		}
 
-		if (ImGui::BeginTabItem("Visuals"))
-		{
-			ui::BeginGroup(ImVec2(270, 150), "Player");
-			ImGui::Checkbox("Enabled", &cfg.visuals.Enabled);
-			ImGui::Checkbox("Show Friendly", &cfg.visuals.Friendly);
-			ImGui::Checkbox("Snap Lines", &cfg.visuals.esp.Lines);
-			ImGui::Checkbox("Bouding Box", &cfg.visuals.esp.BoudningBox);
-			ImGui::Checkbox("Health Bar", &cfg.visuals.esp.HealthBar);
-			ui::EndGroup();
-
-			ui::BeginGroup(ImVec2(270, 265), "Misc");
-			ImGui::Checkbox("Third Person", &cfg.visuals.misc.ThirdPerson);
-			ImGui::SliderFloat("##ThirdPersonDistance", &cfg.visuals.misc.TPDistance, 0.0f, 3.0f, "Distance %.2f");
-			ImGui::SliderFloat("##AspectRatio", &cfg.visuals.misc.AspectRatio, 0.0f, 3.0f, "Aspect Ratio %.2f");
-			ImGui::SliderFloat("##CAMFOV", &cfg.visuals.misc.camFOV, 40, 160.0f, "Cam Fov %.2f");
-			ImGui::Checkbox("Steady Cam", &cfg.visuals.misc.SteadyCam); ui::HelpMarker("Terminates the shaking effects in your Camera.");
-			ImGui::Checkbox("No Zoom", &cfg.visuals.misc.noZoon); ui::HelpMarker("Eliminates the zoom effect when using Scoping.");
-			ImGui::Spacing();
-
-			ui::BeginOutlineGroup("View Model");
-			ImGui::SliderFloat("##ViewModelFOV", &cfg.visuals.viewmodel.ViewModelFOV, 60, 140.0f, "FOV %.2f");
-			ImGui::Checkbox("Always Draw", &cfg.visuals.viewmodel.AlwaysDraw);
-			ui::EndOutlineGroup();
-
-			ui::EndGroup();
-
-			ImGui::EndTabItem();
+		// if the menu is being dragged, also update the position
+		if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem)
+			&& ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+			windowPos = ImGui::GetWindowPos();
+			isUpdating = true;
 		}
 
-		if (ImGui::BeginTabItem("Misc"))
+		if (!isUpdating)
 		{
-			ui::BeginGroup(ImVec2(270, 150), "Movement");
-			ImGui::Checkbox("Bunny Hop", &cfg.misc.movement.BunnyHop);
-			ImGui::Checkbox("Auto-Strafe", &cfg.misc.movement.Strafe);
-			ImGui::Checkbox("Air Duck", &cfg.misc.movement.AirDuck);
-			ui::EndGroup();
-
-			ui::BeginGroup(ImVec2(270, 80), "Exploits");
-			ImGui::Checkbox("Infinite Duck", &cfg.misc.exploits.InfDuck);
-			ui::EndGroup();
-
-			ImGui::EndTabItem();
+			ImGui::SetWindowPos(windowPos + (windowSize - animatedSize) / 2);
 		}
 
-		if (ImGui::BeginTabItem("Settings"))
 		{
-			//ImGui::Checkbox("Stream Proof", &cfg.settings.StreamProof); // No Work :)
-			ImGui::Checkbox("Show Debug Window", &cfg.settings.ShowDebug);
-			if (ImGui::Button("Unload [Pause]")) // the "Pause" key will also unload it :)
+			static Animation txtFade(0.25f, Linear, Linear);
+			txtFade.Update();
+			animPopUp.getValue() == 1.f ? txtFade.Switch(1) : txtFade.Switch(0);
+
+			const char* txt = "(Build: " __DATE__ " - " __TIME__ ")";
+			ImVec2 txtSize = ImGui::CalcTextSize(txt);
+			Render::OutLinedText(txt, (ImGui::GetWindowPos().x + ImGui::GetWindowSize().x - (txtSize.x)), (ImGui::GetWindowPos().y +ImGui::GetWindowSize().y + 3), ImGui::GetForegroundDrawList(), ImColor(1.f, 1.f, 1.f, txtFade.getValue()));
+		}
+
+		if (ImGui::BeginTabBar("##TabsBar"))
+		{
+			if (ImGui::BeginTabItem("Aim"))
 			{
-				bUnloaded = true;
-				return;
+				ui::BeginGroup(ImVec2(270, 170), "General");
+
+				ImGui::Checkbox("Enabled", &cfg.aimbot.Enabled);
+				ImGui::Checkbox("Silent", &cfg.aimbot.Silent);
+				ImGui::SliderFloat("##FOVval", &cfg.aimbot.FOV, 0, 180, "FOV %.1f");
+				ImGui::SliderFloat("##Smoothval", &cfg.aimbot.Smooth, 1, 10.0f, cfg.aimbot.Smooth > 1 ? "Smooth %.2f" : "Smooth None");
+				ImGui::Checkbox("Aim At Friendly", &cfg.aimbot.FriendlyFire);
+				ui::EndGroup();
+
+				ImGui::SameLine();
+
+				// Right Side
+				ui::BeginGroup(ImVec2(270, 70), "Visuals");
+				ImGui::Checkbox("FOV Circle", &cfg.aimbot.DrawFov);
+				ui::EndGroup();
+
+				ImGui::EndTabItem();
+
+				ui::BeginGroup(ImVec2(270, 70), "Performance");
+
+				ImGui::SliderInt("##MaxPlayersScanval", &cfg.aimbot.MaxPlayersInFov, 2, 20, "Max Players Scan %d");
+				ui::HelpMarker("Max Amount of Players Scanned inside of the aim FOV");
+				ui::EndGroup();
 			}
-			ImGui::SliderFloat("##Animations_Speed", &cfg.settings.AnimSpeed, 0.5f, 4.f, "Animations's Speed %.2f");
 
-			ImGui::EndTabItem();
+			if (ImGui::BeginTabItem("Visuals"))
+			{
+				ui::BeginGroup(ImVec2(270, 150), "Player");
+				ImGui::Checkbox("Enabled", &cfg.visuals.Enabled);
+				ImGui::Checkbox("Show Friendly", &cfg.visuals.Friendly);
+				ImGui::Checkbox("Snap Lines", &cfg.visuals.esp.Lines);
+				ImGui::Checkbox("Bouding Box", &cfg.visuals.esp.BoudningBox);
+				ImGui::Checkbox("Health Bar", &cfg.visuals.esp.HealthBar);
+				ui::EndGroup();
+
+				ui::BeginGroup(ImVec2(270, 265), "Misc");
+				ImGui::Checkbox("Third Person", &cfg.visuals.misc.ThirdPerson);
+				ImGui::SliderFloat("##ThirdPersonDistance", &cfg.visuals.misc.TPDistance, 0.0f, 3.0f, "Distance %.2f");
+				ImGui::SliderFloat("##AspectRatio", &cfg.visuals.misc.AspectRatio, 0.0f, 3.0f, "Aspect Ratio %.2f");
+				ImGui::SliderFloat("##CAMFOV", &cfg.visuals.misc.camFOV, 40, 160.0f, "Cam Fov %.2f");
+				ImGui::Checkbox("Steady Cam", &cfg.visuals.misc.SteadyCam); ui::HelpMarker("Terminates the shaking effects in your Camera.");
+				ImGui::Checkbox("No Zoom", &cfg.visuals.misc.noZoon); ui::HelpMarker("Eliminates the zoom effect when using Scoping.");
+				ImGui::Spacing();
+
+				ui::BeginOutlineGroup("View Model");
+				ImGui::SliderFloat("##ViewModelFOV", &cfg.visuals.viewmodel.ViewModelFOV, 60, 140.0f, "FOV %.2f");
+				ImGui::Checkbox("Always Draw", &cfg.visuals.viewmodel.AlwaysDraw);
+				ui::EndOutlineGroup();
+
+				ui::EndGroup();
+
+				ImGui::EndTabItem();
+			}
+
+			if (ImGui::BeginTabItem("Misc"))
+			{
+				ui::BeginGroup(ImVec2(270, 150), "Movement");
+				ImGui::Checkbox("Bunny Hop", &cfg.misc.movement.BunnyHop);
+				ImGui::Checkbox("Auto-Strafe", &cfg.misc.movement.Strafe);
+				ImGui::Checkbox("Air Duck", &cfg.misc.movement.AirDuck);
+				ui::EndGroup();
+
+				ui::BeginGroup(ImVec2(270, 80), "Exploits");
+				ImGui::Checkbox("Infinite Duck", &cfg.misc.exploits.InfDuck);
+				ui::EndGroup();
+
+				ImGui::EndTabItem();
+			}
+
+			if (ImGui::BeginTabItem("Settings"))
+			{
+				//ImGui::Checkbox("Stream Proof", &cfg.settings.StreamProof); // No Work :)
+				ImGui::Checkbox("Show Debug Window", &cfg.settings.ShowDebug);
+				if (ImGui::Button("Unload [Pause]")) // the "Pause" key will also unload it :)
+				{
+					bUnloaded = true;
+					return;
+				}
+				ImGui::SliderFloat("##Animations_Speed", &cfg.settings.AnimSpeed, 0.5f, 4.f, "Animations's Speed %.2f");
+
+				ImGui::EndTabItem();
+			}
+
+			ImGui::EndTabBar();
 		}
-
-		ImGui::EndTabBar();
 	}
-
 	ImGui::End();
 
 	if (cfg.settings.ShowDebug) {
 		gui::DebugWindow();
 	}
 	
-}
 }
 
 void gui::DebugWindow() noexcept

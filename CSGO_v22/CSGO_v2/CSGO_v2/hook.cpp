@@ -286,8 +286,15 @@ void __stdcall hooks::hkOverrideView(CViewSetup* pSetup)
 		pSetup->angles = globals::g_interfaces.Engine->GetViewAngles(); // LOL xD
 	}
 
-	if (LocalPlayer.Get() && LocalPlayer.isScoped() && cfg.visuals.misc.noZoon) {
+	// store the zoom sens value
+	static float temp_zoom_sensitivity_ratio_mouse = globals::g_interfaces.Cvar->FindVar("zoom_sensitivity_ratio_mouse")->GetFloat();
+	globals::g_interfaces.Cvar->FindVar("zoom_sensitivity_ratio_mouse")->SetValue(temp_zoom_sensitivity_ratio_mouse); // restore the zoom sens ratio
+
+	// if currently zooming
+	if (LocalPlayer.Get() && cfg.visuals.misc.noZoon && ( LocalPlayer.isScoped() || pSetup->fov != cfg.visuals.misc.camFOV)) {
 		pSetup->fov = cfg.visuals.misc.camFOV;
+		globals::g_interfaces.Cvar->FindVar("zoom_sensitivity_ratio_mouse")->SetValue(0.f);
+		
 	}
 	else {
 		pSetup->fov += (cfg.visuals.misc.camFOV - 90.0f);

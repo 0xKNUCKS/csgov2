@@ -505,12 +505,15 @@ LRESULT CALLBACK WindowProcess(
 		gui::bUnloaded = true;
 
 	// pass messages to imgui, to be able to click and stuff
-	ImGui_ImplWin32_WndProcHandler(
-		hWnd,
-		msg,
-		wParam,
-		lParam
-	);
+	if (gui::bOpen &&
+		ImGui_ImplWin32_WndProcHandler(
+			hWnd,
+			msg,
+			wParam,
+			lParam
+		)) {
+		return true;
+	}
 
 	return CallWindowProc(
 		gui::oWindowProc,

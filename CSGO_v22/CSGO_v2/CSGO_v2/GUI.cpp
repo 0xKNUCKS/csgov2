@@ -227,6 +227,10 @@ void gui::Destroy() noexcept
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 
+	// Restore the input
+	globals::g_interfaces.InputSystem->EnableInput(1);
+
+	// Restore the original WindowProc to the game's window
 	SetWindowLongA(
 		gui::Window,
 		GWLP_WNDPROC,
@@ -499,6 +503,9 @@ LRESULT CALLBACK WindowProcess(
 	// toggle menu wewe
 	if (GetAsyncKeyState(gui::menuKey) & 1)
 		gui::bOpen = !gui::bOpen;
+
+	// if the menu is enabled, then disable the input, vice versa
+	g_interfaces.InputSystem->EnableInput(!gui::bOpen);
 
 	// Unload key "wewe"
 	if (GetAsyncKeyState(gui::unloadKey) & 1)

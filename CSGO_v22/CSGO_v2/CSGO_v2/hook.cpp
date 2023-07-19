@@ -145,6 +145,32 @@ long __stdcall hooks::hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept
 	// Render the gui
 	gui::Render();
 
+	// Draw the Mouse Tracer
+	if (cfg.settings.mouseTracer.Enabled && (!cfg.settings.mouseTracer.AlwaysOn && gui::bOpen))
+	{
+		ImVec2 mousePos = ImGui::GetIO().MousePos;
+		static std::vector<ImVec2> mousePoints = {};
+
+		mousePoints.insert(mousePoints.begin(), mousePos);
+		mousePoints.resize(cfg.settings.mouseTracer.TrailLength); // limit the points to a certrain value (in a way the "length")
+
+		for (int i = 0; i < mousePoints.size(); i++)
+		{
+			ImVec2 Point = mousePoints[i];
+			float scale = (float)(1.0f - (float)i / (mousePoints.size() - 1));
+
+			ImVec4 FirstColor = cfg.settings.mouseTracer.Color;
+			ImVec4 SecondColor = cfg.settings.mouseTracer.SecondColor;
+			ImColor FinalColor = ImColor(SecondColor + (FirstColor - SecondColor) * ImVec4(scale, scale, scale, 0));
+			FinalColor.Value.w = 0.85f * scale;
+
+			if (i > 0) {
+				ImGui::GetForegroundDrawList()->AddLine(mousePoints[i - 1] - ImVec2(0.5, 0.5), mousePoints[i] - ImVec2(0.5, 0.5),
+					FinalColor, cfg.settings.mouseTracer.TrailThickness * scale);
+			}
+		}
+	}
+
 	// Unload code
 	if (gui::bUnloaded) {
 		// Free console because one is created when using debug build

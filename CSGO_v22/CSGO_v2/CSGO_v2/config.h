@@ -66,6 +66,14 @@ public:
 		bool StreamProof = false;
 		bool ShowDebug = false;
 		float AnimSpeed = 1.f; // Animations speed
+		struct MouseTracer {
+			bool Enabled = true;
+			int TrailLength = 40;
+			float TrailThickness = 4.f;
+			bool AlwaysOn = false;
+			ImColor Color = ImColor(94, 156, 255, 255);
+			ImColor SecondColor = ImColor(255, 255, 255, 255);
+		} mouseTracer;
 	} settings;
 };
 

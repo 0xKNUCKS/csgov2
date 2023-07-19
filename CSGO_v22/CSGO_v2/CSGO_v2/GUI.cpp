@@ -405,7 +405,51 @@ void gui::Render() noexcept
 					bUnloaded = true;
 					return;
 				}
-				ImGui::SliderFloat("##Animations_Speed", &cfg.settings.AnimSpeed, 0.5f, 4.f, "Animations's Speed %.2f");
+				ImGui::SliderFloat("##Animations_Speed", &cfg.settings.AnimSpeed, 0.5f, 4.f, "Animations's Speed %.2f"); ui::HelpMarker("Modify the menu's animation speed.\n including the fade-in and out speed, etc");
+
+				ui::BeginOutlineGroup("Mouse Tracer");
+				ImGui::Checkbox("Enabled##MouseTracer", &cfg.settings.mouseTracer.Enabled); ui::HelpMarker("Creates a trail behind your mouse tracing it!");
+				ImGui::SliderInt("##TrailLength", &cfg.settings.mouseTracer.TrailLength, 15, 100, "Trail Length %d");
+
+				static int curOption = 1; // "Thick" as default
+				const float ThicknessOptions[3] = { 1.f, 4.f, 8.f };
+				cfg.settings.mouseTracer.TrailThickness = ThicknessOptions[curOption];
+				ImGui::Text("Trail Thickness");
+				ImGui::Combo("##TailThcikness", &curOption, "Slim\0Thick\0Bold\0");
+				
+				// 1st color picker
+				{
+					if (ImGui::ColorButton("##Color1", cfg.settings.mouseTracer.Color)) {
+						ImGui::OpenPopup("Color_1");
+					}
+
+					ImGui::SameLine();  ImGui::Text("Color");
+
+					if (ImGui::BeginPopup("Color_1"))
+					{
+						ImGui::ColorPicker4("Main Color", &cfg.settings.mouseTracer.Color.Value.x, ImGuiColorEditFlags_NoAlpha);
+						ImGui::EndPopup();
+					}
+				}
+
+				// 2nd color picker
+				{
+					if (ImGui::ColorButton("##SecondColor", cfg.settings.mouseTracer.SecondColor)) {
+						ImGui::OpenPopup("Color_2");
+					}
+
+					ImGui::SameLine();  ImGui::Text("Second Color");
+
+					if (ImGui::BeginPopup("Color_2"))
+					{
+						ImGui::ColorPicker4("Second Color", &cfg.settings.mouseTracer.SecondColor.Value.x, ImGuiColorEditFlags_NoAlpha);
+						ImGui::EndPopup();
+					}
+				}
+
+				ImGui::Checkbox("Always On", &cfg.settings.mouseTracer.AlwaysOn); ui::HelpMarker("Always show the tracer, even when the menu is closed.");
+
+				ui::EndOutlineGroup();
 
 				ImGui::EndTabItem();
 			}

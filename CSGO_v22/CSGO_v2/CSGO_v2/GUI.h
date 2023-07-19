@@ -7,6 +7,9 @@
 #pragma comment(lib, "d3d9.lib")
 #pragma comment(lib, "d3dx9.lib")
 
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include "../ext/ImGui/imgui_internal.h"
+
 #include "../ext/ImGui/imgui.h"
 #include "../ext/ImGui/imgui_impl_dx9.h"
 #include "../ext/ImGui/imgui_impl_win32.h"

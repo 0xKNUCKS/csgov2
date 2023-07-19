@@ -5500,7 +5500,9 @@ bool ImGui::ColorButton(const char* desc_id, const ImVec4& col, ImGuiColorEditFl
     const ImGuiID id = window->GetID(desc_id);
     const float default_size = GetFrameHeight();
     const ImVec2 size(size_arg.x == 0.0f ? default_size : size_arg.x, size_arg.y == 0.0f ? default_size : size_arg.y);
-    const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
+    ImRect tmp(window->DC.CursorPos, window->DC.CursorPos + size);
+    tmp.Max.x *= 1.015f;
+    const ImRect bb(tmp);
     ItemSize(bb, (size.y >= default_size) ? g.Style.FramePadding.y : 0.0f);
     if (!ItemAdd(bb, id))
         return false;

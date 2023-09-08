@@ -30,7 +30,8 @@ public:
 private:
     typedef void* (_cdecl* tCreateInterface)(const char* name, int* returnCode);
 
-    inline void* FindInterface(const char* dllname, const char* interfaceName);
+    template <typename retType>
+    inline retType* FindInterface(const char* dllname, const char* interfaceName);
 };
 
 //extern interfaces_t g_interfaces;

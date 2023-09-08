@@ -1,25 +1,30 @@
 #include "interface.h"
 
-void* interfaces_t::FindInterface(const char* dllname, const char* interfaceName)
+template <typename retType>
+retType* interfaces_t::FindInterface(const char* dllname, const char* interfaceName)
 {
+    HMODULE Module = GetModuleHandleA(dllname);
+    if (!Module)
+        return nullptr;
 
-    if (tCreateInterface CreateInterface = (tCreateInterface)GetProcAddress(GetModuleHandleA(dllname), "CreateInterface"))
-    {
-        if (void* rinterface = CreateInterface(interfaceName, nullptr))
-            return rinterface;
-    }
+    tCreateInterface CreateInterface = (tCreateInterface)GetProcAddress(Module, "CreateInterface");
+    if (!CreateInterface)
+        return nullptr;
 
-    return 0;
+    if (retType* rinterface = CreateInterface(interfaceName, nullptr))
+        return rinterface;
+
+    return nullptr;
 }
 
 void interfaces_t::init()
 {
-    ClientEntity = (IClientEntityList*)FindInterface(DLL_CLIENT, "VClientEntityList003");
-    BaseClient = (IBaseClientDLL*)FindInterface(DLL_CLIENT, "VClient018");
-    Engine = (IVEngineClient*)FindInterface(DLL_ENGINE, "VEngineClient014");
-    InputSystem = (CInputSystem*)FindInterface("inputsystem.dll", "InputSystemVersion001");
-    ModelInfo = (IVModelInfo*)FindInterface(DLL_ENGINE, "VModelInfoClient004");
-    EngineTrace = (IEngineTrace*)FindInterface(DLL_ENGINE, "EngineTraceClient004");
-    Cvar        = (ICvar*)FindInterface("vstdlib.dll", "VEngineCvar007");
-    Surface     = (ISurface*)FindInterface("vguimatsurface.dll", "VGUI_Surface031");
+    ClientEntity =  FindInterface<IClientEntityList>(DLL_CLIENT, "VClientEntityList003");
+    BaseClient =    FindInterface<IBaseClientDLL>(DLL_CLIENT, "VClient018");
+    Engine =        FindInterface<IVEngineClient>(DLL_ENGINE, "VEngineClient014");
+    InputSystem =   FindInterface<CInputSystem>("inputsystem.dll", "InputSystemVersion001");
+    ModelInfo =     FindInterface<IVModelInfo>(DLL_ENGINE, "VModelInfoClient004");
+    EngineTrace =   FindInterface<IEngineTrace>(DLL_ENGINE, "EngineTraceClient004");
+    Cvar =          FindInterface<ICvar>("vstdlib.dll", "VEngineCvar007");
+    Surface =       FindInterface<ISurface>("vguimatsurface.dll", "VGUI_Surface031");
 }

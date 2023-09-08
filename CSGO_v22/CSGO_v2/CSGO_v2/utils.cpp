@@ -123,8 +123,12 @@ void utils::SetupConsole()
     FILE* conStream;
     freopen_s(&conStream, "CONOUT$", "w", stdout);
     SetConsoleTitleA("DBG con");
-    if (conStream)
+    HWND conWindow = GetConsoleWindow();
+    if (conStream && conWindow) {
+        ::ShowWindow(conWindow, SW_SHOW);
+        printf("Console Window Addr: 0x%x \n", conWindow != NULL ? conWindow : 0x0);
         std::cout << "Allocated a Console!\n";
+    }
     system("echo %cd%");
 }
 

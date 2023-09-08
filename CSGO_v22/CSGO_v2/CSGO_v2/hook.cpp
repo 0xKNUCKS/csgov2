@@ -171,24 +171,23 @@ long __stdcall hooks::hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept
 		}
 	}
 
+	// End the frame
+	gui::EndFrame();
+
 	// Unload code
 	if (gui::bUnloaded) {
-		// Free console because one is created when using debug build
 #ifdef _DEBUG
-		FreeConsole(); // Will NOT close the console, but will free it from the process, meaning, you can close it manually without it closing csgo with it.
-		/*I did try to attempt to fix this issue and close it but it either didnt work wasnt that conveniet, one of them was using "fclose", it works, but u wont be able to use the stream stdout again if you reinject, thats the problem*/
+		// Free the console because one is created when using debug build
+		::ShowWindow(GetConsoleWindow(), SW_HIDE);
+		FreeConsole();
 #endif // _DEBUG
 
 		// Unload the hooks
 		hooks::Destroy();
 		// Unload dx and imgui etc
 		gui::Destroy();
-		// return, now nothing is executing at all (hooks are unloaded and everything), atleast shouldnt be... (I hope there is no memory leaks here...)
-		return result;
+		// the end, now nothing is executing at all (hooks are unloaded and everything), atleast shouldnt be... (I hope there is no memory leaks here...)
 	}
-
-	// End the frame
-	gui::EndFrame();
 
 	return result;
 }

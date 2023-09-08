@@ -81,6 +81,15 @@ bool hooks::Setup()
 		)) return 0;//throw std::runtime_error("Unable to hook GetScreenAspectRatio");
 	}
 
+	// globals::g_interfaces.Surface
+	{
+		if (MH_CreateHook( // virtual void LockCursor() = 0; - Index 67
+			VirtualFunction(globals::g_interfaces.Surface, 67),
+			&hkLockCursor,
+			reinterpret_cast<void**>(&oLockCursor)
+		)) return 0;
+	}
+
 	// super duper crash dont uncomment
 	{
 		//if (MH_CreateHook(
@@ -344,4 +353,14 @@ bool __stdcall hooks::hkSvCheatsGetBool(void* pConVar) noexcept
 		return true;
 
 	return oSvCheatsGetBool(pConVar);
+}
+
+void __stdcall hooks::hkLockCursor() noexcept
+{
+	if (gui::bOpen) {
+		globals::g_interfaces.Surface->UnlockCursor();
+		return;
+	}
+
+	oLockCursor(globals::g_interfaces.Surface);
 }

@@ -39,6 +39,7 @@ namespace hooks
 	using tOverrideView =		  void(__thiscall*)(void*, CViewSetup* pSetup) noexcept;
 	using tShouldDrawViewModel =  bool(__thiscall*)(void*) noexcept;
 	using tConVarHook =			  bool(__thiscall*)(void*) noexcept;
+	using tLockCursor =			  void(__thiscall*)(void*) noexcept;
 
 	// globals
 	inline void* g_ClientMode = nullptr;
@@ -61,6 +62,8 @@ namespace hooks
 
 	inline tConVarHook oSvCheatsGetBool = nullptr;
 
+	inline tLockCursor oLockCursor = nullptr;
+
 	// Hooked Functions Declarations
     long __stdcall	  hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept;
 	HRESULT __stdcall hkReset(IDirect3DDevice9* Device, D3DPRESENT_PARAMETERS* params) noexcept;
@@ -72,4 +75,5 @@ namespace hooks
 	void __stdcall	  hkOverrideView(CViewSetup* pSetup);
 	bool __stdcall	  hkShouldDrawViewModel() noexcept;
 	bool __stdcall	  hkSvCheatsGetBool(void* pConVar) noexcept;
+	void __stdcall	  hkLockCursor() noexcept;
 }

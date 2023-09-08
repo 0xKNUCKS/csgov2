@@ -981,3 +981,18 @@ public:
 	// virtual const ConVar	*FindVar ( const char *var_name ) const = 0;
 	VIRTUAL_METHOD(ConVar*, FindVar, 15, (const char* var_name), (this, var_name));
 };
+
+// To terminate the definition of winAPI func PlaySound -> PlaySoundA
+#define PlaySound PlaySound
+
+class ISurface
+{
+public:
+	// virtual void UnlockCursor() = 0; - Index 66
+	VIRTUAL_METHOD(void, UnlockCursor, 66, (), (this));
+	// virtual void PlaySound(const char *fileName) = 0; - Index 82
+	VIRTUAL_METHOD(void, PlaySound, 82, (const char* fileName), (this, fileName));
+};
+
+// Undefine it so it dosent interfere with the winAPI func definition
+#undef PlaySound

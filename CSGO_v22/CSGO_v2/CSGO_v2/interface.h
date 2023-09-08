@@ -23,6 +23,8 @@ public:
     IVModelInfo* ModelInfo;
     IEngineTrace* EngineTrace;
     ICvar* Cvar;
+    ISurface* Surface;
+
     void init();
 
 private:

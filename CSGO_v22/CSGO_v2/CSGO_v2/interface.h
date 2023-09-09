@@ -28,8 +28,6 @@ public:
     void init();
 
 private:
-    typedef void* (_cdecl* tCreateInterface)(const char* name, int* returnCode);
-
     template <typename retType>
     inline retType* FindInterface(const char* dllname, const char* interfaceName);
 };

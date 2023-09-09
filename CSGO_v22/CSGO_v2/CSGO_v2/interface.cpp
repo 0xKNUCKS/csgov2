@@ -7,6 +7,7 @@ retType* interfaces_t::FindInterface(const char* dllname, const char* interfaceN
     if (!Module)
         return nullptr;
 
+    typedef retType* (_cdecl* tCreateInterface)(const char* name, int* returnCode);
     tCreateInterface CreateInterface = (tCreateInterface)GetProcAddress(Module, "CreateInterface");
     if (!CreateInterface)
         return nullptr;

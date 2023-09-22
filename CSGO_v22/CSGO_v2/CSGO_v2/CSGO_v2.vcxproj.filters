@@ -115,6 +115,9 @@
     <Filter Include="ext\AnimationLib">
       <UniqueIdentifier>{becc9e6b-6497-44c7-bac4-5193841217df}</UniqueIdentifier>
     </Filter>
+    <Filter Include="lib\Hooks\Manager">
+      <UniqueIdentifier>{e23a10f0-c685-460d-957f-2c1c7f7e7be5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -215,6 +218,12 @@
     </ClCompile>
     <ClCompile Include="..\ext\AnimationLib\ext\easing.cpp">
       <Filter>ext\AnimationLib</Filter>
+    </ClCompile>
+    <ClCompile Include="hooksManager.cpp">
+      <Filter>lib\Hooks\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="VMT.cpp">
+      <Filter>lib\Memory</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -361,6 +370,12 @@
     </ClInclude>
     <ClInclude Include="..\ext\AnimationLib\ext\easing.h">
       <Filter>ext\AnimationLib</Filter>
+    </ClInclude>
+    <ClInclude Include="hooksManager.h">
+      <Filter>lib\Hooks\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="VMT.h">
+      <Filter>lib\Memory</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

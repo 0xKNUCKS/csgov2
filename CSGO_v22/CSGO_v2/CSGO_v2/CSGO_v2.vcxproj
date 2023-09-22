@@ -191,6 +191,7 @@
     <ClCompile Include="ESP.cpp" />
     <ClCompile Include="GUI.cpp" />
     <ClCompile Include="hook.cpp" />
+    <ClCompile Include="hooksManager.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="mem.cpp" />
     <ClCompile Include="interface.cpp" />
@@ -200,6 +201,7 @@
     <ClCompile Include="UserCmd.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="VARS.cpp" />
+    <ClCompile Include="VMT.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ext\AnimationLib\Animation.h" />
@@ -234,6 +236,7 @@
     <ClInclude Include="GlobalVars.h" />
     <ClInclude Include="GUI.h" />
     <ClInclude Include="hook.h" />
+    <ClInclude Include="hooksManager.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="mem.h" />
     <ClInclude Include="includes.h" />
@@ -250,6 +253,7 @@
     <ClInclude Include="VARS.h" />
     <ClInclude Include="ViewSetup.h" />
     <ClInclude Include="VirtualMethod.h" />
+    <ClInclude Include="VMT.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,111 +1,6 @@
 #include "hook.h"
 #include "../ext/AnimationLib/Animation.h"
-
-bool hooks::Setup()
-{
-	// Globals Initialization
-	g_ClientMode = **reinterpret_cast<void***>((*reinterpret_cast<unsigned int**>(globals::g_interfaces.BaseClient))[10] + 5);
-	input = *reinterpret_cast<CInput**>((*reinterpret_cast<uintptr_t**>(globals::g_interfaces.BaseClient))[16] + 1);
-	GlobalVars = **reinterpret_cast<CGlobalVarsBase***>((*reinterpret_cast<uintptr_t**>(globals::g_interfaces.BaseClient))[11] + 10);
-	CAM_THINK = reinterpret_cast<uintptr_t*>(utils::PatternScan(GetModuleHandle("client.dll"), "85 C0 75 30 38 86"));
-	svCheatsCVar = globals::g_interfaces.Cvar->FindVar("sv_cheats");
-
-	if (MH_Initialize())
-		return 0;//throw std::runtime_error("Unable to initialize Hooks");
-
-	// gui::Device hooks
-	{
-		// D3D9 Hook
-		if (MH_CreateHook(
-			VirtualFunction(gui::device, 42),
-			&hkEndScene,
-			reinterpret_cast<void**>(&oEndScene)
-		)) return 0;//throw std::runtime_error("Unable to hook Reset");
-
-		// Reset Hook
-		if (MH_CreateHook(
-			VirtualFunction(gui::device, 16),
-			&hkReset,
-			reinterpret_cast<void**>(&oReset)
-		)) return 0;// throw std::runtime_error("Unable to hook Reset");
-	}
-
-	// g_ClientMode hooks
-	{
-		// GetViewModelFOV Hook
-		if (MH_CreateHook(
-			VirtualFunction(g_ClientMode, 35),
-			&hkGetViewModelFOV,
-			reinterpret_cast<void**>(&oGetViewModelFOV)
-		)) return 0;//throw std::runtime_error("Unable to hook GetViewModelFOV");
-
-		// OverrideView Hook
-		if (MH_CreateHook(
-			VirtualFunction(g_ClientMode, 18),
-			&hkOverrideView,
-			reinterpret_cast<void**>(&oOverrideView)
-		)) return 0;
-
-		// ShouldDrawViewModel Hook
-		if (MH_CreateHook(
-			VirtualFunction(g_ClientMode, 27),
-			&hkShouldDrawViewModel,
-			reinterpret_cast<void**>(&oShouldDrawViewModel)
-		)) return 0;
-	}
-
-	// globals::g_interfaces.BaseClient hooks
-	{
-		// CreateMove Hook
-		if (MH_CreateHook(
-			VirtualFunction(globals::g_interfaces.BaseClient, 22),
-			&hkCreateMoveProxy,
-			reinterpret_cast<void**>(&oCreateMove)
-		)) return 0;//throw std::runtime_error("Unable to hook CreateMove");
-
-		// FrameStageNotify hook
-		if (MH_CreateHook(
-			VirtualFunction(globals::g_interfaces.BaseClient, 37),
-			&hkFrameStageNotify,
-			reinterpret_cast<void**>(&oFrameStageNotify)
-		)) return 0;//throw std::runtime_error("Unable to hook FrameStageNotify");
-	}
-
-	// globals::g_interfaces.Engine hooks
-	{
-		// Engine::GetScreenAspectRatio hook
-		if (MH_CreateHook(
-			VirtualFunction(globals::g_interfaces.Engine, 101),
-			&hkGetScreenAspectRatio,
-			reinterpret_cast<void**>(&oGetScreenAspectRatio)
-		)) return 0;//throw std::runtime_error("Unable to hook GetScreenAspectRatio");
-	}
-
-	// globals::g_interfaces.Surface
-	{
-		if (MH_CreateHook( // virtual void LockCursor() = 0; - Index 67
-			VirtualFunction(globals::g_interfaces.Surface, 67),
-			&hkLockCursor,
-			reinterpret_cast<void**>(&oLockCursor)
-		)) return 0;
-	}
-
-	// super duper crash dont uncomment
-	{
-		//if (MH_CreateHook(
-		//	VirtualFunction(svCheatsCVar, 13),
-		//	&hkSvCheatsGetBool,
-		//	reinterpret_cast<void**>(&oSvCheatsGetBool)
-		//)) return 0;//throw std::runtime_error("Unable to hook GetScreenAspectRatio");
-	}
-
-	// Actually hook
-	if (MH_EnableHook(MH_ALL_HOOKS))
-		return 0;//throw std::runtime_error("Unable to enable hooks");
-
-	gui::DestroyDirectX();
-	return 1;
-}
+#include "hooksManager.h"
 
 // FINALLLYY FIXED IT :skull:
 void hooks::Destroy() noexcept
@@ -117,9 +12,9 @@ void hooks::Destroy() noexcept
 	MH_Uninitialize();
 }
 
-long __stdcall hooks::hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept
+long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept
 {
-	const auto result = oEndScene(&pDevice, pDevice);
+	const auto result = hooks::d3dDeviceHk.getOriginal<long, index::d3d9Device::EndScene>(pDevice)(pDevice, pDevice);
 
 	// gotta setup/init only once
 	if (!gui::init)
@@ -201,22 +96,22 @@ long __stdcall hooks::hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept
 	return result;
 }
 
-HRESULT __stdcall hooks::hkReset(IDirect3DDevice9* Device, D3DPRESENT_PARAMETERS* params) noexcept
+HRESULT __stdcall hkReset(IDirect3DDevice9* Device, D3DPRESENT_PARAMETERS* params) noexcept
 {
 	ImGui_ImplDX9_InvalidateDeviceObjects();
-	const auto result = oReset(Device, Device, params);
+	const auto result = hooks::d3dDeviceHk.getOriginal<HRESULT, index::d3d9Device::Reset>(Device, params)(Device, Device, params);
 	ImGui_ImplDX9_CreateDeviceObjects();
 	return result;
 }
 
-void __stdcall hooks::hkCreateMove(int sequence_number, float input_sample_frametime, bool active, bool* bSendPacket) noexcept
+void __stdcall hkCreateMove(int sequence_number, float input_sample_frametime, bool active, bool* bSendPacket) noexcept
 {
-	oCreateMove(globals::g_interfaces.BaseClient, sequence_number, input_sample_frametime, active);
+	hooks::BaseClientHk.callOriginal<void, index::BaseClient::CreateMove>(sequence_number, input_sample_frametime, active);
 
 	if (!bSendPacket)
 		return;
 
-	CUserCmd* cmd = input->getUserCmd(0, sequence_number);
+	CUserCmd* cmd = hooks::input->getUserCmd(0, sequence_number);
 
 	if (!cmd || !cmd->command_number)
 		return;
@@ -224,7 +119,7 @@ void __stdcall hooks::hkCreateMove(int sequence_number, float input_sample_frame
 	static int lastTick = cmd->tick_count;
 
 	// TODO: fix this bs, no work without sv_cheats on, also distance no work too, bad bad bad (also add keys pls thanks)
-	input->isCameraInThirdPerson = cfg.visuals.misc.ThirdPerson && LocalPlayer.Get();
+	hooks::input->isCameraInThirdPerson = cfg.visuals.misc.ThirdPerson && LocalPlayer.Get();
 
 	if (cfg.misc.exploits.InfDuck)
 		cmd->buttons |= cmd->IN_BULLRUSH;
@@ -245,12 +140,12 @@ void __stdcall hooks::hkCreateMove(int sequence_number, float input_sample_frame
 
 	lastTick = cmd->tick_count;
 
-	VerifiedUserCmd* verified = input->getVerifiedUserCmd(sequence_number);
+	VerifiedUserCmd* verified = hooks::input->getVerifiedUserCmd(sequence_number);
 	if (verified)
 		*verified = VerifiedUserCmd(*cmd);
 }
 
-__declspec(naked) void __stdcall hooks::hkCreateMoveProxy(int sequenceNumber, float inputSampleTime, bool active) noexcept
+__declspec(naked) void __stdcall hkCreateMoveProxy(int sequenceNumber, float inputSampleTime, bool active) noexcept
 {
 	// Create move Proxy to be able to retrieve "bSendPacket" pointer
 	__asm {
@@ -263,17 +158,18 @@ __declspec(naked) void __stdcall hooks::hkCreateMoveProxy(int sequenceNumber, fl
 		push edx
 		push inputSampleTime
 		push sequenceNumber
-		call hooks::hkCreateMove
+		call hkCreateMove
 		pop ebx
 		pop ebp
 		ret 0Ch
 	}
 }
 
-void __stdcall hooks::hkFrameStageNotify(ClientFrameStage_t curStage) noexcept
+void __stdcall hkFrameStageNotify(ClientFrameStage_t curStage) noexcept
 {
 	using enum ClientFrameStage_t;
 
+	hooks::BaseClientHk.callOriginal<void, index::BaseClient::FrameStageNotify>(curStage);
 
 	switch (curStage)
 	{
@@ -286,24 +182,22 @@ void __stdcall hooks::hkFrameStageNotify(ClientFrameStage_t curStage) noexcept
 		aimbot::TargetsArr = aimbot::GetTargetsArr(cfg.aimbot);
 		break;
 	}
-
-	oFrameStageNotify(globals::g_interfaces.BaseClient, curStage);
 }
 
-float __stdcall hooks::hkGetScreenAspectRatio(int viewportWidth, int viewportHeight) noexcept
+float __stdcall hkGetScreenAspectRatio(int viewportWidth, int viewportHeight) noexcept
 {
-	globals::aspectRatio = cfg.visuals.misc.AspectRatio > 0.f ? cfg.visuals.misc.AspectRatio : oGetScreenAspectRatio(globals::g_interfaces.Engine, viewportWidth, viewportHeight);
+	globals::aspectRatio = cfg.visuals.misc.AspectRatio > 0.f ? cfg.visuals.misc.AspectRatio : hooks::EngineHk.callOriginal<float, index::Engine::GetScreenAspectRatio>(viewportWidth, viewportHeight);
 	return globals::aspectRatio;
 }
 
-float __stdcall hooks::hkGetViewModelFOV() noexcept
+float __stdcall hkGetViewModelFOV() noexcept
 {
 	return cfg.visuals.viewmodel.ViewModelFOV;
 }
 
-void __stdcall hooks::hkOverrideView(CViewSetup* pSetup)
+void __stdcall hkOverrideView(CViewSetup* pSetup)
 {
-	oOverrideView(g_ClientMode, pSetup);
+	hooks::ClientModeHk.callOriginal<void, index::ClientMode::OverrideView>(pSetup);
 
 	if (LocalPlayer.Get())
 	{
@@ -337,9 +231,9 @@ void __stdcall hooks::hkOverrideView(CViewSetup* pSetup)
 	globals::camFOV = pSetup->fov;
 }
 
-bool __stdcall hooks::hkShouldDrawViewModel() noexcept
+bool __stdcall hkShouldDrawViewModel() noexcept
 {
-	auto result = oShouldDrawViewModel(g_ClientMode);
+	auto result = hooks::ClientModeHk.callOriginal<bool, index::ClientMode::ShouldDrawViewModel>();
 
 	if (!result && cfg.visuals.viewmodel.AlwaysDraw)
 		result = 1;
@@ -347,20 +241,71 @@ bool __stdcall hooks::hkShouldDrawViewModel() noexcept
 	return result;
 }
 
-bool __stdcall hooks::hkSvCheatsGetBool(void* pConVar) noexcept
-{
-	if ((uintptr_t*)_ReturnAddress() == CAM_THINK && cfg.visuals.misc.ThirdPerson)
-		return true;
-
-	return oSvCheatsGetBool(pConVar);
-}
-
-void __stdcall hooks::hkLockCursor() noexcept
+void __stdcall hkLockCursor() noexcept
 {
 	if (gui::bOpen) {
 		globals::g_interfaces.Surface->UnlockCursor();
 		return;
 	}
 
-	oLockCursor(globals::g_interfaces.Surface);
+	hooks::SurfaceHk.callOriginal<void, index::Surface::LockCursor>();
+}
+
+bool hooks::Setup()
+{
+	// Globals Initialization
+	ClientMode = **reinterpret_cast<void***>((*reinterpret_cast<unsigned int**>(globals::g_interfaces.BaseClient))[10] + 5);
+	input = *reinterpret_cast<CInput**>((*reinterpret_cast<uintptr_t**>(globals::g_interfaces.BaseClient))[16] + 1);
+	GlobalVars = **reinterpret_cast<CGlobalVarsBase***>((*reinterpret_cast<uintptr_t**>(globals::g_interfaces.BaseClient))[11] + 10);
+
+
+	// manually call if youre gonna use DETOUR hooking
+	if (MH_Initialize())
+		return 0;//throw std::runtime_error("Unable to initialize Hooks");
+
+	// gui::Device hooks
+	{
+		d3dDeviceHk.init(gui::device, DETOUR);
+		d3dDeviceHk.hook(index::d3d9Device::EndScene, hkEndScene);
+		d3dDeviceHk.hook(index::d3d9Device::Reset, hkReset);
+	}
+
+	// g_ClientMode hooks
+	{
+		ClientModeHk.init(ClientMode, DETOUR);
+		ClientModeHk.hook(index::ClientMode::GetViewModelFOV, hkGetViewModelFOV);
+		ClientModeHk.hook(index::ClientMode::OverrideView, hkOverrideView);
+		ClientModeHk.hook(index::ClientMode::ShouldDrawViewModel, hkShouldDrawViewModel);
+	}
+
+	// globals::g_interfaces.BaseClient hooks
+	{
+		BaseClientHk.init(globals::g_interfaces.BaseClient, DETOUR);
+		BaseClientHk.hook(index::BaseClient::CreateMove, hkCreateMoveProxy);
+		BaseClientHk.hook(index::BaseClient::FrameStageNotify, hkFrameStageNotify);
+	}
+
+	// globals::g_interfaces.Engine hooks
+	{
+		EngineHk.init(globals::g_interfaces.Engine, DETOUR);
+		EngineHk.hook(index::Engine::GetScreenAspectRatio, hkGetScreenAspectRatio);
+	}
+
+	// globals::g_interfaces.Surface
+	{
+		SurfaceHk.init(globals::g_interfaces.Surface, DETOUR);
+		SurfaceHk.hook(index::Surface::LockCursor, hkLockCursor); // virtual void LockCursor() = 0; - Index 67
+	}
+
+	// super duper crash dont uncomment
+	{
+		//if (MH_CreateHook(
+		//	VirtualFunction(svCheatsCVar, 13),
+		//	&hkSvCheatsGetBool,
+		//	reinterpret_cast<void**>(&oSvCheatsGetBool)
+		//)) return 0;//throw std::runtime_error("Unable to hook GetScreenAspectRatio");
+	}
+
+	gui::DestroyDirectX();
+	return 1;
 }

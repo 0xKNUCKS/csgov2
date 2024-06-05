@@ -1,5 +1,5 @@
 # Note
-this have not been uodated for CS:GO 2 so its outdated!
+this have not been updated for CS:GO 2 so its outdated!
 ---
 # CSGO V2
 This is my CSGO Educational internal Cheat, which is a recode of my old version (hazedumper offsets based), hence why its called "V2"

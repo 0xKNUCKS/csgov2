@@ -4,7 +4,9 @@
 
 #define ABS(x) ((x < 0) ? (-x) : (x))
 
-#define PI 3.14159265358979f
+constexpr float PI = 3.14159265358979f;
+constexpr float RAD_TO_DEG = 180.0f / PI;
+constexpr float DEG_TO_RAD = PI / 180.0f;
 
 constexpr auto _normalizeDeg = [](float a) noexcept { return isfinite(a) ? remainder(a, 360.0f) : 0.0f; };
 
@@ -155,8 +157,10 @@ namespace math
 
 		constexpr Vector& normalize() noexcept
 		{
-			x = std::clamp(x, -89.0f, 89.0f);
-			y = std::clamp(y, -180.0f, 180.0f);
+			if (x > 89.0f) x = 89.0f;
+			if (x < -89.0f) x = -89.0f;
+
+			y = std::fmod(y + 180.0f, 360.0f) - 180.0f;
 			z = 0.0f;
 			return *this;
 		}

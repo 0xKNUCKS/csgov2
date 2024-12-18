@@ -5,8 +5,7 @@
 namespace ESP
 {
 	void Render();
-	void DrawLine(ent_t& ent);
-	void DrawSkeleton(ent_t& ent);
-	void DrawBoundingBox(ent_t& ent);
+	void DrawLine(const math::Vector& screenPos);
+	void DrawBoundingBox(gEntity* ent, const math::Vector& screenPos);
 }
 

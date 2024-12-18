@@ -100,9 +100,6 @@
     <Filter Include="SDK\Classes\GlobalVars">
       <UniqueIdentifier>{b3d5ce79-f736-4528-af53-159f3b9549e3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="SDK\Entity List">
-      <UniqueIdentifier>{7b69e57e-1275-49a7-8d69-93e1c2c256f9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="SDK\Models">
       <UniqueIdentifier>{3371c4ab-aaba-43d0-bce7-b59dc92c3103}</UniqueIdentifier>
     </Filter>
@@ -134,9 +131,6 @@
     </ClCompile>
     <ClCompile Include="drawing.cpp">
       <Filter>dx9\Drawing</Filter>
-    </ClCompile>
-    <ClCompile Include="entity.cpp">
-      <Filter>SDK\Entity</Filter>
     </ClCompile>
     <ClCompile Include="GUI.cpp">
       <Filter>lib\Hooks\GUI</Filter>
@@ -213,9 +207,6 @@
     <ClCompile Include="Input.cpp">
       <Filter>SDK\Classes\Input</Filter>
     </ClCompile>
-    <ClCompile Include="entitylist.cpp">
-      <Filter>SDK\Entity List</Filter>
-    </ClCompile>
     <ClCompile Include="..\ext\AnimationLib\ext\easing.cpp">
       <Filter>ext\AnimationLib</Filter>
     </ClCompile>
@@ -224,6 +215,12 @@
     </ClCompile>
     <ClCompile Include="VMT.cpp">
       <Filter>lib\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="entity.cpp">
+      <Filter>SDK\Entity</Filter>
+    </ClCompile>
+    <ClCompile Include="localplayer.cpp">
+      <Filter>SDK\Entity</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -353,9 +350,6 @@
     <ClInclude Include="GlobalVars.h">
       <Filter>SDK\Classes\GlobalVars</Filter>
     </ClInclude>
-    <ClInclude Include="entitylist.h">
-      <Filter>SDK\Entity List</Filter>
-    </ClInclude>
     <ClInclude Include="Model.h">
       <Filter>SDK\Models</Filter>
     </ClInclude>
@@ -376,6 +370,9 @@
     </ClInclude>
     <ClInclude Include="VMT.h">
       <Filter>lib\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="localplayer.h">
+      <Filter>SDK\Entity</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,70 +1,62 @@
 #include "ESP.h"
 #include "hook.h"
 #include <math.h>
+#include <format>
+#include <string>
+#include <vector>
 
 void ESP::Render()
 {
-	if (!cfg.visuals.Enabled)
+	if (!cfg.visuals.Enabled || !globals::g_interfaces.Engine->IsInGame())
 		return;
 
-	if (!globals::g_interfaces.Engine->IsInGame())
+	if (hooks::GlobalVars == nullptr) {
+		std::cerr << "Error: GlobalVars is null." << std::endl;
 		return;
+	}
 
-	for (int i = 0; i <= globals::EntList.Size(); i++)
+	std::vector<math::Vector> screenPositions(hooks::GlobalVars->maxClients + 1);
+
+	for (int i = 0; i <= hooks::GlobalVars->maxClients; i++)
 	{
-		if (!globals::EntList[i].isValidState())
+		auto ent = globals::g_interfaces.ClientEntity->GetClientEntity(i);
+
+		if (!ent->isValidState() || (ent->isTeammate() && !cfg.visuals.Friendly))
 			continue;
 
-		if (globals::EntList[i].isTeammate() && !cfg.visuals.Friendly)
+		if (!utils::WolrdToScreen(ent->getAbsOrigin(), screenPositions[i]))
 			continue;
 
 		if (cfg.visuals.esp.Lines)
-			DrawLine(globals::EntList[i]);
-		
+			DrawLine(screenPositions[i]);
+
 		if (cfg.visuals.esp.BoudningBox)
-			DrawBoundingBox(globals::EntList[i]);
+			DrawBoundingBox(ent, screenPositions[i]);
 	}
 }
 
-void ESP::DrawLine(ent_t& ent)
+void ESP::DrawLine(const math::Vector& screenPos)
 {
-	math::Vector sOrginPos = math::Vector();
-
-	if (!utils::WolrdToScreen(ent.GetPos(), sOrginPos))
-		return;
-
 	// TODO: improve the lines by using the new players bounding box instead of this ancient way
-	Render::Line(ImGui::GetIO().DisplaySize.x / 2, ImGui::GetIO().DisplaySize.y, sOrginPos.x, sOrginPos.y, 2.0f);
+	Render::Line(ImGui::GetIO().DisplaySize.x / 2, ImGui::GetIO().DisplaySize.y, screenPos.x, screenPos.y, 2.0f);
 }
 
-void ESP::DrawSkeleton(ent_t& ent)
-{
-	for (size_t x = 0; x <= ent.Bones.size(); x++)
-	{
-		std::pair<math::Vector, math::Vector> Bones = ent.Bones[x];
-		math::Vector sBone, sParent;
-		if (!utils::WolrdToScreen(Bones.first, sBone) || !utils::WolrdToScreen(Bones.second, sParent))
-			continue;
-
-		Render::Line(sBone.x, sBone.y, sParent.x, sParent.y);
-	}
-}
-
-void ESP::DrawBoundingBox(ent_t& ent)
+void ESP::DrawBoundingBox(gEntity* ent, const math::Vector& screenPos)
 {
 	// Getting the bounding box's min and max
 	math::Vector min, max;
 	auto model = ent->getModel();
 	min = model->mins; max = model->maxs;
 
-	math::Vector points[] = {math::Vector(min.x, min.y, min.z),
-						math::Vector(min.x, max.y, min.z),
-						math::Vector(max.x, max.y, min.z),
-						math::Vector(max.x, min.y, min.z),
-						math::Vector(max.x, max.y, max.z),
-						math::Vector(min.x, max.y, max.z),
-						math::Vector(min.x, min.y, max.z),
-						math::Vector(max.x, min.y, max.z)
+	math::Vector points[] = {
+		math::Vector(min.x, min.y, min.z),
+		math::Vector(min.x, max.y, min.z),
+		math::Vector(max.x, max.y, min.z),
+		math::Vector(max.x, min.y, min.z),
+		math::Vector(max.x, max.y, max.z),
+		math::Vector(min.x, max.y, max.z),
+		math::Vector(min.x, min.y, max.z),
+		math::Vector(max.x, min.y, max.z)
 	};
 
 	math::Vector pointsTransformed[8];
@@ -73,10 +65,7 @@ void ESP::DrawBoundingBox(ent_t& ent)
 		pointsTransformed[i] = utils::VectorTransform(points[i], ent->toWorldTransform());
 	}
 
-	math::Vector pos = ent.GetPos();
 	math::Vector flb, brt, blb, frt, frb, brb, blt, flt;
-
-
 	if (!utils::WolrdToScreen(pointsTransformed[3], flb) || !utils::WolrdToScreen(pointsTransformed[5], brt)
 		|| !utils::WolrdToScreen(pointsTransformed[0], blb) || !utils::WolrdToScreen(pointsTransformed[4], frt)
 		|| !utils::WolrdToScreen(pointsTransformed[2], frb) || !utils::WolrdToScreen(pointsTransformed[1], brb)
@@ -127,7 +116,7 @@ void ESP::DrawBoundingBox(ent_t& ent)
 	{
 		h -= 2; // for pixel correction, its one pixel off from the top and one pixel off from the bottom, so we gotta fix that :)
 		math::Vector BarPos = math::Vector((left + w) + 2, top + 1 /*Pixel Correction*/).floor();
-		float BarHeight = h * ent.GetHealth() / 100; // get health percentage out of 100, and apply it to the height to get bar's height (TODO: add percentage of max health instead of just "100")
+		float BarHeight = h * ent->health() / 100; // get health percentage out of 100, and apply it to the height to get bar's height (TODO: add percentage of max health instead of just "100")
 
 		Render::FilledRect(BarPos.x, BarPos.y, 2, h, ImColor(0, 0, 0)); // black bg bar
 		Render::FilledRect(BarPos.x, BarPos.y, 2, BarHeight, ImColor(0, 255, 0)); // green health bar

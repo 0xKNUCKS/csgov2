@@ -157,10 +157,8 @@ namespace math
 
 		constexpr Vector& normalize() noexcept
 		{
-			if (x > 89.0f) x = 89.0f;
-			if (x < -89.0f) x = -89.0f;
-
-			y = std::fmod(y + 180.0f, 360.0f) - 180.0f;
+			x = std::clamp(x, -89.0f, 89.0f);
+			y = std::clamp(y, -180.0f, 180.0f);
 			z = 0.0f;
 			return *this;
 		}

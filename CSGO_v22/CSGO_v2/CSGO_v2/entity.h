@@ -4,18 +4,16 @@
 #include <iostream>
 #include <vector>
 #include "math.h"
-#include "Globals.h"
 
 #define STR_MERGE_IMPL(a, b) a##b
 #define STR_MERGE(a, b) STR_MERGE_IMPL(a,b)
 #define MAKE_PAD(size) STR_MERGE(_pad, __COUNTER__)[size]
 #define DEFINE_MEMBER_N(type, name, offset) struct {unsigned char MAKE_PAD(offset); type name;}
 
-
 #define NETVAR_DECL(name, type, offset) \
-    type name() \
+    type name() noexcept \
 {\
-    return *(type*)(enty + offset); \
+    return *(type*)(this + offset); \
 }
 
 enum class MoveType
@@ -71,78 +69,77 @@ namespace offsets
     constexpr ::std::ptrdiff_t dwBoneMatrix = hazedumper::netvars::m_dwBoneMatrix;
 }
 
-class ent_t
+// fuck this shit idek wtf is this, pasted from NEPS. sad.
+class gEntity
 {
 public:
-    gEntity* operator->() {
-        return enty;
-    }
+    // virtual functions from the entity
+    VIRTUAL_METHOD(void, release, 1, (), (this + sizeof(uintptr_t) * 2))
+    VIRTUAL_METHOD(ClientClass*, getClientClass, 2, (), (this + sizeof(uintptr_t) * 2))
+    VIRTUAL_METHOD(void, preDataUpdate, 6, (int updateType), (this + sizeof(uintptr_t) * 2, updateType))
+    VIRTUAL_METHOD(void, postDataUpdate, 7, (int updateType), (this + sizeof(uintptr_t) * 2, updateType))
+    VIRTUAL_METHOD(bool, isDormant, 9, (), (this + sizeof(uintptr_t) * 2))
+    VIRTUAL_METHOD(int, index, 10, (), (this + sizeof(uintptr_t) * 2))
+    VIRTUAL_METHOD(void, setDestroyedOnRecreateEntities, 13, (), (this + sizeof(uintptr_t) * 2))
+    
+    VIRTUAL_METHOD(math::Vector&, getRenderOrigin, 1, (), (this + sizeof(uintptr_t)))
+    VIRTUAL_METHOD(bool, shouldDraw, 3, (), (this + sizeof(uintptr_t)))
+    VIRTUAL_METHOD(const model_t*, getModel, 8, (), (this + sizeof(uintptr_t)))
+    VIRTUAL_METHOD(const math::Matrix3x4&, toWorldTransform, 32, (), (this + sizeof(uintptr_t)))
+    
+    VIRTUAL_METHOD(int&, handle, 2, (), (this))
+    VIRTUAL_METHOD(void*, getCollideable, 3, (), (this))
+    VIRTUAL_METHOD(const math::Vector&, getAbsOrigin, 10, (), (this))
+    VIRTUAL_METHOD(const math::Vector&, getAbsAngle, 11, (), (this))
+    VIRTUAL_METHOD(void, setModelIndex, 75, (int index), (this, index))
+    VIRTUAL_METHOD(int, health, 122, (), (this))
+    VIRTUAL_METHOD(bool, isAlive, 156, (), (this))
+    VIRTUAL_METHOD(bool, isPlayer, 158, (), (this))
+    VIRTUAL_METHOD(bool, isWeapon, 166, (), (this))
+    VIRTUAL_METHOD(void, updateClientSideAnimation, 224, (), (this))
+    VIRTUAL_METHOD(int, getWeaponSubType, 282, (), (this))
+    VIRTUAL_METHOD(void, getObserverMode, 294, (), (this))
+    VIRTUAL_METHOD(float, getSpread, 453, (), (this))
+    VIRTUAL_METHOD(void, getWeaponType, 455, (), (this))
+    VIRTUAL_METHOD(void*, getWeaponData, 461, (), (this))
+    VIRTUAL_METHOD(int, getMuzzleAttachmentIndex1stPerson, 468, (gEntity* viewModel), (this, viewModel))
+    VIRTUAL_METHOD(int, getMuzzleAttachmentIndex3rdPerson, 469, (), (this))
+    VIRTUAL_METHOD(float, getInaccuracy, 483, (), (this))
+    VIRTUAL_METHOD(void, updateInaccuracyPenalty, 484, (), (this))
+    
+    // NetVars
+    NETVAR_DECL(getTeamID, int, offsets::m_iTeamNum)
+    NETVAR_DECL(flags, int, offsets::m_fFlags)
+    NETVAR_DECL(isScoped, bool, offsets::m_bIsScoped)
+    NETVAR_DECL(getViewingAngles, math::Vector, offsets::deadFlag + 0x4)
+    NETVAR_DECL(getVelocity, math::Vector, offsets::m_vecVelocity)
 
-    int this_index = 1;
+    // custom functions
 
-    bool isDormant();
-
-    int GetHealth();
-
+    // Validate this entity
     bool isValidState();
-
-    math::Vector GetPos();
-
-    uintptr_t GetEnt(int index = -1);
 
     bool isTeammate();
 
-    bool isAlive();
+    math::Vector getAimAtAngles();
 
-    math::Vector GetBonePos(int boneId);
+    std::string getName();
 
-    math::Vector GetAimAtAngles();
-
-    std::string GetName();
-
-    math::Vector GetEyePos();
-
-    float DistTo(ent_t ent);
-
-    // NetVars
-    NETVAR_DECL(GetTeamId, int, offsets::m_iTeamNum)
-    NETVAR_DECL(Flags, int, offsets::m_fFlags)
-    NETVAR_DECL(isScoped, bool, offsets::m_bIsScoped)
-    NETVAR_DECL(GetViewingAngles, math::Vector, offsets::deadFlag + 0x4)
-    NETVAR_DECL(GetVelocity, math::Vector, offsets::m_vecVelocity)
-
-
-    ent_t(int idx) { ent_t::init(); this_index = idx; enty = (gEntity*)GetEnt(); }
-    ent_t() { ent_t::init(); this_index = 1; enty = (gEntity*)GetEnt();}
-
-    void init()
+    auto getEyePosition() noexcept
     {
-
+        math::Vector v;
+        VirtualMethod::call<void, 285>(this, std::ref(v));
+        return v;
     }
 
-    //math::UtlVector<math::Matrix3x4> BoneMatrix;
-    std::vector<std::pair<math::Vector, math::Vector>> Bones;
- // Containder            Bone Pos      Bone Parent Pos
-private:
-    IClientNetworkable* Get_CN(int index);
-
-protected:
-    gEntity* enty;
-};
-
-class localplayer_t : public ent_t
-{
-public:
-    uintptr_t Get();
-
-    localplayer_t()
+    bool SetupBones(math::Matrix3x4* out, int maxBones, int boneMask, float currentTime) noexcept
     {
-        Get();
+        return VirtualMethod::call<bool, 13>(this + sizeof(uintptr_t), out, maxBones, boneMask, currentTime);
     }
 
-protected:
-    uintptr_t Local;
+    math::UtlVector<math::Matrix3x4>& boneCache() noexcept { return *(math::UtlVector<math::Matrix3x4>*)((uintptr_t)this + 0x2914); }
+    math::Vector getBonePosFromChache(int bone) noexcept { return boneCache()[bone].GetVecOrgin(); }
 };
 
-inline localplayer_t LocalPlayer;
+static_assert(sizeof(gEntity) == 1);
 

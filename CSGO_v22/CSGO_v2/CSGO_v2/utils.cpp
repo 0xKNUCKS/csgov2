@@ -1,5 +1,6 @@
 #include "utils.h"
 #include <chrono>
+#include "Globals.h"
 #pragma warning(disable : 4996)
 
 std::string utils::RandomString(const int len) {

@@ -1,6 +1,7 @@
 #include "hook.h"
 #include "../ext/AnimationLib/Animation.h"
 #include "hooksManager.h"
+#include "localplayer.h"
 
 // FINALLLYY FIXED IT :skull:
 void hooks::Destroy() noexcept
@@ -40,7 +41,17 @@ long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept
 		float r = cfg.aimbot.FOV / globals::camFOV * DispSize.x / 2;
 		Render::OutLinedCircle(DispSize.x / 2, DispSize.y / 2, r);
 
-		//if (!aimbot::TargetsArr.empty()) ESP::DrawLine(aimbot::TargetsArr[0].second);
+		//if (aimbot::Target.ent) {
+		//	auto Ent = aimbot::Target.ent;
+		//	math::Vector HeadPos = Ent->getBonePosFromChache(8);
+		//	math::Vector sHeadPos = math::Vector();
+		//	if (utils::WolrdToScreen(HeadPos, sHeadPos))
+		//	{
+		//		auto DisplayCenter = ImGui::GetIO().DisplaySize / 2;
+		//		Render::OutLinedCircle(sHeadPos.x, sHeadPos.y, 20, ImColor(255, 0, 0));
+		//		Render::OutLinedText(std::format("Target's name: {}\nTarget's Index: {}\nTarget's FOV: {}\nDistance: {}", Ent->getName(), Ent-/>index(), /aimbot::Target.fov, aimbot::Target.distance).c_str(), DisplayCenter.x, DisplayCenter.y, ImGui::GetBackgroundDrawList(), /ImColor(255, 255, /255));
+		//	}
+		//}
 	}
 
 	// Render the ESP
@@ -50,7 +61,7 @@ long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept
 	gui::Render();
 
 	// Draw the Mouse Tracer
-	if (cfg.settings.mouseTracer.Enabled && (!cfg.settings.mouseTracer.AlwaysOn && gui::bOpen))
+	if (cfg.settings.mouseTracer.Enabled && (cfg.settings.mouseTracer.AlwaysOn && gui::bOpen))
 	{
 		ImVec2 mousePos = ImGui::GetIO().MousePos;
 		static std::vector<ImVec2> mousePoints = {};
@@ -78,7 +89,7 @@ long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept
 	// End the frame
 	gui::EndFrame();
 
-	// Unload code
+	// Unload code (dosent work)
 	if (gui::bUnloaded) {
 #ifdef _DEBUG
 		// Free the console because one is created when using debug build
@@ -127,6 +138,7 @@ void __stdcall hkCreateMove(int sequence_number, float input_sample_frametime, b
 	if (cmd->buttons & cmd->IN_ATTACK)
 		cmd->viewangles = globals::g_interfaces.Engine->GetViewAngles();
 
+	//aimbot::Run(cmd);
 	aimbot::Run(cmd);
 	misc::BunnyHop(cmd);
 	globals::g_cmd = cmd;
@@ -177,9 +189,6 @@ void __stdcall hkFrameStageNotify(ClientFrameStage_t curStage) noexcept
 		// to be used for WorldToScreen.
 		globals::game::viewMatrix = globals::g_interfaces.Engine->WorldToScreenMatrix();
 		break;
-	case FRAME_NET_UPDATE_END:
-		globals::EntList.Update();
-		aimbot::TargetsArr = aimbot::GetTargetsArr(cfg.aimbot);
 		break;
 	}
 }
@@ -219,7 +228,7 @@ void __stdcall hkOverrideView(CViewSetup* pSetup)
 	globals::g_interfaces.Cvar->FindVar("zoom_sensitivity_ratio_mouse")->SetValue(temp_zoom_sensitivity_ratio_mouse); // restore the zoom sens ratio
 
 	// if currently zooming
-	if (LocalPlayer.Get() && cfg.visuals.misc.noZoon && ( LocalPlayer.isScoped() || pSetup->fov != cfg.visuals.misc.camFOV)) {
+	if (LocalPlayer.Get() && cfg.visuals.misc.noZoon && ( LocalPlayer->isScoped() || pSetup->fov != cfg.visuals.misc.camFOV)) {
 		pSetup->fov = cfg.visuals.misc.camFOV;
 		globals::g_interfaces.Cvar->FindVar("zoom_sensitivity_ratio_mouse")->SetValue(0.f);
 		

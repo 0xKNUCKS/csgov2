@@ -99,7 +99,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
@@ -184,15 +184,15 @@
     <ClCompile Include="aimbot.cpp" />
     <ClCompile Include="config.cpp" />
     <ClCompile Include="CRC.cpp" />
-    <ClCompile Include="entity.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="drawing.cpp" />
-    <ClCompile Include="entitylist.cpp" />
+    <ClCompile Include="entity.cpp" />
     <ClCompile Include="ESP.cpp" />
     <ClCompile Include="GUI.cpp" />
     <ClCompile Include="hook.cpp" />
     <ClCompile Include="hooksManager.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="localplayer.cpp" />
     <ClCompile Include="mem.cpp" />
     <ClCompile Include="interface.cpp" />
     <ClCompile Include="Misc.cpp" />
@@ -230,7 +230,6 @@
     <ClInclude Include="EngineTrace.h" />
     <ClInclude Include="entity.h" />
     <ClInclude Include="drawing.h" />
-    <ClInclude Include="entitylist.h" />
     <ClInclude Include="ESP.h" />
     <ClInclude Include="Globals.h" />
     <ClInclude Include="GlobalVars.h" />
@@ -238,6 +237,7 @@
     <ClInclude Include="hook.h" />
     <ClInclude Include="hooksManager.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="localplayer.h" />
     <ClInclude Include="mem.h" />
     <ClInclude Include="includes.h" />
     <ClInclude Include="interface.h" />

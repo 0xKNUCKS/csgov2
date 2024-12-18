@@ -1,6 +1,7 @@
 #pragma once
 #include "classes.h"
 #include "entity.h"
+#include "config.h"
 
 namespace misc
 {

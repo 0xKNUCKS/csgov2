@@ -1,4 +1,5 @@
 #include "Misc.h"
+#include "localplayer.h"
 
 void misc::BunnyHop(CUserCmd* cmd)
 {
@@ -10,7 +11,7 @@ void misc::BunnyHop(CUserCmd* cmd)
 
 	if ((cmd->buttons & CUserCmd::IN_JUMP)) {
 		// ON AIR
-		if (!(LocalPlayer.Flags() & PlayerFlag_OnGround))
+		if (!(LocalPlayer->flags() & PlayerFlag_OnGround))
 		{
 			cmd->buttons &= ~CUserCmd::IN_JUMP;
 

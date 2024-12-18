@@ -10,6 +10,8 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "../ext/ImGui/imgui_internal.h"
 
+#include "localplayer.h"
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(
 	HWND hWnd,
 	UINT msg,
@@ -249,6 +251,9 @@ void gui::NewFrame() noexcept
 
 void gui::EndFrame() noexcept
 {
+	if (!ImGui::GetCurrentContext())
+		return;
+
 	ImGui::EndFrame();
 	ImGui::Render();
 	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
@@ -281,7 +286,7 @@ void gui::Render() noexcept
 
 	ImGui::SetNextWindowPos(windowPos, ImGuiCond_Once); // Only once
 
-	ImGui::Begin(std::format("cockbalt.solutions - Welcome {}!", LocalPlayer.GetName()).c_str(), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
+	ImGui::Begin(std::format("cockbalt.solutions - Welcome {}!", LocalPlayer->getName()).c_str(), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
 	{
 		ImGui::GetStyle().Alpha = windowFade.getValue();
 
@@ -462,6 +467,28 @@ void gui::Render() noexcept
 	if (cfg.settings.ShowDebug) {
 		gui::DebugWindow();
 	}
+
+	ImGui::Begin("Entity Information");
+
+	//for (int i = 0; i < globals::EntList.Size(); ++i) {
+	//	auto entity = globals::EntList[i];
+	//
+	//	if (!entity->isValidState()) {
+	//		continue;
+	//	}
+	//
+	//	ImGui::Text("Entity %d:", i);
+	//	ImGui::Indent();
+	//	ImGui::Text("Position: (%.2f, %.2f, %.2f)", entity->GetPos().x, entity->GetPos().y, entity->GetPos().z);
+	//	ImGui::Text("Health: %d", entity->GetHealth());
+	//	ImGui::Text("Is Alive: %s", entity->isAlive() ? "Yes" : "No");
+	//	ImGui::Text("Is Dormant: %s", entity->isDormant() ? "Yes" : "No");
+	//	ImGui::Text("Is Teammate: %s", entity->isTeammate() ? "Yes" : "No");
+	//	ImGui::Text("Is Valid: %s", entity->isValidState() ? "Yes" : "No");
+	//	ImGui::Unindent();
+	//}
+
+	ImGui::End();
 	
 }
 
@@ -491,13 +518,13 @@ void gui::DebugWindow() noexcept
 	//math::Vector Pos = LocalPlayer.Get() ? LocalPlayer.GetBonePos(8) : math::Vector{0, 0, 0};
 	//ImGui::Text("Local Head Pos: x.%.1f, y.%.1f, z.%.1f", Pos.x, Pos.y, Pos.z);
 	//ImGui::Spacing();
-	math::Vector Orgin = LocalPlayer.GetEnt() ? LocalPlayer.GetPos() : math::Vector{0, 0, 0};
+	math::Vector Orgin = LocalPlayer.Get() ? LocalPlayer->getAbsOrigin() : math::Vector{0, 0, 0};
 	ImGui::Text("Local Player Orgin: x.%.1f, y.%.1f, z.%.1f", Orgin.x, Orgin.y, Orgin.z);
-	bool Flag = LocalPlayer.Get() ? LocalPlayer.Flags() & PlayerFlag_OnGround : 0;
+	bool Flag = LocalPlayer.Get() ? LocalPlayer->flags() & PlayerFlag_OnGround : 0;
 	ImGui::Text("Local Player OnGround Flag: %d", Flag);
-	bool Flag2 = LocalPlayer.Get() ? LocalPlayer.Flags() & PlayerFlag_Crouched : 0;
+	bool Flag2 = LocalPlayer.Get() ? LocalPlayer->flags() & PlayerFlag_Crouched : 0;
 	ImGui::Text("Local Player Crouched Flag: %d", Flag2);
-	bool Flag3 = LocalPlayer.Get() ? LocalPlayer.Flags() & PlayerFlag_PartialGround : 0;
+	bool Flag3 = LocalPlayer.Get() ? LocalPlayer->flags() & PlayerFlag_PartialGround : 0;
 	ImGui::Text("Local Player PartialGround Flag: %d", Flag2);
 	ImGui::Spacing();
 	ImGui::Text("g_interfaces.Engine->GetLocalPlayerIdx() = %d", globals::g_interfaces.Engine->GetLocalPlayerIdx());

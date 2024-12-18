@@ -38,6 +38,8 @@ class IClientThinkable;
 class IClientModelRenderable;
 class IClientAlphaProperty;
 
+class gEntity;
+
 enum ClientFrameStage_t
 {
 	FRAME_UNDEFINED = -1,			// (haven't run any frames yet)
@@ -252,7 +254,7 @@ public:
 
     // NOTE: This function is only a convenience wrapper.
     // It returns GetClientNetworkable( entnum )->GetIClientEntity().
-    virtual void* GetClientEntity(int entnum) = 0;
+    virtual gEntity* GetClientEntity(int entnum) = 0;
     virtual void* GetClientEntityFromHandle(int hEnt) = 0;
 
     // Returns number of entities currently in use
@@ -658,61 +660,6 @@ public:
 private:
 	unsigned char _color[4];
 };
-
-// fuck this shit idek wtf is this, pasted from NEPS. sad.
-class gEntity
-{
-public:
-	VIRTUAL_METHOD(void, release, 1, (), (this + sizeof(uintptr_t) * 2))
-		VIRTUAL_METHOD(ClientClass*, getClientClass, 2, (), (this + sizeof(uintptr_t) * 2))
-		VIRTUAL_METHOD(void, preDataUpdate, 6, (int updateType), (this + sizeof(uintptr_t) * 2, updateType))
-		VIRTUAL_METHOD(void, postDataUpdate, 7, (int updateType), (this + sizeof(uintptr_t) * 2, updateType))
-		VIRTUAL_METHOD(bool, isDormant, 9, (), (this + sizeof(uintptr_t) * 2))
-		VIRTUAL_METHOD(int, index, 10, (), (this + sizeof(uintptr_t) * 2))
-		VIRTUAL_METHOD(void, setDestroyedOnRecreateEntities, 13, (), (this + sizeof(uintptr_t) * 2))
-
-		VIRTUAL_METHOD(math::Vector&, getRenderOrigin, 1, (), (this + sizeof(uintptr_t)))
-		VIRTUAL_METHOD(bool, shouldDraw, 3, (), (this + sizeof(uintptr_t)))
-		VIRTUAL_METHOD(const model_t*, getModel, 8, (), (this + sizeof(uintptr_t)))
-		VIRTUAL_METHOD(const math::Matrix3x4&, toWorldTransform, 32, (), (this + sizeof(uintptr_t)))
-
-		VIRTUAL_METHOD(int&, handle, 2, (), (this))
-		VIRTUAL_METHOD(void*, getCollideable, 3, (), (this))
-		VIRTUAL_METHOD(const math::Vector&, getAbsOrigin, 10, (), (this))
-		VIRTUAL_METHOD(const math::Vector&, getAbsAngle, 11, (), (this))
-		VIRTUAL_METHOD(void, setModelIndex, 75, (int index), (this, index))
-		VIRTUAL_METHOD(int, health, 122, (), (this))
-		VIRTUAL_METHOD(bool, isAlive, 156, (), (this))
-		VIRTUAL_METHOD(bool, isPlayer, 158, (), (this))
-		VIRTUAL_METHOD(bool, isWeapon, 166, (), (this))
-		VIRTUAL_METHOD(void, updateClientSideAnimation, 224, (), (this))
-		VIRTUAL_METHOD(int, getWeaponSubType, 282, (), (this))
-		VIRTUAL_METHOD(void, getObserverMode, 294, (), (this))
-		VIRTUAL_METHOD(float, getSpread, 453, (), (this))
-		VIRTUAL_METHOD(void, getWeaponType, 455, (), (this))
-		VIRTUAL_METHOD(void*, getWeaponData, 461, (), (this))
-		VIRTUAL_METHOD(int, getMuzzleAttachmentIndex1stPerson, 468, (gEntity* viewModel), (this, viewModel))
-		VIRTUAL_METHOD(int, getMuzzleAttachmentIndex3rdPerson, 469, (), (this))
-		VIRTUAL_METHOD(float, getInaccuracy, 483, (), (this))
-		VIRTUAL_METHOD(void, updateInaccuracyPenalty, 484, (), (this))
-
-	auto getEyePosition() noexcept
-	{
-		math::Vector v;
-		VirtualMethod::call<void, 285>(this, std::ref(v));
-		return v;
-	}
-
-	bool SetupBones(math::Matrix3x4* out, int maxBones, int boneMask, float currentTime) noexcept
-	{
-		return VirtualMethod::call<bool, 13>(this + sizeof(uintptr_t), out, maxBones, boneMask, currentTime);
-	}
-
-	math::UtlVector<math::Matrix3x4>& boneCache() noexcept { return *(math::UtlVector<math::Matrix3x4>*)((uintptr_t)this + 0x2914); }
-	math::Vector GetBonePosFromChache(int bone) noexcept { return boneCache()[bone].GetVecOrgin(); }
-};
-
-static_assert(sizeof(gEntity) == 1);
 
 // this should be in EngineTrace.h but C++ sucks and for some reason give me errors :(
 

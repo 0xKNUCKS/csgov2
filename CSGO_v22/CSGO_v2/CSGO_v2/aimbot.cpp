@@ -4,6 +4,18 @@
 #include "hook.h"
 #include <cmath>
 
+// Movement corrector for when using Silent Aim, using basic maths
+void AdjustMovement(CUserCmd* cmd, const math::Vector& oldAngles, const math::Vector& newAngles)
+{
+	float forward = cmd->forwardmove;
+	float side = cmd->sidemove;
+
+	float deltaAngle = newAngles.y - oldAngles.y;
+	float radDelta = deltaAngle * DEG_TO_RAD;
+
+	cmd->forwardmove = std::cos(radDelta) * forward + std::cos(radDelta + PI/2) * side;
+	cmd->sidemove = std::sin(radDelta) * forward + std::sin(radDelta + PI/2) * side;
+}
 
 // Wrap for the aimbot function (new and sexy, less complicated too)
 void aimbot::Run(CUserCmd* cmd)
@@ -68,5 +80,7 @@ void aimbot::Run(CUserCmd* cmd)
 			cmd->viewangles = isSilent ? aimAngles : finalAngles; // if its silent aim, aim at target directly without any smooth.
 		if (!isSilent)
 			globals::g_interfaces.Engine->SetViewAngles(finalAngles); // if silent aim isnt on, itll also change engine's viewAngles
+
+		AdjustMovement(cmd, currentAngles, finalAngles);
 	}
 }

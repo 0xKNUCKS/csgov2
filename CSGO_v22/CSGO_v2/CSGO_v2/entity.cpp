@@ -1,6 +1,7 @@
 #include "entity.h"
 #include "Globals.h"
 #include "localplayer.h"
+#include <cmath>
 
 std::string gEntity::getName()
 {
@@ -35,15 +36,18 @@ bool gEntity::isTeammate()
 math::Vector gEntity::getAimAtAngles()
 {
     math::Vector source = LocalPlayer->getEyePosition();
-    math::Vector destination = getBonePosFromChache(8); // Will add the option to use another bone later
+    math::Vector destination = getBonePosFromChache(8); // Ensure this returns the correct bone position
 
-    math::Vector retAngle = {};
-    math::Vector delta = source - destination;
+    math::Vector delta = destination - source;
+    float hypotenuse = std::sqrt(delta.x * delta.x + delta.y * delta.y);
 
-    const float hyp = std::hypot(delta.x, delta.y);
-    retAngle.x = atan2(delta.z, hyp) * RAD_TO_DEG; // pitch
-    retAngle.y = atan2(delta.y, delta.x) * RAD_TO_DEG; // yaw
-    retAngle.z = 0.f;
+    math::Vector angles;
+    angles.x = std::atan2(-delta.z, hypotenuse) * RAD_TO_DEG; // pitch
+    angles.y = std::atan2(delta.y, delta.x) * RAD_TO_DEG; // yaw
+    angles.z = 0.0f;
 
-    return retAngle.normalize();
+    // Normalize angles to ensure they are within the correct range
+    angles.normalizeDeg();
+
+    return angles;
 }

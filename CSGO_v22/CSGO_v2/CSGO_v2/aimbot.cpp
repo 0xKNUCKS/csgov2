@@ -5,20 +5,6 @@
 #include <cmath>
 
 
-// Helper function to calculate angles from a position to a target
-math::Vector inline CalculateAngles(const math::Vector& source, const math::Vector& destination)
-{
-	math::Vector delta = destination - source;
-	float hypotenuse = std::sqrt(delta.x * delta.x + delta.y * delta.y);
-
-	math::Vector angles;
-	angles.x = std::atan2(-delta.z, hypotenuse) * (180.0f / PI);
-	angles.y = std::atan2(delta.y, delta.x) * (180.0f / PI);
-	angles.z = 0.0f;
-
-	return angles;
-}
-
 // Wrap for the aimbot function (new and sexy, less complicated too)
 void aimbot::Run(CUserCmd* cmd)
 {
@@ -48,7 +34,7 @@ void aimbot::Run(CUserCmd* cmd)
 		math::Vector aimDirection = (targetPos - localPos).normalize();
 
 		math::Vector viewAngles = globals::g_interfaces.Engine->GetViewAngles();
-		math::Vector aimAngles = CalculateAngles(localPos, targetPos);
+		math::Vector aimAngles = ent->getAimAtAngles();
 
 		float fov = (viewAngles - aimAngles).length2D();
 		float distance = (targetPos - localPos).length();
@@ -68,9 +54,7 @@ void aimbot::Run(CUserCmd* cmd)
 
 	if (bestTarget)
 	{
-		math::Vector targetPos = bestTarget->getBonePosFromChache(8);
-		math::Vector localPos = LocalPlayer->getEyePosition();
-		math::Vector aimAngles = CalculateAngles(localPos, targetPos);
+		math::Vector aimAngles = bestTarget->getAimAtAngles();
 
 		math::Vector currentAngles = globals::g_interfaces.Engine->GetViewAngles();
 		math::Vector delta = aimAngles - currentAngles;

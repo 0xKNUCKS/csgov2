@@ -1,6 +1,7 @@
 #pragma once
 #include <Windows.h>
 #include "drawing.h"
+#include "ESP.h"
 
 class Config
 {
@@ -28,7 +29,7 @@ public:
 			bool BoudningBox = false;
 			bool Skeleton = false;
 			bool HealthBar = false;
-			//eBoxType boxType = eBoxType::Outlined;
+			UINT16 boxType = 0U; // eBoxType
 			ImColor color = ImColor(255,255,255);
 		} esp;
 		struct Misc

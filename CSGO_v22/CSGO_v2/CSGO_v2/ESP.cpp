@@ -15,7 +15,7 @@ void ESP::Render()
 		return;
 	}
 
-	std::vector<math::Vector> screenPositions(hooks::GlobalVars->maxClients + 1);
+	math::Vector screenPosition;
 
 	for (int i = 0; i <= hooks::GlobalVars->maxClients; i++)
 	{
@@ -24,101 +24,106 @@ void ESP::Render()
 		if (!ent->isValidState() || (ent->isTeammate() && !cfg.visuals.Friendly))
 			continue;
 
-		if (!utils::WolrdToScreen(ent->getAbsOrigin(), screenPositions[i]))
+		if (!utils::WolrdToScreen(ent->getAbsOrigin(), screenPosition))
+			continue;
+
+		BBox bbox = ent->GetBoundingBox();
+
+		if (!bbox.isValid)
 			continue;
 
 		if (cfg.visuals.esp.Lines)
-			DrawLine(screenPositions[i]);
+			DrawLine(bbox);
 
-		if (cfg.visuals.esp.BoudningBox)
-			DrawBoundingBox(ent, screenPositions[i]);
+		if (cfg.visuals.esp.BoudningBox) {
+			switch ((eBoxType)cfg.visuals.esp.boxType)
+			{
+			case Outlined:
+			case Filled:
+				//DrawBoundingRect(bbox, (bool)cfg.visuals.esp.boxType);
+				break;
+			case Box3d:
+				//DrawBoundingBox(bbox);
+				break;
+			case Corners:
+				break;
+			default:
+				break;
+			}
+			//DrawBoundingBox(bbox);
+			DrawBoundingRect(bbox, 0);
+		}
+
+		if (cfg.visuals.esp.HealthBar)
+			DrawHealthBar(bbox, ent->health());
 	}
 }
 
-void ESP::DrawLine(const math::Vector& screenPos)
+void ESP::DrawLine(BBox bbox)
 {
-	// TODO: improve the lines by using the new players bounding box instead of this ancient way
-	Render::Line(ImGui::GetIO().DisplaySize.x / 2, ImGui::GetIO().DisplaySize.y, screenPos.x, screenPos.y, 2.0f);
+	Render::Line(ImGui::GetIO().DisplaySize.x / 2, ImGui::GetIO().DisplaySize.y, norm(bbox.topLeft.x) + (bbox.w / 2), norm(bbox.topLeft.y), 1.0f);
 }
 
-void ESP::DrawBoundingBox(gEntity* ent, const math::Vector& screenPos)
+void ESP::DrawBoundingRect(BBox bbox, bool filled)
 {
-	// Getting the bounding box's min and max
-	math::Vector min, max;
-	auto model = ent->getModel();
-	min = model->mins; max = model->maxs;
-
-	math::Vector points[] = {
-		math::Vector(min.x, min.y, min.z),
-		math::Vector(min.x, max.y, min.z),
-		math::Vector(max.x, max.y, min.z),
-		math::Vector(max.x, min.y, min.z),
-		math::Vector(max.x, max.y, max.z),
-		math::Vector(min.x, max.y, max.z),
-		math::Vector(min.x, min.y, max.z),
-		math::Vector(max.x, min.y, max.z)
-	};
-
-	math::Vector pointsTransformed[8];
-	for (int i = 0; i < 8; i++)
-	{
-		pointsTransformed[i] = utils::VectorTransform(points[i], ent->toWorldTransform());
-	}
-
-	math::Vector flb, brt, blb, frt, frb, brb, blt, flt;
-	if (!utils::WolrdToScreen(pointsTransformed[3], flb) || !utils::WolrdToScreen(pointsTransformed[5], brt)
-		|| !utils::WolrdToScreen(pointsTransformed[0], blb) || !utils::WolrdToScreen(pointsTransformed[4], frt)
-		|| !utils::WolrdToScreen(pointsTransformed[2], frb) || !utils::WolrdToScreen(pointsTransformed[1], brb)
-		|| !utils::WolrdToScreen(pointsTransformed[6], blt) || !utils::WolrdToScreen(pointsTransformed[7], flt))
-		return;
-
-	math::Vector arr[] = {flb, brt, blb, frt, frb, brb, blt, flt};
-
-	float left = flb.x;		// left
-	float top = flb.y;		// top
-	float right = flb.x;	// right
-	float bottom = flb.y;	// bottom
-
-	for (int i = 1; i < 8; i++)
-	{
-		if (left > arr[i].x)
-			left = arr[i].x;
-		if (top < arr[i].y)
-			top = arr[i].y;
-		if (right < arr[i].x)
-			right = arr[i].x;
-		if (bottom > arr[i].y)
-			bottom = arr[i].y;
-	}
-
-	int h = bottom - top;	// height
-	int w = -min(left - right, h / globals::aspectRatio); /* width -> to understand it better, this is how it looks like with the default Apect Ratio: "h / 2", but im gonna use the aspect ratio to make it compatable with other aspect ratios, the goal here is to avoid ugly boxes anyways ;) (if the width is less than half of the height (thats with the default aspect ratio) its gonna look very ugly, i dont like it, so i implemented this :)*/
+	if (filled)
+		Render::FilledRect(norm(bbox.topLeft.x), norm(bbox.topLeft.y), bbox.w, bbox.h, ImColor(1.f, 1.f, 1.f, 0.35f));
 
 	// Render the actual BOX!!!! ouh am geee woowwww
-	Render::OutLinedRect(norm(left), norm(top), w, h);
+	Render::OutLinedRect(norm(bbox.topLeft.x), norm(bbox.topLeft.y), bbox.w, bbox.h);
 
-	//	x-y
-	// .left-top   x-y
-	// ---------- .right-top
-	// |		|
-	// |		|
-	// |		|
-	// |		|
-	// |		|
-	// |		|  x-y
-	// ---------- .right-bottom
-	// .left-bottom
-	//  x-y
+}
 
+void ESP::DrawBoundingBox(BBox bbox)
+{
+	// Array to store the converted 2D points of the 3D corners
+	math::Vector screenCorners[8];
 
-	// Health Bar (TODO: make work when not want box esp too, so it can work by itself)
-	if (cfg.visuals.esp.HealthBar)
+	// Define the 3D corners of the bounding box
+	math::Vector boxCorners[8] = {
+		bbox.flb, bbox.flt, bbox.frb, bbox.frt,
+		bbox.blb, bbox.blt, bbox.brb, bbox.brt
+	};
+
+	// Convert each 3D corner to 2D screen space
+	for (int i = 0; i < 8; i++)
 	{
-		h -= 2; // for pixel correction, its one pixel off from the top and one pixel off from the bottom, so we gotta fix that :)
-		math::Vector BarPos = math::Vector((left + w) + 2, top + 1 /*Pixel Correction*/).floor();
-		float BarHeight = h * ent->health() / 100; // get health percentage out of 100, and apply it to the height to get bar's height (TODO: add percentage of max health instead of just "100")
+		if (!utils::WolrdToScreen(boxCorners[i], screenCorners[i]))
+		{
+			// If any point fails to project, exit the function
+			return;
+		}
 
-		Render::FilledRect(BarPos.x, BarPos.y, 2, h, ImColor(0, 0, 0)); // black bg bar
-		Render::FilledRect(BarPos.x, BarPos.y, 2, BarHeight, ImColor(0, 255, 0)); // green health bar
+		Render::OutLinedCircle(screenCorners[i].x, screenCorners[i].y, 35);
 	}
-}	
+
+	// Draw the front face
+	Render::Line(screenCorners[0].x, screenCorners[0].y, screenCorners[1].x, screenCorners[1].y); // flb -> flt
+	Render::Line(screenCorners[1].x, screenCorners[1].y, screenCorners[3].x, screenCorners[3].y); // flt -> frt
+	Render::Line(screenCorners[3].x, screenCorners[3].y, screenCorners[2].x, screenCorners[2].y); // frt -> frb
+	Render::Line(screenCorners[2].x, screenCorners[2].y, screenCorners[0].x, screenCorners[0].y); // frb -> flb
+
+	// Draw the back face
+	Render::Line(screenCorners[4].x, screenCorners[4].y, screenCorners[5].x, screenCorners[5].y); // blb -> blt
+	Render::Line(screenCorners[5].x, screenCorners[5].y, screenCorners[7].x, screenCorners[7].y); // blt -> brt
+	Render::Line(screenCorners[7].x, screenCorners[7].y, screenCorners[6].x, screenCorners[6].y); // brt -> brb
+	Render::Line(screenCorners[6].x, screenCorners[6].y, screenCorners[4].x, screenCorners[4].y); // brb -> blb
+
+	// Connect front and back faces
+	Render::Line(screenCorners[0].x, screenCorners[0].y, screenCorners[4].x, screenCorners[4].y); // flb -> blb
+	Render::Line(screenCorners[1].x, screenCorners[1].y, screenCorners[5].x, screenCorners[5].y); // flt -> blt
+	Render::Line(screenCorners[2].x, screenCorners[2].y, screenCorners[6].x, screenCorners[6].y); // frb -> brb
+	Render::Line(screenCorners[3].x, screenCorners[3].y, screenCorners[7].x, screenCorners[7].y); // frt -> brt
+
+}
+
+void ESP::DrawHealthBar(BBox bbox, int health)
+{
+	bbox.h -= 2; // for pixel correction, its one pixel off from the top and one pixel off from the bottom, so we gotta fix that :)
+
+	math::Vector BarPos = math::Vector(bbox.topLeft.x + bbox.w + 2.f, bbox.topRight.y + 1.f /*Pixel Correction*/).floor();
+	float BarHeight = bbox.h * health / 100; // get health percentage out of 100, and apply it to the height to get bar's height (TODO: add percentage of max health instead of just "100")
+
+	Render::FilledRect(BarPos.x, BarPos.y, 2, bbox.h, ImColor(0, 0, 0)); // black bg bar
+	Render::FilledRect(BarPos.x, BarPos.y, 2, BarHeight, ImColor(0, 255, 0)); // green health bar
+}

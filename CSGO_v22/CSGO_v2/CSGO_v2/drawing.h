@@ -9,14 +9,6 @@
 #include "config.h"
 #include "math.h"
 
-enum eBoxType : UINT16
-{
-	Filled,
-	Outlined,
-	Box3d,
-	Corners
-};
-
 namespace Render
 {
 	void Line(float fromX, float fromY, float toX, float toY, float thickness = 1.0F, ImColor color = ImColor(255, 255, 255));
@@ -31,10 +23,5 @@ namespace Render
 	void FilledCircle			(float x, float y, float rad, ImColor color = ImColor(255, 255, 255));
 
 	void OutLinedText(const  char* text, float x, float y, ImDrawList* drawList, ImColor color = ImColor(255, 255, 255));
-
-	namespace ESP
-	{
-		void DrawBox(math::Vector top, math::Vector bot, ImColor color, eBoxType Type);
-	}
 };
 

@@ -1,11 +1,20 @@
 #pragma once
 #include "drawing.h"
-//#include "entitylist.h"
 
 namespace ESP
 {
 	void Render();
-	void DrawLine(const math::Vector& screenPos);
-	void DrawBoundingBox(gEntity* ent, const math::Vector& screenPos);
+	void DrawLine(BBox bbox);
+	void DrawBoundingRect(BBox bbox, bool filled);
+	void DrawBoundingBox(BBox bbox);
+	void DrawHealthBar(BBox bbox, int health);
+
+	enum eBoxType : UINT16
+	{
+		Outlined,
+		Filled,
+		Box3d,
+		Corners
+	};
 }
 

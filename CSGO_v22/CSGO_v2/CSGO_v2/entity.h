@@ -16,6 +16,30 @@
     return *(type*)(this + offset); \
 }
 
+// bounding box
+struct BBox {
+    // 2D points
+    math::Vector topLeft;
+    math::Vector topRight;
+    math::Vector bottomLeft;
+    math::Vector bottomRight;
+
+    // 3D points
+    math::Vector flb; // Front Left Bottom
+    math::Vector flt; // Front Left Top
+    math::Vector frb; // Front Right Bottom
+    math::Vector frt; // Front Right Top
+    math::Vector blb; // Back Left Bottom
+    math::Vector blt; // Back Left Top
+    math::Vector brb; // Back Right Bottom
+    math::Vector brt; // Back Right Top
+
+    // Dimensions
+    int w, h;
+
+    bool isValid = false;
+};
+
 enum class MoveType
 {
     Noclip = 8,
@@ -124,6 +148,8 @@ public:
     math::Vector getAimAtAngles();
 
     std::string getName();
+
+    BBox GetBoundingBox();
 
     auto getEyePosition() noexcept
     {

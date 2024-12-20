@@ -43,25 +43,3 @@ void Render::OutLinedText(const char* text, float x, float y, ImDrawList* drawLi
 	drawList->AddText(ImVec2(x + 1, y + 1), Shade, text);
 	drawList->AddText(ImVec2(x, y), color, text);
 }
-
-void Render::ESP::DrawBox(math::Vector top, math::Vector bot, ImColor color, eBoxType Type)
-{
-	float Height = ABS(bot.y - top.y);
-	float Width = Height / 2;
-
-	switch (Type)
-	{
-	case Filled:
-		Render::FilledRect(bot.x - (Width / 2), bot.y - Height, Width, Height, D3DCOLOR_RGBA(255, 255, 255, 255));
-		break;
-	case Outlined:
-		Render::OutLinedRect(bot.x - (Width / 2), bot.y - Height, Width, Height, 1, D3DCOLOR_RGBA(255, 255, 255, 255));
-		break;
-	case Box3d:
-		break;
-	case Corners:
-		break;
-	default:
-		break;
-	}
-}

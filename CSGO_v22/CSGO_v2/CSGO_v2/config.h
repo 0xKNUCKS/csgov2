@@ -29,7 +29,7 @@ public:
 			bool BoudningBox = false;
 			bool Skeleton = false;
 			bool HealthBar = false;
-			UINT16 boxType = 0U; // eBoxType
+			int boxType = 0; // eBoxType
 			ImColor color = ImColor(255,255,255);
 		} esp;
 		struct Misc

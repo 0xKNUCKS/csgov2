@@ -361,10 +361,16 @@ void gui::Render() noexcept
 			{
 				ui::BeginGroup(ImVec2(270, 150), "Player");
 				ImGui::Checkbox("Enabled", &cfg.visuals.Enabled);
-				ImGui::Checkbox("Show Friendly", &cfg.visuals.Friendly);
-				ImGui::Checkbox("Snap Lines", &cfg.visuals.esp.Lines);
-				ImGui::Checkbox("Bouding Box", &cfg.visuals.esp.BoudningBox);
+				ImGui::Checkbox("Bounding Box", &cfg.visuals.esp.BoudningBox); ImGui::SameLine();
+
+				ImGui::PushItemWidth(270 * 0.3);
+				ImGui::Combo("##TailThcikness", &cfg.visuals.esp.boxType, "Outlined\0Filled\0Box3d\0Corners\0");
+				ImGui::PopItemWidth();
+				
 				ImGui::Checkbox("Health Bar", &cfg.visuals.esp.HealthBar);
+				ImGui::Checkbox("Snap Lines", &cfg.visuals.esp.Lines);
+				ImGui::Checkbox("Show Friendly", &cfg.visuals.Friendly);
+
 				ui::EndGroup();
 
 				ui::BeginGroup(ImVec2(270, 265), "Misc");
@@ -467,29 +473,6 @@ void gui::Render() noexcept
 	if (cfg.settings.ShowDebug) {
 		gui::DebugWindow();
 	}
-
-	ImGui::Begin("Entity Information");
-
-	//for (int i = 0; i < globals::EntList.Size(); ++i) {
-	//	auto entity = globals::EntList[i];
-	//
-	//	if (!entity->isValidState()) {
-	//		continue;
-	//	}
-	//
-	//	ImGui::Text("Entity %d:", i);
-	//	ImGui::Indent();
-	//	ImGui::Text("Position: (%.2f, %.2f, %.2f)", entity->GetPos().x, entity->GetPos().y, entity->GetPos().z);
-	//	ImGui::Text("Health: %d", entity->GetHealth());
-	//	ImGui::Text("Is Alive: %s", entity->isAlive() ? "Yes" : "No");
-	//	ImGui::Text("Is Dormant: %s", entity->isDormant() ? "Yes" : "No");
-	//	ImGui::Text("Is Teammate: %s", entity->isTeammate() ? "Yes" : "No");
-	//	ImGui::Text("Is Valid: %s", entity->isValidState() ? "Yes" : "No");
-	//	ImGui::Unindent();
-	//}
-
-	ImGui::End();
-	
 }
 
 void gui::DebugWindow() noexcept

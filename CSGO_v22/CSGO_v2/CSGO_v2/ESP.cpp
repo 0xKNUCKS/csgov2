@@ -40,18 +40,16 @@ void ESP::Render()
 			{
 			case Outlined:
 			case Filled:
-				//DrawBoundingRect(bbox, (bool)cfg.visuals.esp.boxType);
+				DrawBoundingRect(bbox, (bool)cfg.visuals.esp.boxType);
 				break;
 			case Box3d:
-				//DrawBoundingBox(bbox);
+				DrawBoundingBox(bbox);
 				break;
 			case Corners:
 				break;
 			default:
 				break;
 			}
-			DrawBoundingBox(bbox);
-			DrawBoundingRect(bbox, 0);
 		}
 
 		if (cfg.visuals.esp.HealthBar)

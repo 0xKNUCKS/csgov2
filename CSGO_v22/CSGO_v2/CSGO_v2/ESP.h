@@ -9,7 +9,7 @@ namespace ESP
 	void DrawBoundingBox(BBox bbox);
 	void DrawHealthBar(BBox bbox, int health);
 
-	enum eBoxType : UINT16
+	enum eBoxType : int
 	{
 		Outlined,
 		Filled,

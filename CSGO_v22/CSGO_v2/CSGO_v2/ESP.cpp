@@ -50,7 +50,7 @@ void ESP::Render()
 			default:
 				break;
 			}
-			//DrawBoundingBox(bbox);
+			DrawBoundingBox(bbox);
 			DrawBoundingRect(bbox, 0);
 		}
 
@@ -76,45 +76,23 @@ void ESP::DrawBoundingRect(BBox bbox, bool filled)
 
 void ESP::DrawBoundingBox(BBox bbox)
 {
-	// Array to store the converted 2D points of the 3D corners
-	math::Vector screenCorners[8];
-
-	// Define the 3D corners of the bounding box
-	math::Vector boxCorners[8] = {
-		bbox.flb, bbox.flt, bbox.frb, bbox.frt,
-		bbox.blb, bbox.blt, bbox.brb, bbox.brt
-	};
-
-	// Convert each 3D corner to 2D screen space
-	for (int i = 0; i < 8; i++)
-	{
-		if (!utils::WolrdToScreen(boxCorners[i], screenCorners[i]))
-		{
-			// If any point fails to project, exit the function
-			return;
-		}
-
-		Render::OutLinedCircle(screenCorners[i].x, screenCorners[i].y, 35);
-	}
-
 	// Draw the front face
-	Render::Line(screenCorners[0].x, screenCorners[0].y, screenCorners[1].x, screenCorners[1].y); // flb -> flt
-	Render::Line(screenCorners[1].x, screenCorners[1].y, screenCorners[3].x, screenCorners[3].y); // flt -> frt
-	Render::Line(screenCorners[3].x, screenCorners[3].y, screenCorners[2].x, screenCorners[2].y); // frt -> frb
-	Render::Line(screenCorners[2].x, screenCorners[2].y, screenCorners[0].x, screenCorners[0].y); // frb -> flb
+	Render::Line(bbox.flb.x, bbox.flb.y, bbox.flt.x, bbox.flt.y); // flb -> flt
+	Render::Line(bbox.flt.x, bbox.flt.y, bbox.frt.x, bbox.frt.y); // flt -> frt
+	Render::Line(bbox.frt.x, bbox.frt.y, bbox.frb.x, bbox.frb.y); // frt -> frb
+	Render::Line(bbox.frb.x, bbox.frb.y, bbox.flb.x, bbox.flb.y); // frb -> flb
 
 	// Draw the back face
-	Render::Line(screenCorners[4].x, screenCorners[4].y, screenCorners[5].x, screenCorners[5].y); // blb -> blt
-	Render::Line(screenCorners[5].x, screenCorners[5].y, screenCorners[7].x, screenCorners[7].y); // blt -> brt
-	Render::Line(screenCorners[7].x, screenCorners[7].y, screenCorners[6].x, screenCorners[6].y); // brt -> brb
-	Render::Line(screenCorners[6].x, screenCorners[6].y, screenCorners[4].x, screenCorners[4].y); // brb -> blb
+	Render::Line(bbox.blb.x, bbox.blb.y, bbox.blt.x, bbox.blt.y); // blb -> blt
+	Render::Line(bbox.blt.x, bbox.blt.y, bbox.brt.x, bbox.brt.y); // blt -> brt
+	Render::Line(bbox.brt.x, bbox.brt.y, bbox.brb.x, bbox.brb.y); // brt -> brb
+	Render::Line(bbox.brb.x, bbox.brb.y, bbox.blb.x, bbox.blb.y); // brb -> blb
 
 	// Connect front and back faces
-	Render::Line(screenCorners[0].x, screenCorners[0].y, screenCorners[4].x, screenCorners[4].y); // flb -> blb
-	Render::Line(screenCorners[1].x, screenCorners[1].y, screenCorners[5].x, screenCorners[5].y); // flt -> blt
-	Render::Line(screenCorners[2].x, screenCorners[2].y, screenCorners[6].x, screenCorners[6].y); // frb -> brb
-	Render::Line(screenCorners[3].x, screenCorners[3].y, screenCorners[7].x, screenCorners[7].y); // frt -> brt
-
+	Render::Line(bbox.flb.x, bbox.flb.y, bbox.blb.x, bbox.blb.y); // flb -> blb
+	Render::Line(bbox.flt.x, bbox.flt.y, bbox.blt.x, bbox.blt.y); // flt -> blt
+	Render::Line(bbox.frb.x, bbox.frb.y, bbox.brb.x, bbox.brb.y); // frb -> brb
+	Render::Line(bbox.frt.x, bbox.frt.y, bbox.brt.x, bbox.brt.y); // frt -> brt
 }
 
 void ESP::DrawHealthBar(BBox bbox, int health)

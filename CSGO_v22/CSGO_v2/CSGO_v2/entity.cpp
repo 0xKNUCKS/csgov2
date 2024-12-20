@@ -54,7 +54,7 @@ BBox gEntity::GetBoundingBox()
     float right = bbox.flb.x;	// right
     float bottom = bbox.flb.y;	// bottom
 
-    for (int i = 1; i < 8; i++)
+    for (int i = 0; i < 8; i++)
     {
         if (left > arr[i].x)
             left = arr[i].x;

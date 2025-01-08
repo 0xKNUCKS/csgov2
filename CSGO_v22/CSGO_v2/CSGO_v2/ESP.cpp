@@ -15,8 +15,6 @@ void ESP::Render()
 		return;
 	}
 
-	math::Vector screenPosition;
-
 	for (int i = 0; i <= hooks::GlobalVars->maxClients; i++)
 	{
 		auto ent = globals::g_interfaces.ClientEntity->GetClientEntity(i);
@@ -24,9 +22,7 @@ void ESP::Render()
 		if (!ent->isValidState() || (ent->isTeammate() && !cfg.visuals.Friendly))
 			continue;
 
-		if (!utils::WolrdToScreen(ent->getAbsOrigin(), screenPosition))
-			continue;
-
+		// TODO: Use Skeletons to define bounds (and use getRenderOrgin for better positions)
 		BBox bbox = ent->GetBoundingBox();
 
 		if (!bbox.isValid)

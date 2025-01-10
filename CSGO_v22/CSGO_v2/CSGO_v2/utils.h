@@ -15,7 +15,7 @@ namespace utils
     std::string VirtualKeyToString(unsigned int virtualKey);
 
     // Game Related
-    bool WolrdToScreen(math::Vector Pos, math::Vector& ScreenPos);
+    bool WorldToScreen(math::Vector Pos, math::Vector& ScreenPos);
     math::Vector VectorTransform(const math::Vector& in, const math::Matrix3x4& matrix);
 
     // Memory Related

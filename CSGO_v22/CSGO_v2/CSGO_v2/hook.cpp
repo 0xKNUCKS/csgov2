@@ -45,7 +45,7 @@ long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept
 		//	auto Ent = aimbot::Target.ent;
 		//	math::Vector HeadPos = Ent->getBonePosFromChache(8);
 		//	math::Vector sHeadPos = math::Vector();
-		//	if (utils::WolrdToScreen(HeadPos, sHeadPos))
+		//	if (utils::WorldToScreen(HeadPos, sHeadPos))
 		//	{
 		//		auto DisplayCenter = ImGui::GetIO().DisplaySize / 2;
 		//		Render::OutLinedCircle(sHeadPos.x, sHeadPos.y, 20, ImColor(255, 0, 0));

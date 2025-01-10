@@ -133,7 +133,7 @@ void utils::SetupConsole()
     system("echo %cd%");
 }
 
-bool utils::WolrdToScreen(math::Vector Pos, math::Vector& ScreenPos)
+bool utils::WorldToScreen(math::Vector Pos, math::Vector& ScreenPos)
 {
     const auto w = globals::game::viewMatrix._41 * Pos.x + globals::game::viewMatrix._42 * Pos.y + globals::game::viewMatrix._43 * Pos.z + globals::game::viewMatrix._44;
     if (w < 0.001f)
@@ -182,7 +182,7 @@ std::string utils::VirtualKeyToString(unsigned int virtualKey)
         break;
     }
 
-    // The rest of the buttons
+    // T
     char buff[32] = {};
     int strLen = GetKeyNameTextA(MapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC) << 16, buff, sizeof(buff));
     if (strLen <= 0) {

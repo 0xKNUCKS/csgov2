@@ -38,10 +38,10 @@ BBox gEntity::GetBoundingBox()
         pointsTransformed[i] = utils::VectorTransform(points[i], this->toWorldTransform());
     }
 
-    if (!utils::WolrdToScreen(pointsTransformed[3], bbox.flb) || !utils::WolrdToScreen(pointsTransformed[5], bbox.brt)
-        || !utils::WolrdToScreen(pointsTransformed[0], bbox.blb) || !utils::WolrdToScreen(pointsTransformed[4], bbox.frt)
-        || !utils::WolrdToScreen(pointsTransformed[2], bbox.frb) || !utils::WolrdToScreen(pointsTransformed[1], bbox.brb)
-        || !utils::WolrdToScreen(pointsTransformed[6], bbox.blt) || !utils::WolrdToScreen(pointsTransformed[7], bbox.flt))
+    if (!utils::WorldToScreen(pointsTransformed[3], bbox.flb) || !utils::WorldToScreen(pointsTransformed[5], bbox.brt)
+        || !utils::WorldToScreen(pointsTransformed[0], bbox.blb) || !utils::WorldToScreen(pointsTransformed[4], bbox.frt)
+        || !utils::WorldToScreen(pointsTransformed[2], bbox.frb) || !utils::WorldToScreen(pointsTransformed[1], bbox.brb)
+        || !utils::WorldToScreen(pointsTransformed[6], bbox.blt) || !utils::WorldToScreen(pointsTransformed[7], bbox.flt))
     {
         bbox.isValid = false;
         return bbox;

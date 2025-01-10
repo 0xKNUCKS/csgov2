@@ -1,6 +1,5 @@
 #pragma once
 #include "netvars.h"
-#include "offsets.hpp"
 #include <iostream>
 #include <vector>
 #include "math.h"
@@ -90,7 +89,6 @@ namespace offsets
     inline uintptr_t m_bIsScoped;
     inline uintptr_t deadFlag;
     inline uintptr_t m_vecVelocity;
-    constexpr ::std::ptrdiff_t dwBoneMatrix = hazedumper::netvars::m_dwBoneMatrix;
 }
 
 // fuck this shit idek wtf is this, pasted from NEPS. sad.

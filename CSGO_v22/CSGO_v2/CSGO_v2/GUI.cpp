@@ -334,6 +334,7 @@ void gui::Render() noexcept
 			{
 				ui::BeginGroup(ImVec2(270, 170), "General");
 
+				ui::HotkeySelector(cfg.aimbot.Key);
 				ImGui::Checkbox("Enabled", &cfg.aimbot.Enabled);
 				ImGui::Checkbox("Silent", &cfg.aimbot.Silent);
 				ImGui::SliderFloat("##FOVval", &cfg.aimbot.FOV, 0, 180, "FOV %.1f");

@@ -23,7 +23,7 @@ void aimbot::Run(CUserCmd* cmd)
 	if (!cfg.aimbot.Enabled)
 		return;
 
-	if (!GetAsyncKeyState(cfg.aimbot.Key))
+	if (!GetAsyncKeyState(cfg.aimbot.Key.virtualKey))
 		return;
 
 	if (!globals::g_interfaces.Engine->IsInGame())

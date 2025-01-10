@@ -3,12 +3,24 @@
 #include "drawing.h"
 #include "ESP.h"
 
+struct Hotkey {
+	unsigned int virtualKey = 0x0;
+	bool searching = false;
+	std::string label = "None";
+
+	Hotkey(unsigned int key) {
+		virtualKey = key;
+		label = utils::VirtualKeyToString(this->virtualKey);
+	}
+};
+
 class Config
 {
 public:
+
 	struct Aimbot
 	{
-		unsigned int Key = VK_XBUTTON1;
+		Hotkey Key = Hotkey(VK_XBUTTON1);
 		bool Enabled = false;
 		bool Silent = false;
 		float FOV = 10.0f;

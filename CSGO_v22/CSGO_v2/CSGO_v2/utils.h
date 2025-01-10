@@ -6,15 +6,18 @@
 
 namespace utils
 {
+    // Internal System Related
     std::string RandomString(const int len);
     std::string GetGameSumHashMD5();
     const char* GetFileMD5(const char* file);
     bool CheckVersion(const char* MD5Hash);
     void SetupConsole();
-    float SlideVal(float curVal, float Max, float fraction);
+    std::string VirtualKeyToString(unsigned int virtualKey);
 
+    // Game Related
     bool WolrdToScreen(math::Vector Pos, math::Vector& ScreenPos);
     math::Vector VectorTransform(const math::Vector& in, const math::Matrix3x4& matrix);
 
+    // Memory Related
     std::uint8_t* PatternScan(void* module, const char* signature);
 }

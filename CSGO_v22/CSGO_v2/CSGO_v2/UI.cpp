@@ -29,6 +29,31 @@ void ui::HelpMarker(const char* desc, bool sameLine)
 	}
 }
 
+void ui::HotkeySelector(Hotkey& hotKey)
+{
+    if (ImGui::Button(hotKey.label.c_str(), ImVec2(70, 0))) {
+        hotKey.searching = true;
+    }
+
+    if (hotKey.searching) {
+        hotKey.label = "...";
+
+        for (unsigned int i = 0x01; i <= 0xFE; i++) {
+            if (GetAsyncKeyState(i) & 0x8000) {
+                hotKey.searching = false; // The tressure was found...
+
+                // Only set it if its not canceling the operation
+                if (i != VK_ESCAPE) {
+                    hotKey.virtualKey = i;
+                }
+
+                hotKey.label = utils::VirtualKeyToString(hotKey.virtualKey);
+                break;
+            }
+        }
+    }
+}
+
 static ImVector<ImRect> s_GroupPanelLabelStack;
 
 void ui::BeginOutlineGroup(const char* name, const ImVec2& size)

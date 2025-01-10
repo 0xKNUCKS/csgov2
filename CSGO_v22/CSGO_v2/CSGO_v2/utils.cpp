@@ -133,14 +133,6 @@ void utils::SetupConsole()
     system("echo %cd%");
 }
 
-float utils::SlideVal(float curVal, float Max, float fraction)
-{
-    float delta = Max - curVal;
-    fraction = std::clamp(fraction, 0.0f, 1.0f);
-    delta *= fraction;
-    return curVal + delta;
-}
-
 bool utils::WolrdToScreen(math::Vector Pos, math::Vector& ScreenPos)
 {
     const auto w = globals::game::viewMatrix._41 * Pos.x + globals::game::viewMatrix._42 * Pos.y + globals::game::viewMatrix._43 * Pos.z + globals::game::viewMatrix._44;
@@ -162,6 +154,41 @@ math::Vector utils::VectorTransform(const math::Vector& in, const math::Matrix3x
     out.y = in.dotProduct(math::Vector(matrix.m[1][0], matrix.m[1][1], matrix.m[1][2])) + matrix.m[1][3];
     out.z = in.dotProduct(math::Vector(matrix.m[2][0], matrix.m[2][1], matrix.m[2][2])) + matrix.m[2][3];
     return out;
+}
+
+std::string utils::VirtualKeyToString(unsigned int virtualKey)
+{
+    // Not all buttons are registered, so i have to do some manually.
+    switch (virtualKey)
+    {
+    // Mouse Buttons
+    case VK_LBUTTON: return "LMB";
+    case VK_RBUTTON: return "RMB";
+    case VK_XBUTTON1: return "XMB1";
+    case VK_XBUTTON2: return "XMB2";
+    case VK_SCROLL: return "Scroll";
+    // Side buttons
+    case VK_INSERT: return "Insert";
+    case VK_HOME: return "Home";
+    case VK_PRIOR: return "Page Up";
+    case VK_DELETE: return "Delete";
+    case VK_END: return "End";
+    case VK_NEXT: return "Page Down";
+    case VK_LEFT: return "Left Arrow";
+    case VK_RIGHT: return "Right Arrow";
+    case VK_UP: return "Up Arrow";
+    case VK_DOWN: return "Down Arrow";
+    default:
+        break;
+    }
+
+    // The rest of the buttons
+    char buff[32] = {};
+    int strLen = GetKeyNameTextA(MapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC) << 16, buff, sizeof(buff));
+    if (strLen <= 0) {
+        return std::format("0x{:X}", virtualKey); // just return the hex code of it if its not registered.
+    }
+    return std::string(buff, strLen);
 }
 
 // Pasted

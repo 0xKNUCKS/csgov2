@@ -200,7 +200,6 @@
     <ClCompile Include="UI.cpp" />
     <ClCompile Include="UserCmd.cpp" />
     <ClCompile Include="utils.cpp" />
-    <ClCompile Include="VARS.cpp" />
     <ClCompile Include="VMT.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -239,18 +238,15 @@
     <ClInclude Include="Input.h" />
     <ClInclude Include="localplayer.h" />
     <ClInclude Include="mem.h" />
-    <ClInclude Include="includes.h" />
     <ClInclude Include="interface.h" />
     <ClInclude Include="math.h" />
     <ClInclude Include="Misc.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="netvars.h" />
-    <ClInclude Include="offsets.hpp" />
     <ClInclude Include="Pad.h" />
     <ClInclude Include="UI.h" />
     <ClInclude Include="UserCmd.h" />
     <ClInclude Include="utils.h" />
-    <ClInclude Include="VARS.h" />
     <ClInclude Include="ViewSetup.h" />
     <ClInclude Include="VirtualMethod.h" />
     <ClInclude Include="VMT.h" />

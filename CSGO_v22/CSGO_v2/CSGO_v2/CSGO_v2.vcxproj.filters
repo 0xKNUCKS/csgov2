@@ -5,10 +5,6 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
-    </Filter>
     <Filter Include="SDK">
       <UniqueIdentifier>{497471be-f833-4aa6-9ba0-15f5ae983d21}</UniqueIdentifier>
     </Filter>
@@ -32,10 +28,6 @@
     </Filter>
     <Filter Include="lib\Math">
       <UniqueIdentifier>{998ddd2a-74fa-46f7-b2a5-aa4e6bf7f417}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lib\Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
     <Filter Include="lib\Memory">
       <UniqueIdentifier>{a702decc-45c1-4fb7-a4ff-406326c42218}</UniqueIdentifier>
@@ -119,9 +111,6 @@
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="VARS.cpp">
-      <Filter>lib\Resource Files</Filter>
     </ClCompile>
     <ClCompile Include="interface.cpp">
       <Filter>SDK\interface</Filter>
@@ -224,15 +213,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="offsets.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="includes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="VARS.h">
-      <Filter>lib\Resource Files</Filter>
-    </ClInclude>
     <ClInclude Include="interface.h">
       <Filter>SDK\interface</Filter>
     </ClInclude>

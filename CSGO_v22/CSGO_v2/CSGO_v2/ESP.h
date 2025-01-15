@@ -8,6 +8,7 @@ namespace ESP
 	void DrawBoundingRect(BBox bbox, bool filled);
 	void DrawBoundingBox(BBox bbox);
 	void DrawHealthBar(BBox bbox, int health);
+	void DrawName(BBox bbox, std::string name);
 
 	enum eBoxType : int
 	{

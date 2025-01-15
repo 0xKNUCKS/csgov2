@@ -332,7 +332,7 @@ void gui::Render() noexcept
 		{
 			if (ImGui::BeginTabItem("Aim"))
 			{
-				ui::BeginGroup(ImVec2(270, 170), "General");
+				ui::BeginGroup(ImVec2(270, 175), "General");
 
 				ui::HotkeySelector(cfg.aimbot.Key);
 				ImGui::Checkbox("Enabled", &cfg.aimbot.Enabled);
@@ -360,16 +360,18 @@ void gui::Render() noexcept
 
 			if (ImGui::BeginTabItem("Visuals"))
 			{
-				ui::BeginGroup(ImVec2(270, 150), "Player");
+				ui::BeginGroup(ImVec2(270, 195), "Player");
 				ImGui::Checkbox("Enabled", &cfg.visuals.Enabled);
 				ImGui::Checkbox("Bounding Box", &cfg.visuals.esp.BoudningBox); ImGui::SameLine();
 
 				ImGui::PushItemWidth(270 * 0.3);
-				ImGui::Combo("##TailThcikness", &cfg.visuals.esp.boxType, "Outlined\0Filled\0Box3d\0Corners\0");
+				ImGui::Combo("##ESPboxType", &cfg.visuals.esp.boxType, "Outlined\0Filled\0Box3d\0Corners\0");
 				ImGui::PopItemWidth();
 				
 				ImGui::Checkbox("Health Bar", &cfg.visuals.esp.HealthBar);
 				ImGui::Checkbox("Snap Lines", &cfg.visuals.esp.Lines);
+				ImGui::Checkbox("Display Name", &cfg.visuals.esp.Name);
+				ImGui::Checkbox("Show Dormant", &cfg.visuals.esp.Dormant); ui::HelpMarker("Show players that are not updated by the server. (kinda useless)");
 				ImGui::Checkbox("Show Friendly", &cfg.visuals.Friendly);
 
 				ui::EndGroup();

@@ -186,7 +186,7 @@ std::string utils::VirtualKeyToString(unsigned int virtualKey)
     char buff[32] = {};
     int strLen = GetKeyNameTextA(MapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC) << 16, buff, sizeof(buff));
     if (strLen <= 0) {
-        return std::format("0x{:X}", virtualKey); // just return the hex code of it if its not registered.
+        return std::format("0x{:X}", virtualKey); // just return the hex code of it if its not registered at all.
     }
     return std::string(buff, strLen);
 }

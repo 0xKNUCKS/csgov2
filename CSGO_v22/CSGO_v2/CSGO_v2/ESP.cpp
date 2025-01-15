@@ -19,7 +19,9 @@ void ESP::Render()
 	{
 		auto ent = globals::g_interfaces.ClientEntity->GetClientEntity(i);
 
-		if (!ent->isValidState() || (ent->isTeammate() && !cfg.visuals.Friendly))
+		if (!ent->isValidState() ||
+			(ent->isTeammate() && !cfg.visuals.Friendly) ||
+			(ent->isDormant() && !cfg.visuals.esp.Dormant))
 			continue;
 
 		// TODO: Use Skeletons to define bounds (and use getRenderOrgin for better positions)
@@ -30,6 +32,12 @@ void ESP::Render()
 
 		if (cfg.visuals.esp.Lines)
 			DrawLine(bbox);
+
+		if (cfg.visuals.esp.Name)
+			DrawName(bbox, ent->getName());
+
+		if (cfg.visuals.esp.HealthBar)
+			DrawHealthBar(bbox, ent->health());
 
 		if (cfg.visuals.esp.BoudningBox) {
 			switch ((eBoxType)cfg.visuals.esp.boxType)
@@ -47,9 +55,7 @@ void ESP::Render()
 				break;
 			}
 		}
-
-		if (cfg.visuals.esp.HealthBar)
-			DrawHealthBar(bbox, ent->health());
+	
 	}
 }
 
@@ -98,4 +104,12 @@ void ESP::DrawHealthBar(BBox bbox, int health)
 
 	Render::FilledRect(BarPos.x, BarPos.y, 2, bbox.h, ImColor(0, 0, 0)); // black bg bar
 	Render::FilledRect(BarPos.x, BarPos.y, 2, BarHeight, ImColor(0, 255, 0)); // green health bar
+}
+
+void ESP::DrawName(BBox bbox, std::string name)
+{
+	ImVec2 nameSize = ImGui::CalcTextSize(name.c_str());
+	math::Vector namePos = math::Vector(bbox.topLeft.x + bbox.w / 2 - nameSize.x/2, bbox.topLeft.y);
+
+	Render::OutLinedText(name.c_str(), namePos.x, namePos.y, ImGui::GetBackgroundDrawList());
 }

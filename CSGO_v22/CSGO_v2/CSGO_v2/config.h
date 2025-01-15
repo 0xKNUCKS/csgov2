@@ -41,6 +41,8 @@ public:
 			bool BoudningBox = false;
 			bool Skeleton = false;
 			bool HealthBar = false;
+			bool Name = false;
+			bool Dormant = false;
 			int boxType = 0; // eBoxType
 			ImColor color = ImColor(255,255,255);
 		} esp;

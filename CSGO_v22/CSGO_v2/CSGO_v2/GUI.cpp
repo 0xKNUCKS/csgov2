@@ -360,7 +360,7 @@ void gui::Render() noexcept
 
 			if (ImGui::BeginTabItem("Visuals"))
 			{
-				ui::BeginGroup(ImVec2(270, 195), "Player");
+				ui::BeginGroup(ImVec2(270, 220), "Player");
 				ImGui::Checkbox("Enabled", &cfg.visuals.Enabled);
 				ImGui::Checkbox("Bounding Box", &cfg.visuals.esp.BoudningBox); ImGui::SameLine();
 
@@ -368,6 +368,7 @@ void gui::Render() noexcept
 				ImGui::Combo("##ESPboxType", &cfg.visuals.esp.boxType, "Outlined\0Filled\0Box3d\0Corners\0");
 				ImGui::PopItemWidth();
 				
+				ImGui::Checkbox("Show Skeleton", &cfg.visuals.esp.Skeleton);
 				ImGui::Checkbox("Health Bar", &cfg.visuals.esp.HealthBar);
 				ImGui::Checkbox("Snap Lines", &cfg.visuals.esp.Lines);
 				ImGui::Checkbox("Display Name", &cfg.visuals.esp.Name);

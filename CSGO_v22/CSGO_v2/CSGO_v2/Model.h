@@ -45,43 +45,43 @@ struct model_t {
 	math::Vector mins, maxs;
 };
 
-// bones
 struct mstudiobone_t
 {
-	int					sznameindex;
-	inline const char* const pszName(void) const { return ((const char*)this) + sznameindex; }
-	int		 			parent;		// parent bone
-	int					bonecontroller[6];	// bone controller index, -1 == none
+    //DECLARE_BYTESWAP_DATADESC(); idk wtf is that but okay, hopefully not important.
+	int sznameindex;
+	inline char* const pszName(void) const { return ((char*)this) + sznameindex; }
+	int	parent;
 	PAD(152)
-	int					flags;
+	int flags;
+	PAD(52)
 };
 
 struct studiohdr_t
 {
-	int					id;
-	int					version;
+    int                    id;
+    int                    version;
 
-	int				checksum;		// this has to be the same in the phy and vtx files to load!
+    int                checksum;        // this has to be the same in the phy and vtx files to load!
 
-	char				name[64];
+    char                name[64];
 
-	int					length;
+    int                    length;
 
-	math::Vector				eyeposition;	// ideal eye position
+    math::Vector                eyeposition;    // ideal eye position
 
-	math::Vector				illumposition;	// illumination center
+    math::Vector                illumposition;    // illumination center
 
-	math::Vector				hull_min;		// ideal movement hull size
-	math::Vector				hull_max;
+    math::Vector                hull_min;        // ideal movement hull size
+    math::Vector                hull_max;
 
-	math::Vector				view_bbmin;		// clipping bounding box
-	math::Vector				view_bbmax;
+    math::Vector                view_bbmin;        // clipping bounding box
+    math::Vector                view_bbmax;
 
-	int					flags;
+    int                    flags;
 
-	int					numbones;			// bones
-	int					boneindex;
-	inline const mstudiobone_t* pBone(int i) const { return (i >= 0 && i < numbones) ? (mstudiobone_t*)(((uintptr_t*)this) + boneindex) + i : nullptr; };
+    int                    numbones;            // bones
+    int                    boneindex;
+    inline const mstudiobone_t* pBone(int i) const { return i >= 0 && i < numbones ? reinterpret_cast<mstudiobone_t*>(std::uintptr_t(this) + boneindex) + i : nullptr; };
 };
 
 struct IVModelInfo

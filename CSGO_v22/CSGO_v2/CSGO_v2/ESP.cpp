@@ -30,6 +30,9 @@ void ESP::Render()
 		if (!bbox.isValid)
 			continue;
 
+		if (cfg.visuals.esp.Skeleton)
+			DrawSkeleton(ent);
+
 		if (cfg.visuals.esp.Lines)
 			DrawLine(bbox);
 
@@ -112,4 +115,33 @@ void ESP::DrawName(BBox bbox, std::string name)
 	math::Vector namePos = math::Vector(bbox.topLeft.x + bbox.w / 2 - nameSize.x/2, bbox.topLeft.y);
 
 	Render::OutLinedText(name.c_str(), namePos.x, namePos.y, ImGui::GetBackgroundDrawList());
+}
+
+void ESP::DrawSkeleton(gEntity* entity)
+{
+	auto model = entity->getModel();
+	if (!model)
+		return;
+
+	auto studioHDR = globals::g_interfaces.ModelInfo->GetStudioModel(model);
+	if (!studioHDR)
+		return;
+
+	for (int i = 0; i < studioHDR->numbones; i++) {
+		auto bone = studioHDR->pBone(i);
+
+		if (!bone || !(bone->flags & BONE_USED_BY_HITBOX) || bone->parent == -1)
+			continue;
+
+		math::Vector childBone = entity->getBonePosFromChache(i);
+		math::Vector parentBone = entity->getBonePosFromChache(bone->parent);
+
+		math::Vector childScreenPos, parentScreenPos;
+		if (!utils::WorldToScreen(childBone, childScreenPos) ||
+			!utils::WorldToScreen(parentBone, parentScreenPos))
+			continue;
+
+		Render::Line(childScreenPos.x, childScreenPos.y,
+					parentScreenPos.x, parentScreenPos.y);
+	}
 }

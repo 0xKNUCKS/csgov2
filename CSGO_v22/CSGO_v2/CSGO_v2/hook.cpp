@@ -40,18 +40,6 @@ long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept
 		auto DispSize = ImGui::GetIO().DisplaySize;
 		float r = cfg.aimbot.FOV / globals::camFOV * DispSize.x / 2;
 		Render::OutLinedCircle(DispSize.x / 2, DispSize.y / 2, r);
-
-		//if (aimbot::Target.ent) {
-		//	auto Ent = aimbot::Target.ent;
-		//	math::Vector HeadPos = Ent->getBonePosFromChache(8);
-		//	math::Vector sHeadPos = math::Vector();
-		//	if (utils::WorldToScreen(HeadPos, sHeadPos))
-		//	{
-		//		auto DisplayCenter = ImGui::GetIO().DisplaySize / 2;
-		//		Render::OutLinedCircle(sHeadPos.x, sHeadPos.y, 20, ImColor(255, 0, 0));
-		//		Render::OutLinedText(std::format("Target's name: {}\nTarget's Index: {}\nTarget's FOV: {}\nDistance: {}", Ent->getName(), Ent-/>index(), /aimbot::Target.fov, aimbot::Target.distance).c_str(), DisplayCenter.x, DisplayCenter.y, ImGui::GetBackgroundDrawList(), /ImColor(255, 255, /255));
-		//	}
-		//}
 	}
 
 	// Render the ESP
@@ -142,13 +130,6 @@ void __stdcall hkCreateMove(int sequence_number, float input_sample_frametime, b
 	aimbot::Run(cmd);
 	misc::BunnyHop(cmd);
 	globals::g_cmd = cmd;
-
-	// dont repeat ticks
-	if (lastTick != cmd->tick_count)
-	{
-		//std::cout << "AimDirection.x: " << cmd->aimdirection.x << "\nAimDirection.y: " << cmd->aimdirection.x << std::endl;
-		//std::cout << "cmd->mousedx: " << cmd->mousedx << std::endl;
-	}
 
 	lastTick = cmd->tick_count;
 

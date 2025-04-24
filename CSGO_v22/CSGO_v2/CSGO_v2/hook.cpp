@@ -42,6 +42,21 @@ long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept
 		Render::OutLinedCircle(DispSize.x / 2, DispSize.y / 2, r);
 	}
 
+	// Render movement direction indicators
+	if (LocalPlayer.Get() && cfg.misc.movement.BunnyHop) {
+		auto DispSize = ImGui::GetIO().DisplaySize;
+		auto centerX = DispSize.x / 2;
+		auto centerY = DispSize.y / 2;
+		
+		// Get player velocity and origin
+		auto velocity = LocalPlayer->getVelocity();
+		auto origin = LocalPlayer->getAbsOrigin();
+		float speed = velocity.length2D();
+		
+		// Draw speed indicator
+		Render::OutLinedText(std::format("Speed: {:.1f}", speed).c_str(), centerX - 50, centerY - 100, ImGui::GetBackgroundDrawList(), ImColor(255, 255, 255, 255));
+	}
+
 	// Render the ESP
 	ESP::Render();
 

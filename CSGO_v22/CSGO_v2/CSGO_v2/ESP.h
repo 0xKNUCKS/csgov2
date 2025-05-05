@@ -11,6 +11,8 @@ namespace ESP
 	void DrawName(BBox bbox, std::string name);
 	void DrawSkeleton(gEntity* entity);
 
+	inline float baseOpacity = 1.f;
+
 	enum eBoxType : int
 	{
 		Outlined,

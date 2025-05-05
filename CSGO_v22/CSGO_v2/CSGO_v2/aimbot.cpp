@@ -38,7 +38,8 @@ void aimbot::Run(CUserCmd* cmd)
 	{
 		auto ent = globals::g_interfaces.ClientEntity->GetClientEntity(i);
 
-		if (!ent || !ent->isValidState() || (ent->isTeammate() && !cfg.aimbot.FriendlyFire))
+		if (!ent || !ent->isValidState() || ent->isDormant() ||
+			(ent->isTeammate() && !cfg.aimbot.FriendlyFire))
 			continue;
 
 		math::Vector targetPos = ent->getBonePosFromChache(8); // Assume bone index 8 is the head

@@ -16,64 +16,51 @@ BBox gEntity::GetBoundingBox()
 {
     BBox bbox;
 
-    // Getting the bounding box's min and max
-    math::Vector min, max;
+    // Getting the entity's orgin and model bounds
+	math::Vector origin = this->getRenderOrigin();
     auto model = this->getModel();
+    math::Vector min, max;
     min = model->mins; max = model->maxs;
 
-    math::Vector points[] = {
-        math::Vector(min.x, min.y, min.z),
-        math::Vector(min.x, max.y, min.z),
-        math::Vector(max.x, max.y, min.z),
-        math::Vector(max.x, min.y, min.z),
-        math::Vector(max.x, max.y, max.z),
-        math::Vector(min.x, max.y, max.z),
-        math::Vector(min.x, min.y, max.z),
-        math::Vector(max.x, min.y, max.z)
-    };
+    math::Vector headPos = this->getBonePosFromChache(8);
+    math::Vector top = { origin.x, origin.y, headPos.z + 4.f };
+    math::Vector bottom = { origin.x, origin.y, origin.z - 4.f };
 
-    math::Vector pointsTransformed[8];
-    for (int i = 0; i < 8; i++)
-    {
-        pointsTransformed[i] = utils::VectorTransform(points[i], this->toWorldTransform());
-    }
-
-    if (!utils::WorldToScreen(pointsTransformed[3], bbox.flb) || !utils::WorldToScreen(pointsTransformed[5], bbox.brt)
-        || !utils::WorldToScreen(pointsTransformed[0], bbox.blb) || !utils::WorldToScreen(pointsTransformed[4], bbox.frt)
-        || !utils::WorldToScreen(pointsTransformed[2], bbox.frb) || !utils::WorldToScreen(pointsTransformed[1], bbox.brb)
-        || !utils::WorldToScreen(pointsTransformed[6], bbox.blt) || !utils::WorldToScreen(pointsTransformed[7], bbox.flt))
-    {
+    math::Vector screenTop, screenBottom;
+    if (!utils::WorldToScreen(top, screenTop) ||
+        !utils::WorldToScreen(bottom, screenBottom)) {
         bbox.isValid = false;
         return bbox;
     }
 
-    math::Vector arr[] = { bbox.flb, bbox.brt, bbox.blb, bbox.frt, bbox.frb, bbox.brb, bbox.blt, bbox.flt };
+	float height = screenBottom.y - screenTop.y;
+    float width = height / globals::aspectRatio;
 
-    float left = bbox.flb.x;	// left
-    float top = bbox.flb.y;		// top
-    float right = bbox.flb.x;	// right
-    float bottom = bbox.flb.y;	// bottom
+    // Calculate box position
+    float left = screenBottom.x - (width / 2.0f);
+    float right = screenBottom.x + (width / 2.0f);
+    float topY = screenTop.y;
+    float bottomY = screenBottom.y;
 
-    for (int i = 0; i < 8; i++)
-    {
-        if (left > arr[i].x)
-            left = arr[i].x;
-        if (top < arr[i].y)
-            top = arr[i].y;
-        if (right < arr[i].x)
-            right = arr[i].x;
-        if (bottom > arr[i].y)
-            bottom = arr[i].y;
-    }
+    // Store 2D points (maintaining compatibility with the original function)
+    bbox.topLeft = { left, topY };
+    bbox.topRight = { right, topY };
+    bbox.bottomLeft = { left, bottomY };
+    bbox.bottomRight = { right, bottomY };
 
-    bbox.h = bottom - top;	// height
-    bbox.w = -bbox.h / ceilf(globals::aspectRatio);
+    // Set dimensions
+    bbox.h = height;
+    bbox.w = width;
 
-    // Store 2D points
-    bbox.topLeft = { left, top };
-    bbox.topRight = { right, top };
-    bbox.bottomLeft = { left, bottom };
-    bbox.bottomRight = { right, bottom };
+    // For compatibility with the original function's return points
+    bbox.flb = screenBottom;  // front lower bottom
+    bbox.brt = screenTop;     // back right top
+    bbox.blb = { left, bottomY };  // back left bottom
+    bbox.frt = { right, topY };    // front right top
+    bbox.frb = { right, bottomY }; // front right bottom
+    bbox.brb = { right, bottomY }; // back right bottom
+    bbox.blt = { left, topY };     // back left top
+    bbox.flt = { left, topY };     // front left top
 
     bbox.isValid = true;
     return bbox;

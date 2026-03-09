@@ -14,5 +14,6 @@ namespace aimbot
 {
 	inline cTarget Target;
 	void Run(CUserCmd* cmd);
+	void RunInternal(CUserCmd* cmd);
 };
 

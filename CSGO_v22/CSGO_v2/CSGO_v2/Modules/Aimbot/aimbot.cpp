@@ -83,13 +83,22 @@ static bool wasShooting = false;
 
 void aimbot::Run(CUserCmd* cmd)
 {
+	__try {
+		aimbot::RunInternal(cmd);
+	} __except (EXCEPTION_EXECUTE_HANDLER) {
+		// Silently catch crashes during map transitions / entity invalidation
+	}
+}
+
+void aimbot::RunInternal(CUserCmd* cmd)
+{
 	if (!cfg.aimbot.Enabled)
 		return;
 
 	if (!GetAsyncKeyState(cfg.aimbot.Key.virtualKey))
 		return;
 
-	if (!globals::g_interfaces.Engine->IsInGame() || !LocalPlayer.Get())
+	if (!globals::g_interfaces.Engine->IsInGame() || !LocalPlayer.Get() || !hooks::GlobalVars)
 		return;
 
 	// Track shot count for RCS start bullet
@@ -108,7 +117,10 @@ void aimbot::Run(CUserCmd* cmd)
 	math::Vector bestAimAngles = {};
 	Target.ent = nullptr;
 
-	math::Vector localPos = LocalPlayer->getEyePosition();
+	// Use netvar-based eye position (safe during map transitions, no virtual call)
+	auto viewOffset = *(math::Vector*)((uintptr_t)LocalPlayer.Get() + offsets::m_vecViewOffset);
+	const auto& origin = LocalPlayer->getAbsOrigin();
+	math::Vector localPos = { origin.x + viewOffset.x, origin.y + viewOffset.y, origin.z + viewOffset.z };
 	math::Vector viewAngles = globals::g_interfaces.Engine->GetViewAngles();
 
 	int boneIndex = GetBoneIndex(cfg.aimbot.AimBone);

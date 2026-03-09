@@ -127,7 +127,7 @@ long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice)
 	}
 	catch (...) {
 		CrashLog::Write("[EndScene] C++ exception caught");
-		Log::Fatal("Hooks", "Exception in hkEndScene — overlay disabled");
+		Log::Fatal("Hooks", "Exception in hkEndScene - overlay disabled");
 		Log::DumpToFile("csgo_v2_errors.log");
 	}
 
@@ -299,7 +299,7 @@ void __stdcall hkLockCursor()
 	hooks::SurfaceHk.callOriginal<void, index::Surface::LockCursor>();
 }
 
-// Process-wide crash handler — catches crashes on ANY thread (including game render thread)
+// Process-wide crash handler - catches crashes on ANY thread (including game render thread)
 static LONG WINAPI GlobalCrashHandler(EXCEPTION_POINTERS* ep)
 {
 	// Filter out non-fatal exceptions (breakpoints, first-chance, etc.)

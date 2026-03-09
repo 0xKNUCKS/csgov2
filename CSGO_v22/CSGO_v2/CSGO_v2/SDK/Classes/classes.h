@@ -1,5 +1,5 @@
 #pragma once
-// Backward compatibility — includes all SDK headers that were originally in this file
+// Backward compatibility - includes all SDK headers that were originally in this file
 
 #include <Windows.h>
 #include <iostream>

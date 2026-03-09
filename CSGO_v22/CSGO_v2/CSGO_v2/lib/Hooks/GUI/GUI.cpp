@@ -272,20 +272,18 @@ void gui::EndFrame() noexcept
 // render our menu
 void gui::Render() noexcept
 {
-
-#ifdef _DEBUG
-	ImGui::Begin("Style Editor");
-	ImGui::ShowStyleEditor();
-	ImGui::End();
-#endif // _DEBUG
-
 	static Animation animPopUp(0.5f, EaseOutBack, EaseOutSine);
 	animPopUp.Update();
 	animPopUp.Switch(gui::bOpen);
 
-	static Animation windowFade(0.4f, EaseOutQuart, Linear);
+	static Animation windowFade(0.5f, EaseOutQuart, Linear);
 	windowFade.Update();
 	windowFade.Switch(gui::bOpen);
+
+	// Don't render anything when fully closed (no ghost windows)
+	bool isAnimating = animPopUp.getValue() > 0.01f || windowFade.getValue() > 0.01f;
+	if (!gui::bOpen && !isAnimating)
+		return;
 
 	auto xWindowPadding = ImGui::GetStyle().WindowPadding.x * 3;
 	auto xWindowSize = (270 * 2) + xWindowPadding; // 270 because thats the width size i use for my groups, * 2 for 2 collums
@@ -296,11 +294,12 @@ void gui::Render() noexcept
 
 	ImGui::SetNextWindowPos(windowPos, ImGuiCond_Once); // Only once
 
+	float savedAlpha = ImGui::GetStyle().Alpha;
+	ImGui::GetStyle().Alpha = windowFade.getValue();
+
 	std::string playerName = LocalPlayer.Get() ? LocalPlayer->getName() : "Player";
 	ImGui::Begin(std::format("cockbalt.solutions - Welcome {}!", playerName).c_str(), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
 	{
-		ImGui::GetStyle().Alpha = windowFade.getValue();
-
 		// if the windowPos is updating
 		bool isUpdating = false;
 
@@ -309,7 +308,6 @@ void gui::Render() noexcept
 			// reset the position back after changing it for animation
 			ImGui::SetWindowPos(windowPos);
 			windowPos = ImGui::GetWindowPos();
-			ImGui::GetStyle().Alpha = 0.f;
 			isUpdating = true;
 		}
 		else if (animPopUp.getValue() == 1.f) { // if the menu is up, and the animation is also finished
@@ -484,12 +482,20 @@ void gui::Render() noexcept
 	}
 	ImGui::End();
 
-	if (cfg.settings.ShowDebug) {
+#ifdef _DEBUG
+	if (gui::bOpen) {
+		ImGui::Begin("Style Editor");
+		ImGui::ShowStyleEditor();
+		ImGui::End();
+	}
+#endif // _DEBUG
+
+	if (cfg.settings.ShowDebug && gui::bOpen) {
 		gui::DebugWindow();
 	}
 
-	// Restore alpha after all windows are drawn
-	ImGui::GetStyle().Alpha = 1.f;
+	// Restore alpha to what it was before we modified it
+	ImGui::GetStyle().Alpha = savedAlpha;
 }
 
 void gui::DebugWindow() noexcept

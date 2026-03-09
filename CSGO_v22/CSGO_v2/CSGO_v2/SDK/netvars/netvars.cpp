@@ -60,7 +60,7 @@ bool NetVars_t::Init()
     auto findAndValidate = [&](const char* table, const char* name) -> uintptr_t {
         intptr_t offset = globals::g_NetVars.FindOffset(table, name);
         if (offset == 0) {
-            Log::Err("NetVars", "Failed to find '{}.{}' — using 0", table, name);
+            Log::Err("NetVars", "Failed to find '{}.{}' - using 0", table, name);
             allOk = false;
         }
         return (uintptr_t)offset;
@@ -75,9 +75,9 @@ bool NetVars_t::Init()
     offsets::m_vecVelocity = findAndValidate("DT_BasePlayer", "m_vecVelocity[0]");
 
     if (!allOk)
-        Log::Err("NetVars", "Some netvar offsets failed to resolve — features may crash");
+        Log::Err("NetVars", "Some netvar offsets failed to resolve - features may crash");
 
-    // PrintNetVars dumps every single netvar in the game — very slow.
+    // PrintNetVars dumps every single netvar in the game - very slow.
     // Uncomment only when you specifically need to find netvar names/tables.
     //#ifdef _DEBUG
     //    PrintNetVars(globals::g_interfaces.BaseClient->GetAllClasses());

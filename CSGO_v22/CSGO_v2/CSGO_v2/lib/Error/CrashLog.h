@@ -6,7 +6,7 @@
 #include <Windows.h>
 
 // ============================================================
-// CrashLog — SEH-safe file logger with timestamps.
+// CrashLog - SEH-safe file logger with timestamps.
 //            No C++ objects (std::string, etc.) so it works
 //            inside __try/__except and vectored handlers.
 //            Writes to C:\Users\adama\Documents\CSGO_v2_Logs\

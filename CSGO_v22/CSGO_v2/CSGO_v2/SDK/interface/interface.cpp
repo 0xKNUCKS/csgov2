@@ -40,7 +40,7 @@ bool interfaces_t::init()
     Cvar =          FindInterface<ICvar>("vstdlib.dll", "VEngineCvar007");
     Surface =       FindInterface<ISurface>("vguimatsurface.dll", "VGUI_Surface031");
 
-    // Validate critical interfaces — these are required for the mod to function
+    // Validate critical interfaces - these are required for the mod to function
     struct { void* ptr; const char* name; } required[] = {
         { ClientEntity, "ClientEntity" },
         { BaseClient,   "BaseClient" },
@@ -52,16 +52,16 @@ bool interfaces_t::init()
 
     for (const auto& iface : required) {
         if (!iface.ptr) {
-            Log::Fatal("Interfaces", "Critical interface '{}' is null — cannot continue", iface.name);
+            Log::Fatal("Interfaces", "Critical interface '{}' is null - cannot continue", iface.name);
             allOk = false;
         }
     }
 
     // Non-critical: warn but don't fail
     if (!InputSystem)
-        Log::Warn("Interfaces", "InputSystem is null — some features may not work");
+        Log::Warn("Interfaces", "InputSystem is null - some features may not work");
     if (!EngineTrace)
-        Log::Warn("Interfaces", "EngineTrace is null — trace features unavailable");
+        Log::Warn("Interfaces", "EngineTrace is null - trace features unavailable");
 
     if (allOk)
         Log::Info("Interfaces", "All interfaces captured successfully");

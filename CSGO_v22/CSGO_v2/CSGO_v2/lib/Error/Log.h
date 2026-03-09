@@ -10,7 +10,7 @@
 #include "CrashLog.h"
 
 // ============================================================
-// Error — carries full context about what went wrong
+// Error - carries full context about what went wrong
 // ============================================================
 class Error
 {
@@ -70,7 +70,7 @@ private:
 
 
 // ============================================================
-// Result — wraps a success/fail outcome with an Error on failure.
+// Result - wraps a success/fail outcome with an Error on failure.
 // Use: if (!result) { /* handle result.error() */ }
 // ============================================================
 class Result
@@ -94,7 +94,7 @@ private:
 
 
 // ============================================================
-// Log — writes to debug console + collects errors for review.
+// Log - writes to debug console + collects errors for review.
 //       In Release, logging still works but goes to file only.
 // ============================================================
 namespace Log

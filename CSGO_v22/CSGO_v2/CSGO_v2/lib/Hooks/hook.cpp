@@ -16,14 +16,35 @@
 #include "imgui_impl_dx9.h"
 #include "Animation.h"
 
-// FINALLLYY FIXED IT :skull:
 void hooks::Destroy() noexcept
 {
-	// restore hooks
-	MH_DisableHook(MH_ALL_HOOKS);
+	// Restore each hookManager properly (handles both DETOUR and VMT)
+	d3dDeviceHk.restore();
+	ClientModeHk.restore();
+	BaseClientHk.restore();
+	EngineHk.restore();
+	SurfaceHk.restore();
 
-	// uninit minhook
+	// Uninit minhook after all hooks are restored
 	MH_Uninitialize();
+}
+
+// Runs on a separate thread so we don't tear down hooks while inside a hooked function
+void hooks::Unload() noexcept
+{
+	// Small delay to let the current hooked frame finish
+	Sleep(100);
+
+#ifdef _DEBUG
+	::ShowWindow(GetConsoleWindow(), SW_HIDE);
+	FreeConsole();
+#endif
+
+	hooks::Destroy();
+	gui::Destroy();
+
+	// Actually unload the DLL from the process
+	FreeLibraryAndExitThread(hooks::hModule, 0);
 }
 
 long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept
@@ -105,19 +126,10 @@ long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept
 	// End the frame
 	gui::EndFrame();
 
-	// Unload code (dosent work)
+	// Unload: spawn a thread so we don't tear down hooks while inside one
 	if (gui::bUnloaded) {
-#ifdef _DEBUG
-		// Free the console because one is created when using debug build
-		::ShowWindow(GetConsoleWindow(), SW_HIDE);
-		FreeConsole();
-#endif // _DEBUG
-
-		// Unload the hooks
-		hooks::Destroy();
-		// Unload dx and imgui etc
-		gui::Destroy();
-		// the end, now nothing is executing at all (hooks are unloaded and everything), atleast shouldnt be... (I hope there is no memory leaks here...)
+		gui::bUnloaded = false; // prevent re-entry
+		CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(hooks::Unload), nullptr, 0, nullptr);
 	}
 
 	return result;

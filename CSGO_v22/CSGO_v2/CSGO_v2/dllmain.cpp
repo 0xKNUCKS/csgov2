@@ -5,6 +5,7 @@
 #include "lib/Hooks/GUI/GUI.h"
 #include "SDK/Globals/Globals.h"
 #include "lib/utils/utils.h"
+#include "lib/Configs/config.h"
 
 /// Macros
 // Hash sum of game files to confirm the game's version
@@ -14,6 +15,9 @@
 DWORD WINAPI Main(HMODULE hModule)
 {
     while (!GetModuleHandle("serverbrowser.dll")) { Sleep(100); }
+
+    // Store hModule so the unload thread can call FreeLibraryAndExitThread
+    hooks::hModule = hModule;
 
     // Initialize game interfaces and netvars now that all game modules are loaded
     globals::g_interfaces.init();

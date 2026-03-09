@@ -37,10 +37,13 @@ namespace index
 namespace hooks
 {
 	inline bool viewRealAngles = false;
+	inline HMODULE hModule = nullptr;
+
 	// Hooking.
 	bool Setup();
 
 	void Destroy() noexcept;
+	void Unload() noexcept;
 
 	constexpr void* VirtualFunction(void* thisptr, size_t indx) noexcept
 	{

@@ -22,13 +22,16 @@ void hookManager::hook(unsigned int index, void* hookedFunction, hookType type)
 	{
 	case hookType::DETOUR:
 		this->typeUsed[hookType::DETOUR] = true;
-		if (MH_CreateHook(
-			VMT.getVirtualFunction(index),
-			hookedFunction,
-			reinterpret_cast<void**>(&ogVMT.getTable()[index])
-		) == MH_STATUS::MH_OK) {
-			if (MH_EnableHook(VMT.getVirtualFunction(index)) == MH_STATUS::MH_OK)
-				this->MH_HookedFunctions.push_back(hookedFunction);
+		{
+			void* target = VMT.getVirtualFunction(index);
+			if (MH_CreateHook(
+				target,
+				hookedFunction,
+				reinterpret_cast<void**>(&ogVMT.getTable()[index])
+			) == MH_STATUS::MH_OK) {
+				if (MH_EnableHook(target) == MH_STATUS::MH_OK)
+					this->MH_HookedFunctions.push_back(target); // store TARGET, not detour
+			}
 		}
 		break;
 	case hookType::VMT:
@@ -44,8 +47,9 @@ void hookManager::hook(unsigned int index, void* hookedFunction, hookType type)
 void hookManager::restore()
 {
 	if (this->typeUsed[hookType::DETOUR]) {
-		for (void* function : MH_HookedFunctions) {
-			MH_RemoveHook(function);
+		for (void* target : MH_HookedFunctions) {
+			MH_DisableHook(target);
+			MH_RemoveHook(target);
 		}
 	}
 

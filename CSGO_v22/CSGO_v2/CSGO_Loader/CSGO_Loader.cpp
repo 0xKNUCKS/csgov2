@@ -7,6 +7,7 @@
 #include "Process.h"
 #include "color.hpp"
 #include "utils.h"
+#include "MD5.h"
 
 // Process and DLL info.
 #define PROC_NAME "csgo.exe"
@@ -16,6 +17,19 @@
 
 // CSGO process class
 proc_t csgo(PROC_NAME, "", WIND_NAME, CLSS_NAME);
+
+// Hash a file's contents with MD5
+static std::string HashFile(const std::string& path)
+{
+    std::ifstream file(path, std::ios::binary);
+    if (!file) return "";
+    std::string contents((std::istreambuf_iterator<char>(file)),
+                          std::istreambuf_iterator<char>());
+    return md5(contents);
+}
+
+// Track last injected DLL hash
+static std::string lastInjectedHash;
 
 // Main function
 int main(void)
@@ -42,6 +56,15 @@ int main(void)
                 Sleep(3000);
                 ExitProcess(0);
             }
+        }
+
+        // Check if DLL has changed since last injection
+        std::string currentHash = HashFile(csgo.dllPath);
+        if (!currentHash.empty() && !lastInjectedHash.empty()) {
+            if (currentHash == lastInjectedHash)
+                std::cout << dye::yellow("[DLL] Same as last injection (no changes detected)\n");
+            else
+                std::cout << dye::green("[DLL] New build detected!\n");
         }
 
         // Reset process state for a fresh attempt
@@ -76,8 +99,11 @@ int main(void)
             }
         }
 
+        // Update the last injected hash
+        lastInjectedHash = currentHash;
+
         std::cout << dye::purple("\nInjection Completed!\n") << dye::yellow("Info:\n");
-        std::cout << std::format("  Dll path:  {}\n  Proc Name: {}\n  PID:       {}\n", csgo.dllPath, csgo.Name, csgo.pid);
+        std::cout << std::format("  Dll path:  {}\n  Proc Name: {}\n  PID:       {}\n  DLL MD5:   {}\n", csgo.dllPath, csgo.Name, csgo.pid, lastInjectedHash);
 
         std::cout << dye::aqua("\nPress ENTER to inject again (re-open CS:GO first)...");
         std::cin.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');

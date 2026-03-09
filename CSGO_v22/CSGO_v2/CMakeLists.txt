@@ -135,6 +135,7 @@ add_executable(CSGO_Loader
 )
 
 target_include_directories(CSGO_Loader PRIVATE CSGO_Loader)
+target_link_libraries(CSGO_Loader PRIVATE ext_md5)
 
 target_compile_definitions(CSGO_Loader PRIVATE
     WIN32

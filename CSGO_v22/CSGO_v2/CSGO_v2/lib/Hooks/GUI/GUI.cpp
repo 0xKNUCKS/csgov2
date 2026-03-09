@@ -341,22 +341,43 @@ void gui::Render() noexcept
 		{
 			if (ImGui::BeginTabItem("Aim"))
 			{
-				menu::LeftGroup("General", 6)
+				menu::LeftGroup("General", 10)
 					.Hotkey(cfg.aimbot.Key)
 					.Checkbox("Enabled", &cfg.aimbot.Enabled)
 					.Checkbox("Silent", &cfg.aimbot.Silent)
 					.Slider("FOV", &cfg.aimbot.FOV, 0, 180, "%.1f")
 					.Slider("Smooth", &cfg.aimbot.Smooth, 1, 10.0f, cfg.aimbot.Smooth > 1 ? "%.2f" : "None")
+					.Slider("Smooth X", &cfg.aimbot.SmoothX, 0.1f, 3.0f, "%.2f", "Pitch smooth multiplier")
+					.Slider("Smooth Y", &cfg.aimbot.SmoothY, 0.1f, 3.0f, "%.2f", "Yaw smooth multiplier")
 					.Checkbox("Aim At Friendly", &cfg.aimbot.FriendlyFire)
+					.Checkbox("Visibility Check", &cfg.aimbot.VisibilityCheck)
+					.Checkbox("Auto Shoot", &cfg.aimbot.AutoShoot)
 					.End();
 
-				menu::RightGroup("Visuals", 1)
+				menu::RightGroup("Target", 3)
+					.Combo("Aim Bone", &cfg.aimbot.AimBone, "Head\0Neck\0Chest\0Stomach\0")
+					.Slider("Auto Shoot FOV", &cfg.aimbot.AutoShootFov, 0.5f, 10.0f, "%.1f",
+						"How close aim must be to target to auto-fire")
 					.Checkbox("FOV Circle", &cfg.aimbot.DrawFov)
 					.End();
 
 				menu::LeftGroup("Performance", 1)
 					.SliderInt("Max Players Scan", &cfg.aimbot.MaxPlayersInFov, 2, 20, "%d",
 						"Max Amount of Players Scanned inside of the aim FOV")
+					.End();
+
+				menu::RightGroup("Recoil Control", 6)
+					.Checkbox("Enabled##RCS", &cfg.aimbot.RCS)
+					.Checkbox("Standalone", &cfg.aimbot.StandaloneRCS,
+						"RCS works even without an aimbot target")
+					.Slider("Pitch (X)", &cfg.aimbot.RCSAmountX, 0.0f, 2.0f, "%.2f",
+						"Vertical recoil compensation (2.0 = full)")
+					.Slider("Yaw (Y)", &cfg.aimbot.RCSAmountY, 0.0f, 2.0f, "%.2f",
+						"Horizontal recoil compensation (2.0 = full)")
+					.SliderInt("Start Bullet", &cfg.aimbot.RCSStartBullet, 1, 10, "%d",
+						"Start compensating after N shots")
+					.Slider("Smoothing", &cfg.aimbot.RCSSmooth, 1.0f, 10.0f, "%.1f",
+						"How smoothly to apply RCS (1 = instant)")
 					.End();
 
 				ImGui::EndTabItem();
@@ -366,13 +387,7 @@ void gui::Render() noexcept
 			{
 				menu::LeftGroup("Player", 8)
 					.Checkbox("Enabled", &cfg.visuals.Enabled)
-					.Custom([]{
-						ImGui::Checkbox("Bounding Box", &cfg.visuals.esp.BoudningBox);
-						ImGui::SameLine();
-						ImGui::PushItemWidth(menu::kColumnWidth * 0.3f);
-						ImGui::Combo("##ESPboxType", &cfg.visuals.esp.boxType, "Outlined\0Filled\0Box3d\0Corners\0");
-						ImGui::PopItemWidth();
-					})
+					.CheckboxCombo("Bounding Box", &cfg.visuals.esp.BoundingBox, "##ESPboxType", &cfg.visuals.esp.boxType, "Outlined\0Filled\0Box3d\0Corners\0")
 					.Checkbox("Show Skeleton", &cfg.visuals.esp.Skeleton)
 					.Checkbox("Health Bar", &cfg.visuals.esp.HealthBar)
 					.Checkbox("Snap Lines", &cfg.visuals.esp.Lines)
@@ -383,11 +398,11 @@ void gui::Render() noexcept
 
 				menu::RightGroup("Misc", 10)
 					.Checkbox("Third Person", &cfg.visuals.misc.ThirdPerson)
-					.Slider("Distance", &cfg.visuals.misc.TPDistance, 0.0f, 3.0f)
+					.Slider("Distance", &cfg.visuals.misc.TPDistance, 0.1f, 5.0f)
 					.Slider("Aspect Ratio", &cfg.visuals.misc.AspectRatio, 0.0f, 3.0f)
 					.Slider("Cam Fov", &cfg.visuals.misc.camFOV, 40.f, 160.0f)
 					.Checkbox("Steady Cam", &cfg.visuals.misc.SteadyCam, "Terminates the shaking effects in your Camera.")
-					.Checkbox("No Zoom", &cfg.visuals.misc.noZoon, "Eliminates the zoom effect when using Scoping.")
+					.Checkbox("No Zoom", &cfg.visuals.misc.NoZoom, "Eliminates the zoom effect when using Scoping.")
 					.Space()
 					.SubSection("View Model", [](auto& s) {
 						s.Slider("FOV", &cfg.visuals.viewmodel.ViewModelFOV, 60.f, 140.0f)

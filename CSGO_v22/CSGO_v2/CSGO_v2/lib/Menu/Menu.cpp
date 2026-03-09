@@ -125,8 +125,12 @@ void menu::Gap()
 // Layout functions — return GroupBuilder for chaining
 // =========================================================
 
+static bool s_inLeftGroup = false;
+
 menu::GroupBuilder menu::LeftGroup(const char* name, int lines)
 {
+	ImGui::BeginGroup();
+	s_inLeftGroup = true;
 	detail::BeginGroupChild(name, lines, kColumnWidth);
 	return GroupBuilder(GroupBuilder::Type::Group);
 }
@@ -134,6 +138,8 @@ menu::GroupBuilder menu::LeftGroup(const char* name, int lines)
 menu::GroupBuilder menu::RightGroup(const char* name, int lines)
 {
 	ImGui::SameLine();
+	ImGui::BeginGroup();
+	s_inLeftGroup = false;
 	detail::BeginGroupChild(name, lines, kColumnWidth);
 	return GroupBuilder(GroupBuilder::Type::Group);
 }
@@ -171,6 +177,17 @@ GB& GB::SliderInt(const char* label, int* v, int min, int max, const char* fmt, 
 GB& GB::Combo(const char* label, int* current, const char* items, const char* tooltip)
 {
 	detail::RenderCombo(label, current, items, tooltip);
+	return *this;
+}
+
+GB& GB::CheckboxCombo(const char* cbLabel, bool* v, const char* comboId, int* current, const char* items, const char* tooltip)
+{
+	ImGui::Checkbox(cbLabel, v);
+	ImGui::SameLine();
+	ImGui::PushItemWidth(menu::kColumnWidth * 0.3f);
+	ImGui::Combo(comboId, current, items);
+	ImGui::PopItemWidth();
+	if (tooltip) menu::HelpMarker(tooltip);
 	return *this;
 }
 
@@ -257,7 +274,10 @@ GB& GB::Custom(std::function<void()> fn)
 void GB::End()
 {
 	switch (type_) {
-	case Type::Group:   ImGui::EndChild(); break;
+	case Type::Group:
+		ImGui::EndChild();
+		ImGui::EndGroup();
+		break;
 	case Type::Section: menu::EndOutlineGroup(); break;
 	case Type::Inline:  break; // no-op for nested builders
 	}

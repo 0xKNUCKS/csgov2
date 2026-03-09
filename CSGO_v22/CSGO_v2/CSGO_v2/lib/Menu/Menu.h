@@ -52,6 +52,7 @@ namespace menu
 		GroupBuilder& Slider(const char* label, float* v, float min, float max, const char* fmt = "%.2f", const char* tooltip = nullptr);
 		GroupBuilder& SliderInt(const char* label, int* v, int min, int max, const char* fmt = "%d", const char* tooltip = nullptr);
 		GroupBuilder& Combo(const char* label, int* current, const char* items, const char* tooltip = nullptr);
+		GroupBuilder& CheckboxCombo(const char* cbLabel, bool* v, const char* comboId, int* current, const char* items, const char* tooltip = nullptr);
 		GroupBuilder& ColorPicker(const char* label, CfgColor& color, bool alpha = false);
 		GroupBuilder& Hotkey(::Hotkey& hotKey);
 		GroupBuilder& Text(const char* text);

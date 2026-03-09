@@ -37,6 +37,7 @@ namespace index
 namespace hooks
 {
 	inline bool viewRealAngles = false;
+	inline bool setupComplete = false; // true once Setup() finishes — hooks should no-op until then
 	inline HMODULE hModule = nullptr;
 
 	// Hooking.

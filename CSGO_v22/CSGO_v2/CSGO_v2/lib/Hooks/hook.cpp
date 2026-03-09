@@ -5,6 +5,7 @@
 #include "SDK/interface/interface.h"
 #include "lib/Hooks/GUI/GUI.h"
 #include "lib/Error/Log.h"
+#include "lib/Error/CrashLog.h"
 #include "dx9/Drawing/drawing.h"
 #include "SDK/Globals/Globals.h"
 #include "Modules/Aimbot/aimbot.h"
@@ -48,105 +49,107 @@ void hooks::Unload() noexcept
 	FreeLibraryAndExitThread(hooks::hModule, 0);
 }
 
-long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept
+long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice)
 {
 	const auto result = hooks::d3dDeviceHk.getOriginal<long, index::d3d9Device::EndScene>(pDevice)(pDevice, pDevice);
 
-	// gotta setup/init only once
-	if (!gui::init)
-		gui::SetupMenu(pDevice);
+	// Don't touch anything until hooks::Setup() has fully completed
+	if (!hooks::setupComplete)
+		return result;
 
-	// init New Frame
-	gui::NewFrame();
+	try {
+		if (!gui::init)
+			gui::SetupMenu(pDevice);
 
-	// Whatever bs u want to render here
+		gui::NewFrame();
 
-	// Dark BG behind the menu
-	static Animation animFade(0.5f, EaseInSine, Linear);
-	animFade.Update();
-	animFade.Switch(gui::bOpen);
-	Render::FilledRect(0, 0, ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y, ImColor(0.f, 0.f, 0.f, animFade.getValue(gui::baseFade)));
+		static Animation animFade(0.5f, EaseInSine, Linear);
+		animFade.Update();
+		animFade.Switch(gui::bOpen);
+		Render::FilledRect(0, 0, ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y, ImColor(0.f, 0.f, 0.f, animFade.getValue(gui::baseFade)));
 
-	// show our rendering's FPS
-	Render::OutLinedText(std::format(" [{}fps]", (int)ImGui::GetIO().Framerate).c_str(), 0, 5, ImGui::GetBackgroundDrawList());
+		Render::OutLinedText(std::format(" [{}fps]", (int)ImGui::GetIO().Framerate).c_str(), 0, 5, ImGui::GetBackgroundDrawList());
 
-	// Draw the aimbot's FOV
-	if (cfg.aimbot.DrawFov && cfg.aimbot.Enabled && LocalPlayer.Get()) {
-		auto DispSize = ImGui::GetIO().DisplaySize;
-		float r = cfg.aimbot.FOV / globals::camFOV * DispSize.x / 2;
-		Render::OutLinedCircle(DispSize.x / 2, DispSize.y / 2, r);
-	}
+		if (cfg.aimbot.DrawFov && cfg.aimbot.Enabled && LocalPlayer.Get()) {
+			auto DispSize = ImGui::GetIO().DisplaySize;
+			float r = cfg.aimbot.FOV / globals::camFOV * DispSize.x / 2;
+			Render::OutLinedCircle(DispSize.x / 2, DispSize.y / 2, r);
+		}
 
-	// Render movement direction indicators
-	if (LocalPlayer.Get() && cfg.misc.movement.BunnyHop) {
-		auto DispSize = ImGui::GetIO().DisplaySize;
-		auto centerX = DispSize.x / 2;
-		auto centerY = DispSize.y / 2;
-		
-		// Get player velocity and origin
-		auto velocity = LocalPlayer->getVelocity();
-		auto origin = LocalPlayer->getAbsOrigin();
-		float speed = velocity.length2D();
-		
-		// Draw speed indicator
-		Render::OutLinedText(std::format("Speed: {:.1f}", speed).c_str(), centerX - 50, centerY - 100, ImGui::GetBackgroundDrawList(), ImColor(255, 255, 255, 255));
-	}
+		if (LocalPlayer.Get() && cfg.misc.movement.BunnyHop) {
+			auto DispSize = ImGui::GetIO().DisplaySize;
+			auto centerX = DispSize.x / 2;
+			auto centerY = DispSize.y / 2;
 
-	// Render the ESP
-	ESP::Render();
+			auto velocity = LocalPlayer->getVelocity();
+			float speed = velocity.length2D();
 
-	// Render the gui
-	gui::Render();
+			Render::OutLinedText(std::format("Speed: {:.1f}", speed).c_str(), centerX - 50, centerY - 100, ImGui::GetBackgroundDrawList(), ImColor(255, 255, 255, 255));
+		}
 
-	// Draw the Mouse Tracer
-	if (cfg.settings.mouseTracer.Enabled && (cfg.settings.mouseTracer.AlwaysOn || gui::bOpen))
-	{
-		ImVec2 mousePos = ImGui::GetIO().MousePos;
-		static std::vector<ImVec2> mousePoints = {};
+		ESP::Render();
 
-		mousePoints.insert(mousePoints.begin(), mousePos);
-		mousePoints.resize(cfg.settings.mouseTracer.TrailLength); // limit the points to a certrain value (in a way the "length")
+		gui::Render();
 
-		for (size_t i = 0; i < mousePoints.size(); i++)
+		if (cfg.settings.mouseTracer.Enabled && (cfg.settings.mouseTracer.AlwaysOn || gui::bOpen))
 		{
-			ImVec2 Point = mousePoints[i];
-			float scale = (float)(1.0f - (float)i / (mousePoints.size() - 1));
+			ImVec2 mousePos = ImGui::GetIO().MousePos;
+			static std::vector<ImVec2> mousePoints = {};
 
-			ImVec4 FirstColor(cfg.settings.mouseTracer.Color.r, cfg.settings.mouseTracer.Color.g, cfg.settings.mouseTracer.Color.b, cfg.settings.mouseTracer.Color.a);
-			ImVec4 SecondColor(cfg.settings.mouseTracer.SecondColor.r, cfg.settings.mouseTracer.SecondColor.g, cfg.settings.mouseTracer.SecondColor.b, cfg.settings.mouseTracer.SecondColor.a);
-			ImColor FinalColor = ImColor(SecondColor + (FirstColor - SecondColor) * ImVec4(scale, scale, scale, 0));
-			FinalColor.Value.w = 0.85f * scale;
+			mousePoints.insert(mousePoints.begin(), mousePos);
+			mousePoints.resize(cfg.settings.mouseTracer.TrailLength);
 
-			if (i > 0) {
-				ImGui::GetForegroundDrawList()->AddLine(mousePoints[i - 1] - ImVec2(0.5, 0.5), mousePoints[i] - ImVec2(0.5, 0.5),
-					FinalColor, cfg.settings.mouseTracer.TrailThickness * scale);
+			if (mousePoints.size() > 1) {
+				for (size_t i = 0; i < mousePoints.size(); i++)
+				{
+					float scale = 1.0f - (float)i / (float)(mousePoints.size() - 1);
+
+					ImVec4 FirstColor(cfg.settings.mouseTracer.Color.r, cfg.settings.mouseTracer.Color.g, cfg.settings.mouseTracer.Color.b, cfg.settings.mouseTracer.Color.a);
+					ImVec4 SecondColor(cfg.settings.mouseTracer.SecondColor.r, cfg.settings.mouseTracer.SecondColor.g, cfg.settings.mouseTracer.SecondColor.b, cfg.settings.mouseTracer.SecondColor.a);
+					ImColor FinalColor = ImColor(SecondColor + (FirstColor - SecondColor) * ImVec4(scale, scale, scale, 0));
+					FinalColor.Value.w = 0.85f * scale;
+
+					if (i > 0) {
+						ImGui::GetForegroundDrawList()->AddLine(mousePoints[i - 1] - ImVec2(0.5, 0.5), mousePoints[i] - ImVec2(0.5, 0.5),
+							FinalColor, cfg.settings.mouseTracer.TrailThickness * scale);
+					}
+				}
 			}
 		}
+
+		gui::EndFrame();
+
+		// Unload: spawn a thread so we don't tear down hooks while inside one
+		if (gui::bUnloaded) {
+			gui::bUnloaded = false;
+			CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(hooks::Unload), nullptr, 0, nullptr);
+		}
 	}
-
-	// End the frame
-	gui::EndFrame();
-
-	// Unload: spawn a thread so we don't tear down hooks while inside one
-	if (gui::bUnloaded) {
-		gui::bUnloaded = false; // prevent re-entry
-		CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(hooks::Unload), nullptr, 0, nullptr);
+	catch (...) {
+		CrashLog::Write("[EndScene] C++ exception caught");
+		Log::Fatal("Hooks", "Exception in hkEndScene — overlay disabled");
+		Log::DumpToFile("csgo_v2_errors.log");
 	}
 
 	return result;
 }
 
-HRESULT __stdcall hkReset(IDirect3DDevice9* Device, D3DPRESENT_PARAMETERS* params) noexcept
+HRESULT __stdcall hkReset(IDirect3DDevice9* Device, D3DPRESENT_PARAMETERS* params)
 {
-	ImGui_ImplDX9_InvalidateDeviceObjects();
 	const auto result = hooks::d3dDeviceHk.getOriginal<HRESULT, index::d3d9Device::Reset>(Device, params)(Device, Device, params);
+	if (!hooks::setupComplete)
+		return result;
+	ImGui_ImplDX9_InvalidateDeviceObjects();
 	ImGui_ImplDX9_CreateDeviceObjects();
 	return result;
 }
 
-void __stdcall hkCreateMove(int sequence_number, float input_sample_frametime, bool active, bool* bSendPacket) noexcept
+void __stdcall hkCreateMove(int sequence_number, float input_sample_frametime, bool active, bool* bSendPacket)
 {
 	hooks::BaseClientHk.callOriginal<void, index::BaseClient::CreateMove>(sequence_number, input_sample_frametime, active);
+
+	if (!hooks::setupComplete)
+		return;
 
 	if (!bSendPacket)
 		return;
@@ -179,7 +182,7 @@ void __stdcall hkCreateMove(int sequence_number, float input_sample_frametime, b
 		*verified = VerifiedUserCmd(*cmd);
 }
 
-__declspec(naked) void __stdcall hkCreateMoveProxy(int sequenceNumber, float inputSampleTime, bool active) noexcept
+__declspec(naked) void __stdcall hkCreateMoveProxy(int sequenceNumber, float inputSampleTime, bool active)
 {
 	// Create move Proxy to be able to retrieve "bSendPacket" pointer
 	__asm {
@@ -199,12 +202,14 @@ __declspec(naked) void __stdcall hkCreateMoveProxy(int sequenceNumber, float inp
 	}
 }
 
-void __stdcall hkFrameStageNotify(ClientFrameStage_t curStage) noexcept
+void __stdcall hkFrameStageNotify(ClientFrameStage_t curStage)
 {
-	using enum ClientFrameStage_t;
-
 	hooks::BaseClientHk.callOriginal<void, index::BaseClient::FrameStageNotify>(curStage);
 
+	if (!hooks::setupComplete)
+		return;
+
+	using enum ClientFrameStage_t;
 	switch (curStage)
 	{
 	case FRAME_START:
@@ -215,20 +220,26 @@ void __stdcall hkFrameStageNotify(ClientFrameStage_t curStage) noexcept
 	}
 }
 
-float __stdcall hkGetScreenAspectRatio(int viewportWidth, int viewportHeight) noexcept
+float __stdcall hkGetScreenAspectRatio(int viewportWidth, int viewportHeight)
 {
+	if (!hooks::setupComplete)
+		return hooks::EngineHk.callOriginal<float, index::Engine::GetScreenAspectRatio>(viewportWidth, viewportHeight);
 	globals::aspectRatio = cfg.visuals.misc.AspectRatio > 0.f ? cfg.visuals.misc.AspectRatio : hooks::EngineHk.callOriginal<float, index::Engine::GetScreenAspectRatio>(viewportWidth, viewportHeight);
 	return globals::aspectRatio;
 }
 
-float __stdcall hkGetViewModelFOV() noexcept
+float __stdcall hkGetViewModelFOV()
 {
+	if (!hooks::setupComplete)
+		return hooks::ClientModeHk.callOriginal<float, index::ClientMode::GetViewModelFOV>();
+
 	return cfg.visuals.viewmodel.ViewModelFOV;
 }
 
 void __stdcall hkOverrideView(CViewSetup* pSetup)
 {
 	hooks::ClientModeHk.callOriginal<void, index::ClientMode::OverrideView>(pSetup);
+	if (!hooks::setupComplete) return;
 
 	if (LocalPlayer.Get())
 	{
@@ -262,9 +273,10 @@ void __stdcall hkOverrideView(CViewSetup* pSetup)
 	globals::camFOV = pSetup->fov;
 }
 
-bool __stdcall hkShouldDrawViewModel() noexcept
+bool __stdcall hkShouldDrawViewModel()
 {
 	auto result = hooks::ClientModeHk.callOriginal<bool, index::ClientMode::ShouldDrawViewModel>();
+	if (!hooks::setupComplete) return result;
 
 	if (!result && cfg.visuals.viewmodel.AlwaysDraw)
 		result = 1;
@@ -272,8 +284,13 @@ bool __stdcall hkShouldDrawViewModel() noexcept
 	return result;
 }
 
-void __stdcall hkLockCursor() noexcept
+void __stdcall hkLockCursor()
 {
+	if (!hooks::setupComplete) {
+		hooks::SurfaceHk.callOriginal<void, index::Surface::LockCursor>();
+		return;
+	}
+
 	if (gui::bOpen) {
 		globals::g_interfaces.Surface->UnlockCursor();
 		return;
@@ -282,9 +299,49 @@ void __stdcall hkLockCursor() noexcept
 	hooks::SurfaceHk.callOriginal<void, index::Surface::LockCursor>();
 }
 
+// Process-wide crash handler — catches crashes on ANY thread (including game render thread)
+static LONG WINAPI GlobalCrashHandler(EXCEPTION_POINTERS* ep)
+{
+	// Filter out non-fatal exceptions (breakpoints, first-chance, etc.)
+	DWORD code = ep->ExceptionRecord->ExceptionCode;
+	if (code == EXCEPTION_BREAKPOINT || code == EXCEPTION_SINGLE_STEP ||
+		code == DBG_PRINTEXCEPTION_C || code == 0x406D1388 /* SetThreadName */)
+		return EXCEPTION_CONTINUE_SEARCH;
+
+	// Log DLL base address so we can compute exact crash offset
+	HMODULE hSelf = nullptr;
+	GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+		(LPCSTR)GlobalCrashHandler, &hSelf);
+
+	void* addr = ep->ExceptionRecord->ExceptionAddress;
+	CrashLog::Writef("[FATAL] Exception on thread %lu (code: 0x%08X, addr: 0x%p, DLL base: 0x%p, offset: 0x%X)",
+		GetCurrentThreadId(), code, addr, (void*)hSelf,
+		hSelf ? ((uintptr_t)addr - (uintptr_t)hSelf) : 0);
+
+	// Log registers for access violation context
+	if (code == 0xC0000005 && ep->ContextRecord) {
+		auto ctx = ep->ContextRecord;
+		CrashLog::Writef("[FATAL] Registers: EAX=0x%08X EBX=0x%08X ECX=0x%08X EDX=0x%08X ESI=0x%08X EDI=0x%08X EBP=0x%08X ESP=0x%08X EIP=0x%08X",
+			ctx->Eax, ctx->Ebx, ctx->Ecx, ctx->Edx, ctx->Esi, ctx->Edi, ctx->Ebp, ctx->Esp, ctx->Eip);
+		// Log access violation details (read/write and target address)
+		if (ep->ExceptionRecord->NumberParameters >= 2) {
+			CrashLog::Writef("[FATAL] Access violation %s address 0x%08X",
+				ep->ExceptionRecord->ExceptionInformation[0] == 0 ? "reading" : "writing",
+				(DWORD)ep->ExceptionRecord->ExceptionInformation[1]);
+		}
+	}
+
+	Log::DumpToFile("csgo_v2_errors.log");
+
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+
 bool hooks::Setup()
 {
 	Log::Info("Hooks", "Starting hook setup...");
+
+	// Install process-wide crash handler so we catch crashes on the game's render thread too
+	AddVectoredExceptionHandler(1, GlobalCrashHandler);
 
 	// Validate critical interfaces before dereferencing them
 	if (!globals::g_interfaces.BaseClient) {
@@ -297,6 +354,7 @@ bool hooks::Setup()
 	}
 
 	// Globals Initialization
+	CrashLog::Write("[Hooks] Resolving globals (ClientMode, Input, GlobalVars)...");
 	ClientMode = **reinterpret_cast<void***>((*reinterpret_cast<unsigned int**>(globals::g_interfaces.BaseClient))[10] + 5);
 	input = *reinterpret_cast<CInput**>((*reinterpret_cast<uintptr_t**>(globals::g_interfaces.BaseClient))[16] + 1);
 	GlobalVars = **reinterpret_cast<CGlobalVarsBase***>((*reinterpret_cast<uintptr_t**>(globals::g_interfaces.BaseClient))[11] + 10);
@@ -318,6 +376,7 @@ bool hooks::Setup()
 	bool allOk = true;
 
 	// gui::Device hooks
+	CrashLog::Write("[Hooks] Hooking D3D EndScene + Reset...");
 	{
 		allOk &= d3dDeviceHk.init(gui::device, DETOUR);
 		allOk &= d3dDeviceHk.hook(index::d3d9Device::EndScene, hkEndScene);
@@ -325,6 +384,7 @@ bool hooks::Setup()
 	}
 
 	// g_ClientMode hooks
+	CrashLog::Write("[Hooks] Hooking ClientMode...");
 	{
 		allOk &= ClientModeHk.init(ClientMode, DETOUR);
 		allOk &= ClientModeHk.hook(index::ClientMode::GetViewModelFOV, hkGetViewModelFOV);
@@ -333,6 +393,7 @@ bool hooks::Setup()
 	}
 
 	// globals::g_interfaces.BaseClient hooks
+	CrashLog::Write("[Hooks] Hooking BaseClient...");
 	{
 		allOk &= BaseClientHk.init(globals::g_interfaces.BaseClient, DETOUR);
 		allOk &= BaseClientHk.hook(index::BaseClient::CreateMove, hkCreateMoveProxy);
@@ -340,6 +401,7 @@ bool hooks::Setup()
 	}
 
 	// globals::g_interfaces.Engine hooks
+	CrashLog::Write("[Hooks] Hooking Engine...");
 	if (globals::g_interfaces.Engine) {
 		allOk &= EngineHk.init(globals::g_interfaces.Engine, DETOUR);
 		allOk &= EngineHk.hook(index::Engine::GetScreenAspectRatio, hkGetScreenAspectRatio);
@@ -349,23 +411,16 @@ bool hooks::Setup()
 	}
 
 	// globals::g_interfaces.Surface
+	CrashLog::Write("[Hooks] Hooking Surface...");
 	if (globals::g_interfaces.Surface) {
 		allOk &= SurfaceHk.init(globals::g_interfaces.Surface, DETOUR);
-		allOk &= SurfaceHk.hook(index::Surface::LockCursor, hkLockCursor); // virtual void LockCursor() = 0; - Index 67
+		allOk &= SurfaceHk.hook(index::Surface::LockCursor, hkLockCursor);
 	}
 	else {
 		Log::Err("Hooks", "Surface interface null - skipping Surface hooks");
 	}
 
-	// super duper crash dont uncomment
-	{
-		//if (MH_CreateHook(
-		//	VirtualFunction(svCheatsCVar, 13),
-		//	&hkSvCheatsGetBool,
-		//	reinterpret_cast<void**>(&oSvCheatsGetBool)
-		//)) return 0;//throw std::runtime_error("Unable to hook GetScreenAspectRatio");
-	}
-
+	CrashLog::Write("[Hooks] Cleaning up dummy DirectX...");
 	gui::DestroyDirectX();
 
 	if (!allOk) {
@@ -373,8 +428,12 @@ bool hooks::Setup()
 		Log::DumpToFile("csgo_v2_errors.log");
 	}
 	else {
+		CrashLog::Write("[Hooks] All hooks installed successfully");
 		Log::Info("Hooks", "All hooks installed successfully");
 	}
+
+	// Signal all hook functions that they can start running their logic
+	setupComplete = allOk;
 
 	return allOk;
 }

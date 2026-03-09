@@ -7,11 +7,8 @@ intptr_t NetVars_t::FindOffset(const char* tablename, const char* netvarName)
 {
     ClientClass* clientclass = globals::g_interfaces.BaseClient->GetAllClasses();
 
-    if (!clientclass) {
-        Log::Err("NetVars", "GetAllClasses() returned null while looking for '{}.{}'",
-            tablename, netvarName);
+    if (!clientclass)
         return 0;
-    }
 
     return GetNetVarOffset(tablename, netvarName, clientclass);
 }
@@ -59,15 +56,12 @@ bool NetVars_t::Init()
 {
     bool allOk = true;
 
-    // Helper: find offset, log error if not found
+    // Helper: find offset, log only on failure
     auto findAndValidate = [&](const char* table, const char* name) -> uintptr_t {
         intptr_t offset = globals::g_NetVars.FindOffset(table, name);
         if (offset == 0) {
-            Log::Err("NetVars", "Failed to find offset for '{}.{}' — using 0", table, name);
+            Log::Err("NetVars", "Failed to find '{}.{}' — using 0", table, name);
             allOk = false;
-        }
-        else {
-            Log::Info("NetVars", "Found '{}.{}' at offset {:#x}", table, name, (uintptr_t)offset);
         }
         return (uintptr_t)offset;
     };
@@ -80,14 +74,14 @@ bool NetVars_t::Init()
     offsets::deadFlag =      findAndValidate("DT_BasePlayer", "deadflag");
     offsets::m_vecVelocity = findAndValidate("DT_BasePlayer", "m_vecVelocity[0]");
 
-    if (allOk)
-        Log::Info("NetVars", "All netvar offsets resolved successfully");
-    else
+    if (!allOk)
         Log::Err("NetVars", "Some netvar offsets failed to resolve — features may crash");
 
-#ifdef _DEBUG
-    PrintNetVars(globals::g_interfaces.BaseClient->GetAllClasses());
-#endif // _DEBUG
+    // PrintNetVars dumps every single netvar in the game — very slow.
+    // Uncomment only when you specifically need to find netvar names/tables.
+    //#ifdef _DEBUG
+    //    PrintNetVars(globals::g_interfaces.BaseClient->GetAllClasses());
+    //#endif
 
     return allOk;
 }

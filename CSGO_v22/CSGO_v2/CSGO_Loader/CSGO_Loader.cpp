@@ -16,23 +16,6 @@
 
 // CSGO process class
 proc_t csgo(PROC_NAME, "", WIND_NAME, CLSS_NAME);
-int insecure = -1;
-
-// updates every 100ms
-void update()
-{
-    while (true)
-    {
-        csgo.hwnd = FindWindow(csgo.className.c_str(), csgo.windowName.c_str());
-
-#ifdef _DEBUG
-        if (!csgo.isActive()) { printf(" - "); }; // debug purposes
-#endif // _DEBUG
-
-
-        Sleep(100);
-    }
-}
 
 // Main function
 int main(void)
@@ -42,9 +25,6 @@ int main(void)
     // Resolve DLL path relative to the exe's directory
     csgo.dllPath = utils::ResolvePathRelativeToExe(DLL_PATH);
 
-    CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(update), nullptr, 0, nullptr);
-    Sleep(200);
-
     while (true)
     {
         system("cls");
@@ -53,7 +33,6 @@ int main(void)
 
         // if the dll path doesn't exist
         if (!utils::FileExists(csgo.dllPath)) {
-            // make a choice to either enter a new path or shut down the program.
             if (utils::choice(std::format("Could not find the file '{}'!\nWould you like to enter a new dll file path or exit? y/n: ", csgo.dllPath))) {
                 std::cout << dye::yellow("\nEnter a new dll path file: ");
                 std::cin >> csgo.dllPath;
@@ -65,61 +44,42 @@ int main(void)
             }
         }
 
-        if (!csgo.isActive())
-        {
-            // for it to only execute ONCE.
-            if (insecure == -1) {
-                // Choose to start CSGO with -insecure or without.
-                insecure = utils::choice(std::format("(recommended) Start {} with '-insecure'? y/n: ", csgo.Name));
-            }
+        // Reset process state for a fresh attempt
+        csgo.pid = 0;
+        csgo.hwnd = nullptr;
 
-            std::cout << dye::aqua(std::format("\nLaunching {}{}...\n", csgo.Name, insecure ? " With -insecure" : ""));
-            {
-                // this will always launch CSGO with the ID 730, to get your game's ID check steam.inf in your game folder and grab it from there <3.
-                std::string tmp = insecure ? " -insecure" : "";
-                std::string cmd = "\"C:\\Program Files (x86)\\Steam\\steam.exe\" -applaunch 730" + tmp;
-                system(cmd.c_str());
-            }
+        std::cout << dye::aqua("Press ENTER when CS:GO is open and you're ready to inject...");
+        std::cin.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
 
-            do { Sleep(50); } while (!csgo.isActive());
-        }
-
+        // Find the process
+        csgo.hwnd = FindWindow(csgo.className.c_str(), csgo.windowName.c_str());
         {
             auto err = Process::GetProcID(csgo);
             if (!err) {
                 err.print();
-                std::cout << dye::red("Exiting in 3s...");
-                Sleep(3000);
-                ExitProcess(0);
+                std::cout << dye::red("\nCS:GO doesn't seem to be running. Press ENTER to try again...");
+                std::cin.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
+                continue;
             }
         }
 
-        std::cout << dye::green("injecting...\n");
-        Sleep(7500); // wait for the game to fully open. (assuming it wasnt already opened)
+        std::cout << dye::green("\nCS:GO found! Injecting...\n");
+        Sleep(1000);
 
         {
             auto err = Process::inject(csgo);
             if (!err) {
                 err.print();
-                std::cout << dye::red("\nExiting in 3s...");
-                Sleep(3000);
-                ExitProcess(0);
+                std::cout << dye::red("\nInjection failed. Press ENTER to try again...");
+                std::cin.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
+                continue;
             }
         }
 
-        std::cout << dye::purple("injection Completed!\n") << dye::yellow("info:\n");
-        std::cout << std::format("Dll path: {}\nProc Name: {}\nPID: {}", csgo.dllPath, csgo.Name, csgo.pid);
+        std::cout << dye::purple("\nInjection Completed!\n") << dye::yellow("Info:\n");
+        std::cout << std::format("  Dll path:  {}\n  Proc Name: {}\n  PID:       {}\n", csgo.dllPath, csgo.Name, csgo.pid);
 
-        system("pause>nul");
-
-        // for reinjection
-        {
-            auto err = Process::Terminate(csgo);
-            if (!err) {
-                err.print();
-                std::cout << dye::yellow("Warning: Could not terminate process cleanly. Continuing anyway...\n");
-            }
-        }
-        Sleep(1000);
+        std::cout << dye::aqua("\nPress ENTER to inject again (re-open CS:GO first)...");
+        std::cin.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
     }
 }

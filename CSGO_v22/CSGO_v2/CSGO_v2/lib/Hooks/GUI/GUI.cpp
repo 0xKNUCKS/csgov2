@@ -2,6 +2,7 @@
 #include "dx9/Drawing/drawing.h"
 #include "SDK/Globals/Globals.h"
 #include "lib/Hooks/hook.h"
+#include "lib/Error/Log.h"
 #include <iostream>
 #include <format>
 
@@ -165,19 +166,28 @@ void gui::DestroyDirectX() noexcept
 // setup dummy device
 bool gui::Setup()
 {
-	if (!SetupWindowClass("fffheavy001"))
-		throw std::runtime_error("Failed to Create Window Class.");
-	
-	if (!SetupWindow("dumWin"))
-		throw std::runtime_error("Failed to Create Window.");
-	
-	if (!SetupDirectX())
-		throw std::runtime_error("Failed to Create Device.");
-	
+	if (!SetupWindowClass("fffheavy001")) {
+		Log::Fatal("GUI", "Failed to create window class");
+		return false;
+	}
+
+	if (!SetupWindow("dumWin")) {
+		Log::Fatal("GUI", "Failed to create window");
+		DestroyWindowClass();
+		return false;
+	}
+
+	if (!SetupDirectX()) {
+		Log::Fatal("GUI", "Failed to create D3D device");
+		DestroyWindow();
+		DestroyWindowClass();
+		return false;
+	}
+
 	DestroyWindow();
 	DestroyWindowClass();
 
-	return 1;
+	return true;
 }
 
 // all callback function to Enumare through windows and find the correct one used for "EnumWindows"
@@ -273,7 +283,7 @@ void gui::Render() noexcept
 	animPopUp.Update();
 	animPopUp.Switch(gui::bOpen);
 
-	static Animation windowFade(1.f, EaseOutQuart, Linear);
+	static Animation windowFade(0.4f, EaseOutQuart, Linear);
 	windowFade.Update();
 	windowFade.Switch(gui::bOpen);
 
@@ -286,7 +296,8 @@ void gui::Render() noexcept
 
 	ImGui::SetNextWindowPos(windowPos, ImGuiCond_Once); // Only once
 
-	ImGui::Begin(std::format("cockbalt.solutions - Welcome {}!", LocalPlayer->getName()).c_str(), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
+	std::string playerName = LocalPlayer.Get() ? LocalPlayer->getName() : "Player";
+	ImGui::Begin(std::format("cockbalt.solutions - Welcome {}!", playerName).c_str(), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
 	{
 		ImGui::GetStyle().Alpha = windowFade.getValue();
 
@@ -418,7 +429,6 @@ void gui::Render() noexcept
 				if (ImGui::Button("Unload [Pause]")) // the "Pause" key will also unload it :)
 				{
 					bUnloaded = true;
-					return;
 				}
 				ImGui::SliderFloat("##Animations_Speed", &cfg.settings.AnimSpeed, 0.5f, 4.f, "Animations's Speed %.2f"); ui::HelpMarker("Modify the menu's animation speed.\n including the fade-in and out speed, etc");
 
@@ -477,6 +487,9 @@ void gui::Render() noexcept
 	if (cfg.settings.ShowDebug) {
 		gui::DebugWindow();
 	}
+
+	// Restore alpha after all windows are drawn
+	ImGui::GetStyle().Alpha = 1.f;
 }
 
 void gui::DebugWindow() noexcept

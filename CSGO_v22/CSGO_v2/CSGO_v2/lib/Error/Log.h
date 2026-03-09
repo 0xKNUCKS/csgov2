@@ -7,6 +7,7 @@
 #include <vector>
 #include <mutex>
 #include <Windows.h>
+#include "CrashLog.h"
 
 // ============================================================
 // Error — carries full context about what went wrong
@@ -187,9 +188,18 @@ namespace Log
 		return n;
 	}
 
-	// Dump all errors to a log file
-	inline void DumpToFile(const std::string& path)
+	// Log directory (shared with CrashLog)
+	inline std::string GetLogDirectory()
 	{
+		CrashLog::EnsureDir();
+		return std::string(CrashLog::LOG_DIR) + "\\";
+	}
+
+	// Dump all errors to a log file
+	inline void DumpToFile(const std::string& filename)
+	{
+		std::string path = GetLogDirectory() + filename;
+
 		std::lock_guard lock(g_mutex);
 		std::ofstream ofs(path, std::ios::app);
 		if (!ofs.is_open()) return;

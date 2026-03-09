@@ -1,6 +1,10 @@
 #pragma once
 #include <Windows.h>
 #include <string>
+#include <fstream>
+#include <sstream>
+#include <unordered_map>
+#include <filesystem>
 
 // Simple color struct to avoid ImGui dependency in config
 struct CfgColor {
@@ -95,6 +99,11 @@ public:
 			CfgColor SecondColor = CfgColor(255, 255, 255, 255);
 		} mouseTracer;
 	} settings;
+
+	static std::string GetConfigDir();
+	bool Save(const std::string& name = "default") const;
+	bool Load(const std::string& name = "default");
+	void Reset();
 };
 
 inline Config cfg;

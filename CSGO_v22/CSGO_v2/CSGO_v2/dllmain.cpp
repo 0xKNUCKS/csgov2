@@ -58,6 +58,10 @@ static DWORD InitMain(HMODULE hModule)
         return FALSE;
     }
 
+    // Load saved config (silently falls back to defaults if no config exists)
+    if (cfg.Load())
+        Log::Info("Main", "Config loaded from file");
+
     CrashLog::Write("[Main] Init complete");
     Log::Info("Main", "Initialization complete - {} warnings, {} errors",
         Log::Count(Error::Severity::Warning), Log::Count(Error::Severity::Error));

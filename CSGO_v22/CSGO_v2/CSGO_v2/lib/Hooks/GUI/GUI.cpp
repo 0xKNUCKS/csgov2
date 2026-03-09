@@ -430,6 +430,17 @@ void gui::Render() noexcept
 				}
 				ImGui::SliderFloat("##Animations_Speed", &cfg.settings.AnimSpeed, 0.5f, 4.f, "Animations's Speed %.2f"); ui::HelpMarker("Modify the menu's animation speed.\n including the fade-in and out speed, etc");
 
+				ImGui::Spacing();
+				ui::BeginOutlineGroup("Config");
+				static char cfgName[64] = "default";
+				ImGui::InputText("##CfgName", cfgName, sizeof(cfgName));
+				if (ImGui::Button("Save")) cfg.Save(cfgName);
+				ImGui::SameLine();
+				if (ImGui::Button("Load")) cfg.Load(cfgName);
+				ImGui::SameLine();
+				if (ImGui::Button("Reset")) cfg.Reset();
+				ui::EndOutlineGroup();
+
 				ui::BeginOutlineGroup("Mouse Tracer");
 				ImGui::Checkbox("Enabled##MouseTracer", &cfg.settings.mouseTracer.Enabled); ui::HelpMarker("Creates a trail behind your mouse tracing it!");
 				ImGui::SliderInt("##TrailLength", &cfg.settings.mouseTracer.TrailLength, 15, 100, "Trail Length %d");

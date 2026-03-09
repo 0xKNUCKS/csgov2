@@ -125,23 +125,47 @@ void menu::Gap()
 // Layout functions — return GroupBuilder for chaining
 // =========================================================
 
-static bool s_inLeftGroup = false;
+// Independent two-column layout state.
+// Each column tracks its own Y cursor so groups stack without gaps.
+static float s_leftColY  = -1.f;
+static float s_rightColY = -1.f;
+static float s_colStartX = 0.f;
+static bool  s_colActive = false;
+
+static void InitColumnsIfNeeded()
+{
+	if (!s_colActive) {
+		s_leftColY  = ImGui::GetCursorPosY();
+		s_rightColY = s_leftColY;
+		s_colStartX = ImGui::GetCursorPosX();
+		s_colActive = true;
+	}
+}
 
 menu::GroupBuilder menu::LeftGroup(const char* name, int lines)
 {
-	ImGui::BeginGroup();
-	s_inLeftGroup = true;
+	InitColumnsIfNeeded();
+	ImGui::SetCursorPos(ImVec2(s_colStartX, s_leftColY));
 	detail::BeginGroupChild(name, lines, kColumnWidth);
-	return GroupBuilder(GroupBuilder::Type::Group);
+	return GroupBuilder(GroupBuilder::Type::LeftGroup);
 }
 
 menu::GroupBuilder menu::RightGroup(const char* name, int lines)
 {
-	ImGui::SameLine();
-	ImGui::BeginGroup();
-	s_inLeftGroup = false;
+	InitColumnsIfNeeded();
+	float rightX = s_colStartX + kColumnWidth + ImGui::GetStyle().ItemSpacing.x;
+	ImGui::SetCursorPos(ImVec2(rightX, s_rightColY));
 	detail::BeginGroupChild(name, lines, kColumnWidth);
-	return GroupBuilder(GroupBuilder::Type::Group);
+	return GroupBuilder(GroupBuilder::Type::RightGroup);
+}
+
+void menu::EndRow()
+{
+	if (s_colActive) {
+		float maxY = (s_leftColY > s_rightColY) ? s_leftColY : s_rightColY;
+		ImGui::SetCursorPosY(maxY);
+		s_colActive = false;
+	}
 }
 
 menu::GroupBuilder menu::Section(const char* name, float width)
@@ -274,9 +298,13 @@ GB& GB::Custom(std::function<void()> fn)
 void GB::End()
 {
 	switch (type_) {
-	case Type::Group:
+	case Type::LeftGroup:
 		ImGui::EndChild();
-		ImGui::EndGroup();
+		s_leftColY = ImGui::GetCursorPosY();
+		break;
+	case Type::RightGroup:
+		ImGui::EndChild();
+		s_rightColY = ImGui::GetCursorPosY();
 		break;
 	case Type::Section: menu::EndOutlineGroup(); break;
 	case Type::Inline:  break; // no-op for nested builders

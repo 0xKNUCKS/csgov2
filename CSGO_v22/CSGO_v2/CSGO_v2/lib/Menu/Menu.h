@@ -24,6 +24,7 @@ namespace menu
 	GroupBuilder LeftGroup(const char* name, int lines);
 	GroupBuilder RightGroup(const char* name, int lines);
 	GroupBuilder Section(const char* name, float width = kColumnWidth);
+	void EndRow(); // Close any open row group (call before EndTabItem if last group has no RightGroup)
 	void Gap();
 
 	// --- Standalone widgets (for use outside groups) ---
@@ -82,7 +83,7 @@ namespace menu
 		friend GroupBuilder menu::RightGroup(const char*, int);
 		friend GroupBuilder menu::Section(const char*, float);
 
-		enum class Type { Group, Section, Inline };
+		enum class Type { LeftGroup, RightGroup, Section, Inline };
 		Type type_;
 		explicit GroupBuilder(Type t) : type_(t) {}
 	};

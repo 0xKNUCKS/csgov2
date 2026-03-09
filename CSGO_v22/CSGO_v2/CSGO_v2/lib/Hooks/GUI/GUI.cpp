@@ -380,6 +380,7 @@ void gui::Render() noexcept
 						"How smoothly to apply RCS (1 = instant)")
 					.End();
 
+				menu::EndRow();
 				ImGui::EndTabItem();
 			}
 
@@ -410,6 +411,7 @@ void gui::Render() noexcept
 					})
 					.End();
 
+				menu::EndRow();
 				ImGui::EndTabItem();
 			}
 
@@ -425,6 +427,7 @@ void gui::Render() noexcept
 					.Checkbox("Infinite Duck", &cfg.misc.exploits.InfDuck)
 					.End();
 
+				menu::EndRow();
 				ImGui::EndTabItem();
 			}
 

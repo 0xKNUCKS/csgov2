@@ -24,7 +24,7 @@ class NetVars_t
 public:
     intptr_t FindOffset(const char* tablename, const char* netvarName);
 
-    void Init();
+    bool Init();
 
 private:
     inline intptr_t GetOffset(RecvTable* table, const char* tablename, const char* netvarName);

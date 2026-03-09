@@ -4,6 +4,7 @@
 #include "SDK/Classes/classes.h"
 #include "SDK/interface/interface.h"
 #include "lib/Hooks/GUI/GUI.h"
+#include "lib/Error/Log.h"
 #include "dx9/Drawing/drawing.h"
 #include "SDK/Globals/Globals.h"
 #include "Modules/Aimbot/aimbot.h"
@@ -283,48 +284,77 @@ void __stdcall hkLockCursor() noexcept
 
 bool hooks::Setup()
 {
+	Log::Info("Hooks", "Starting hook setup...");
+
+	// Validate critical interfaces before dereferencing them
+	if (!globals::g_interfaces.BaseClient) {
+		Log::Fatal("Hooks", "BaseClient is null - cannot initialize hooks");
+		return false;
+	}
+	if (!gui::device) {
+		Log::Fatal("Hooks", "D3D device is null - cannot hook rendering");
+		return false;
+	}
+
 	// Globals Initialization
 	ClientMode = **reinterpret_cast<void***>((*reinterpret_cast<unsigned int**>(globals::g_interfaces.BaseClient))[10] + 5);
 	input = *reinterpret_cast<CInput**>((*reinterpret_cast<uintptr_t**>(globals::g_interfaces.BaseClient))[16] + 1);
 	GlobalVars = **reinterpret_cast<CGlobalVarsBase***>((*reinterpret_cast<uintptr_t**>(globals::g_interfaces.BaseClient))[11] + 10);
 
+	if (!ClientMode) { Log::Fatal("Hooks", "ClientMode pointer is null"); return false; }
+	if (!input)      { Log::Fatal("Hooks", "CInput pointer is null"); return false; }
+	if (!GlobalVars) { Log::Fatal("Hooks", "GlobalVars pointer is null"); return false; }
+
+	Log::Info("Hooks", "Globals: ClientMode={:#x}, Input={:#x}, GlobalVars={:#x}",
+		(uintptr_t)ClientMode, (uintptr_t)input, (uintptr_t)GlobalVars);
 
 	// manually call if youre gonna use DETOUR hooking
-	if (MH_Initialize())
-		return 0;//throw std::runtime_error("Unable to initialize Hooks");
+	MH_STATUS mhStatus = MH_Initialize();
+	if (mhStatus != MH_OK) {
+		Log::Fatal("Hooks", "MH_Initialize failed (MH_STATUS: {})", (int)mhStatus);
+		return false;
+	}
+
+	bool allOk = true;
 
 	// gui::Device hooks
 	{
-		d3dDeviceHk.init(gui::device, DETOUR);
-		d3dDeviceHk.hook(index::d3d9Device::EndScene, hkEndScene);
-		d3dDeviceHk.hook(index::d3d9Device::Reset, hkReset);
+		allOk &= d3dDeviceHk.init(gui::device, DETOUR);
+		allOk &= d3dDeviceHk.hook(index::d3d9Device::EndScene, hkEndScene);
+		allOk &= d3dDeviceHk.hook(index::d3d9Device::Reset, hkReset);
 	}
 
 	// g_ClientMode hooks
 	{
-		ClientModeHk.init(ClientMode, DETOUR);
-		ClientModeHk.hook(index::ClientMode::GetViewModelFOV, hkGetViewModelFOV);
-		ClientModeHk.hook(index::ClientMode::OverrideView, hkOverrideView);
-		ClientModeHk.hook(index::ClientMode::ShouldDrawViewModel, hkShouldDrawViewModel);
+		allOk &= ClientModeHk.init(ClientMode, DETOUR);
+		allOk &= ClientModeHk.hook(index::ClientMode::GetViewModelFOV, hkGetViewModelFOV);
+		allOk &= ClientModeHk.hook(index::ClientMode::OverrideView, hkOverrideView);
+		allOk &= ClientModeHk.hook(index::ClientMode::ShouldDrawViewModel, hkShouldDrawViewModel);
 	}
 
 	// globals::g_interfaces.BaseClient hooks
 	{
-		BaseClientHk.init(globals::g_interfaces.BaseClient, DETOUR);
-		BaseClientHk.hook(index::BaseClient::CreateMove, hkCreateMoveProxy);
-		BaseClientHk.hook(index::BaseClient::FrameStageNotify, hkFrameStageNotify);
+		allOk &= BaseClientHk.init(globals::g_interfaces.BaseClient, DETOUR);
+		allOk &= BaseClientHk.hook(index::BaseClient::CreateMove, hkCreateMoveProxy);
+		allOk &= BaseClientHk.hook(index::BaseClient::FrameStageNotify, hkFrameStageNotify);
 	}
 
 	// globals::g_interfaces.Engine hooks
-	{
-		EngineHk.init(globals::g_interfaces.Engine, DETOUR);
-		EngineHk.hook(index::Engine::GetScreenAspectRatio, hkGetScreenAspectRatio);
+	if (globals::g_interfaces.Engine) {
+		allOk &= EngineHk.init(globals::g_interfaces.Engine, DETOUR);
+		allOk &= EngineHk.hook(index::Engine::GetScreenAspectRatio, hkGetScreenAspectRatio);
+	}
+	else {
+		Log::Err("Hooks", "Engine interface null - skipping Engine hooks");
 	}
 
 	// globals::g_interfaces.Surface
-	{
-		SurfaceHk.init(globals::g_interfaces.Surface, DETOUR);
-		SurfaceHk.hook(index::Surface::LockCursor, hkLockCursor); // virtual void LockCursor() = 0; - Index 67
+	if (globals::g_interfaces.Surface) {
+		allOk &= SurfaceHk.init(globals::g_interfaces.Surface, DETOUR);
+		allOk &= SurfaceHk.hook(index::Surface::LockCursor, hkLockCursor); // virtual void LockCursor() = 0; - Index 67
+	}
+	else {
+		Log::Err("Hooks", "Surface interface null - skipping Surface hooks");
 	}
 
 	// super duper crash dont uncomment
@@ -337,5 +367,14 @@ bool hooks::Setup()
 	}
 
 	gui::DestroyDirectX();
-	return 1;
+
+	if (!allOk) {
+		Log::Err("Hooks", "Some hooks failed to install - check errors above");
+		Log::DumpToFile("csgo_v2_errors.log");
+	}
+	else {
+		Log::Info("Hooks", "All hooks installed successfully");
+	}
+
+	return allOk;
 }

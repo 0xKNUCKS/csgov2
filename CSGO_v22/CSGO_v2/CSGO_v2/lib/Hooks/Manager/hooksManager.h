@@ -19,9 +19,9 @@ public:
 	hookManager(hookType type) : type(type) {}
 	hookManager(hookType type, uintptr_t* VMTbase) { init(VMTbase, type); }
 
-	void init(uintptr_t* VMTbase, hookType type);
-	void init(void* VMTbase, hookType type);
-	void hook(unsigned int index, void* hookedFunction, hookType type = DEFAULT);
+	bool init(uintptr_t* VMTbase, hookType type);
+	bool init(void* VMTbase, hookType type);
+	bool hook(unsigned int index, void* hookedFunction, hookType type = DEFAULT);
 	void restore();
 
 	template<typename retType, unsigned int index, typename ...arguments>

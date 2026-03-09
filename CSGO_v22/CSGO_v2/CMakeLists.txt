@@ -124,3 +124,37 @@ endif()
 
 # Character set: MultiByte (not Unicode) for Debug/Release Win32
 target_compile_definitions(CSGO_v2 PRIVATE _MBCS)
+
+# ============================================================
+# Loader — CSGO_Loader (console app)
+# ============================================================
+add_executable(CSGO_Loader
+    CSGO_Loader/CSGO_Loader.cpp
+    CSGO_Loader/Process.cpp
+    CSGO_Loader/utils.cpp
+)
+
+target_include_directories(CSGO_Loader PRIVATE CSGO_Loader)
+
+target_compile_definitions(CSGO_Loader PRIVATE
+    WIN32
+    _WINDOWS
+    _MBCS
+    $<$<CONFIG:Debug>:_DEBUG>
+    $<$<CONFIG:Release>:NDEBUG>
+)
+
+if(MSVC)
+    target_compile_options(CSGO_Loader PRIVATE
+        /W3
+        /permissive-
+        /Zc:__cplusplus
+    )
+endif()
+
+# Copy DLL next to loader exe after build so the default path works
+add_custom_command(TARGET CSGO_Loader POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:CSGO_v2>
+        $<TARGET_FILE_DIR:CSGO_Loader>/CSGO_v2.dll
+)

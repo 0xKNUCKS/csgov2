@@ -1,22 +1,33 @@
 #include "utils.h"
+#include <Windows.h>
 
-bool utils::FileExists(const char* file)
+bool utils::FileExists(const std::string& file)
 {
     return std::filesystem::exists(file);
 }
 
-bool utils::choice(const char* str, ...)
+bool utils::choice(const std::string& prompt)
 {
     char buf;
-    std::cout << str;
+    std::cout << prompt;
     std::cin >> buf;
     return ::tolower(buf) == 'y';
+}
+
+std::string utils::ResolvePathRelativeToExe(const std::string& relativePath)
+{
+    char exePath[MAX_PATH];
+    GetModuleFileNameA(nullptr, exePath, MAX_PATH);
+
+    std::filesystem::path exeDir = std::filesystem::path(exePath).parent_path();
+    auto resolved = exeDir / relativePath;
+    return resolved.string();
 }
 
 void utils::ascii_art(std::string input)
 {
     //loop will print first layer
-    for (int i = 0; i < input.size(); i++)
+    for (size_t i = 0; i < input.size(); i++)
     {
         if (input[i] == 'A' || input[i] == 'a')
             std::cout << "  ___   ";
@@ -159,7 +170,7 @@ void utils::ascii_art(std::string input)
     }
     std::cout << std::endl;
     //loop will print second layer
-    for (int i = 0; i < input.size(); i++)
+    for (size_t i = 0; i < input.size(); i++)
     {
         if (input[i] == 'A' || input[i] == 'a')
             std::cout << " / _ \\  ";
@@ -302,7 +313,7 @@ void utils::ascii_art(std::string input)
     }
     std::cout << std::endl;
     //loop will print third layer
-    for (int i = 0; i < input.size(); i++)
+    for (size_t i = 0; i < input.size(); i++)
     {
         if (input[i] == 'A' || input[i] == 'a')
             std::cout << "/ /_\\ \\ ";
@@ -445,7 +456,7 @@ void utils::ascii_art(std::string input)
     }
     std::cout << std::endl;
     //loop will print fourth layer
-    for (int i = 0; i < input.size(); i++)
+    for (size_t i = 0; i < input.size(); i++)
     {
         if (input[i] == 'A' || input[i] == 'a')
             std::cout << "|  _  | ";
@@ -588,7 +599,7 @@ void utils::ascii_art(std::string input)
     }
     std::cout << std::endl;
     //loop will print fifth layer
-    for (int i = 0; i < input.size(); i++)
+    for (size_t i = 0; i < input.size(); i++)
     {
         if (input[i] == 'A' || input[i] == 'a')
             std::cout << "| | | | ";
@@ -731,7 +742,7 @@ void utils::ascii_art(std::string input)
     }
     std::cout << std::endl;
     //loop will print sixth layer
-    for (int i = 0; i < input.size(); i++)
+    for (size_t i = 0; i < input.size(); i++)
     {
         if (input[i] == 'A' || input[i] == 'a')
             std::cout << "\\_| |_/ ";

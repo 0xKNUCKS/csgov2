@@ -1,32 +1,37 @@
 #pragma once
 #include <Windows.h>
 #include <TlHelp32.h>
+#include <string>
 #include "utils.h"
+#include "LoaderError.h"
 
 struct proc_t;
 
 namespace Process
 {
-	bool GetProcID(proc_t& proc);
-	bool inject(proc_t proc);
-	bool Terminate(proc_t proc);
+	LoaderError GetProcID(proc_t& proc);
+	LoaderError inject(const proc_t& proc);
+	LoaderError Terminate(proc_t& proc);
 }
 
 struct proc_t
 {
-	proc_t(const char* name, const char* dllpath) { this->Name = name; this->dllPath = dllpath; };
-	proc_t(const char* name, const char* dllpath, const char* windowname, const char* classname) { this->Name = name; this->dllPath = dllpath; this->windowName = windowname; this->className = classname; }
+	proc_t(std::string name, std::string dllpath)
+		: Name(std::move(name)), dllPath(std::move(dllpath)) {}
 
-	const char* Name;
-	const char* dllPath;
-	
-	const char* windowName;
-	const char* className;
+	proc_t(std::string name, std::string dllpath, std::string windowname, std::string classname)
+		: Name(std::move(name)), dllPath(std::move(dllpath)),
+		  windowName(std::move(windowname)), className(std::move(classname)) {}
 
-	DWORD pid;
-	HWND hwnd;
+	std::string Name;
+	std::string dllPath;
+	std::string windowName;
+	std::string className;
+
+	DWORD pid = 0;
+	HWND hwnd = nullptr;
 
 	bool isActive()
-	{ return hwnd || Process::GetProcID(*this); }
+	{ return hwnd || Process::GetProcID(*this).ok(); }
 };
 

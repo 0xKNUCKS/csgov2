@@ -20,7 +20,7 @@ public:
     ICvar* Cvar = nullptr;
     ISurface* Surface = nullptr;
 
-    void init();
+    bool init();
 
 private:
     template <typename retType>

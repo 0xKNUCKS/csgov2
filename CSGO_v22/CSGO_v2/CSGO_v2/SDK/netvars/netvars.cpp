@@ -1,10 +1,17 @@
 #include "netvars.h"
 #include "SDK/Globals/Globals.h"
 #include "SDK/Entity/entity.h"
+#include "lib/Error/Log.h"
 
 intptr_t NetVars_t::FindOffset(const char* tablename, const char* netvarName)
 {
     ClientClass* clientclass = globals::g_interfaces.BaseClient->GetAllClasses();
+
+    if (!clientclass) {
+        Log::Err("NetVars", "GetAllClasses() returned null while looking for '{}.{}'",
+            tablename, netvarName);
+        return 0;
+    }
 
     return GetNetVarOffset(tablename, netvarName, clientclass);
 }
@@ -48,18 +55,39 @@ intptr_t NetVars_t::GetNetVarOffset(const char* tablename, const char* netvarNam
 }
 
 // Temporary fix
-void NetVars_t::Init()
+bool NetVars_t::Init()
 {
-    offsets::m_bSpotted = (uintptr_t)globals::g_NetVars.FindOffset("DT_BaseEntity", "m_bSpotted");
-    offsets::m_iTeamNum = (uintptr_t)globals::g_NetVars.FindOffset("DT_BaseEntity", "m_iTeamNum");
-    offsets::m_iKills = (uintptr_t)globals::g_NetVars.FindOffset("DT_PlayerResource", "m_iKills");
-    offsets::m_fFlags = (uintptr_t)globals::g_NetVars.FindOffset("DT_BasePlayer", "m_fFlags");
-    offsets::m_bIsScoped = (uintptr_t)globals::g_NetVars.FindOffset("DT_CSPlayer", "m_bIsScoped");
-    offsets::deadFlag = (uintptr_t)globals::g_NetVars.FindOffset("DT_BasePlayer", "deadflag");
-    offsets::m_vecVelocity = (uintptr_t)globals::g_NetVars.FindOffset("DT_BasePlayer", "m_vecVelocity[0]");
+    bool allOk = true;
+
+    // Helper: find offset, log error if not found
+    auto findAndValidate = [&](const char* table, const char* name) -> uintptr_t {
+        intptr_t offset = globals::g_NetVars.FindOffset(table, name);
+        if (offset == 0) {
+            Log::Err("NetVars", "Failed to find offset for '{}.{}' — using 0", table, name);
+            allOk = false;
+        }
+        else {
+            Log::Info("NetVars", "Found '{}.{}' at offset {:#x}", table, name, (uintptr_t)offset);
+        }
+        return (uintptr_t)offset;
+    };
+
+    offsets::m_bSpotted =    findAndValidate("DT_BaseEntity", "m_bSpotted");
+    offsets::m_iTeamNum =    findAndValidate("DT_BaseEntity", "m_iTeamNum");
+    offsets::m_iKills =      findAndValidate("DT_PlayerResource", "m_iKills");
+    offsets::m_fFlags =      findAndValidate("DT_BasePlayer", "m_fFlags");
+    offsets::m_bIsScoped =   findAndValidate("DT_CSPlayer", "m_bIsScoped");
+    offsets::deadFlag =      findAndValidate("DT_BasePlayer", "deadflag");
+    offsets::m_vecVelocity = findAndValidate("DT_BasePlayer", "m_vecVelocity[0]");
+
+    if (allOk)
+        Log::Info("NetVars", "All netvar offsets resolved successfully");
+    else
+        Log::Err("NetVars", "Some netvar offsets failed to resolve — features may crash");
 
 #ifdef _DEBUG
     PrintNetVars(globals::g_interfaces.BaseClient->GetAllClasses());
 #endif // _DEBUG
 
+    return allOk;
 }

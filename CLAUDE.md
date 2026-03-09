@@ -64,11 +64,17 @@ CSGO_v22/CSGO_v2/
 - Only verified configs are listed in the menu
 - Config dir: `C:\Users\adama\Documents\CSGO_v2_Configs`
 
+### Logging
+- Log files at: `C:\Users\adama\Documents\CSGO_v2_Logs`
+- `csgo_v2.log` — general log, `csgo_v2_errors.log` — error dumps
+
 ### ImGui Version
 - **ImGui 1.88 WIP** (version 18724)
 - NO auto-resize child windows (that's 1.89+)
 - `BeginChild` with height 0 fills available space, cannot shrink to content
 - Line-count based height calculation for groups
+- **Side-by-side layout**: LeftGroup/RightGroup wrap children in `BeginGroup()`/`EndGroup()`. `EndGroup()` tracks bounding box so the next row starts below the taller group. See `imgui_demo.cpp:7033-7073`.
+- ImGui source/docs at `ext/ImGui/` — `imgui_demo.cpp` is the best reference for layout patterns
 
 ## Conventions
 - `cfg` is the global `Config` instance (defined in config.h as `inline Config cfg`)

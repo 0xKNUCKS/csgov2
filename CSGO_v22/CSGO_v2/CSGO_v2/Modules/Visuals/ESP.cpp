@@ -49,7 +49,7 @@ void ESP::Render()
 		if (cfg.visuals.esp.HealthBar)
 			DrawHealthBar(bbox, ent->health());
 
-		if (cfg.visuals.esp.BoudningBox) {
+		if (cfg.visuals.esp.BoundingBox) {
 			switch ((eBoxType)cfg.visuals.esp.boxType)
 			{
 			case Outlined:
@@ -119,6 +119,8 @@ void ESP::DrawBoundingBox(BBox bbox)
 
 void ESP::DrawHealthBar(BBox bbox, int health)
 {
+	health = max(0, min(health, 100)); // clamp to valid range
+
 	math::Vector barPos = math::Vector(bbox.topRight.x + 2.f, bbox.bottomLeft.y);
 	float barHeight = bbox.h * health / 100; // get health percentage % and apply it to the bar's height
 
@@ -126,8 +128,10 @@ void ESP::DrawHealthBar(BBox bbox, int health)
 	Render::FilledRect(barPos.x, barPos.y, 2, -barHeight /*hehe*/, ImColor(1.f, 1.f, 1.f, baseOpacity)); // actual health bar
 }
 
-void ESP::DrawName(BBox bbox, std::string name)
+void ESP::DrawName(BBox bbox, const std::string& name)
 {
+	if (name.empty()) return;
+
 	ImVec2 nameSize = ImGui::CalcTextSize(name.c_str());
 	math::Vector namePos = math::Vector(bbox.topLeft.x + bbox.w / 2 - nameSize.x/2, bbox.bottomLeft.y);
 
@@ -136,18 +140,29 @@ void ESP::DrawName(BBox bbox, std::string name)
 
 void ESP::DrawSkeleton(gEntity* entity)
 {
+	if (!entity) return;
+
 	auto model = entity->getModel();
 	if (!model)
 		return;
 
 	auto studioHDR = globals::g_interfaces.ModelInfo->GetStudioModel(model);
-	if (!studioHDR)
+	if (!studioHDR || studioHDR->numbones <= 0)
+		return;
+
+	auto& cache = entity->boneCache();
+	int cacheSize = cache.size;
+	if (cacheSize <= 0)
 		return;
 
 	for (int i = 0; i < studioHDR->numbones; i++) {
 		auto bone = studioHDR->pBone(i);
 
 		if (!bone || !(bone->flags & BONE_USED_BY_HITBOX) || bone->parent == -1)
+			continue;
+
+		// Bounds check against bone cache
+		if (i >= cacheSize || bone->parent >= cacheSize)
 			continue;
 
 		math::Vector childBone = entity->getBonePosFromChache(i);

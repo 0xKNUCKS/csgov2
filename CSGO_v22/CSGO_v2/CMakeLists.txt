@@ -47,25 +47,34 @@ target_include_directories(ext_animation PUBLIC ext/AnimationLib)
 # Main DLL — CSGO_v2
 # ============================================================
 add_library(CSGO_v2 SHARED
+    # Source Files
     CSGO_v2/dllmain.cpp
-    CSGO_v2/hook.cpp
-    CSGO_v2/hooksManager.cpp
-    CSGO_v2/VMT.cpp
-    CSGO_v2/GUI.cpp
-    CSGO_v2/drawing.cpp
-    CSGO_v2/UI.cpp
-    CSGO_v2/ESP.cpp
-    CSGO_v2/aimbot.cpp
-    CSGO_v2/Misc.cpp
-    CSGO_v2/entity.cpp
-    CSGO_v2/localplayer.cpp
-    CSGO_v2/interface.cpp
-    CSGO_v2/netvars.cpp
-    CSGO_v2/utils.cpp
-    CSGO_v2/Input.cpp
-    CSGO_v2/UserCmd.cpp
-    CSGO_v2/CRC.cpp
-    CSGO_v2/config.cpp
+
+    # SDK
+    CSGO_v2/SDK/interface/interface.cpp
+    CSGO_v2/SDK/netvars/netvars.cpp
+    CSGO_v2/SDK/Entity/entity.cpp
+    CSGO_v2/SDK/Entity/localplayer.cpp
+    CSGO_v2/SDK/CRC/CRC.cpp
+    CSGO_v2/SDK/Classes/UserCmd/UserCmd.cpp
+    CSGO_v2/SDK/Classes/Input/Input.cpp
+
+    # lib
+    CSGO_v2/lib/Hooks/hook.cpp
+    CSGO_v2/lib/Hooks/GUI/GUI.cpp
+    CSGO_v2/lib/Hooks/Manager/hooksManager.cpp
+    CSGO_v2/lib/Memory/VMT.cpp
+    CSGO_v2/lib/utils/utils.cpp
+    CSGO_v2/lib/Configs/config.cpp
+    CSGO_v2/lib/Menu/UI.cpp
+
+    # dx9
+    CSGO_v2/dx9/Drawing/drawing.cpp
+
+    # Modules
+    CSGO_v2/Modules/Aimbot/aimbot.cpp
+    CSGO_v2/Modules/Misc/Misc.cpp
+    CSGO_v2/Modules/Visuals/ESP.cpp
 )
 
 target_include_directories(CSGO_v2 PRIVATE

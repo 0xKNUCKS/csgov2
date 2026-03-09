@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Solution>
+	<Configurations>
+		<BuildType Name="Debug"/>
+		<BuildType Name="Release"/>
+		<BuildType Name="MinSizeRel"/>
+		<BuildType Name="RelWithDebInfo"/>
+		<Platform Name="Win32"/>
+	</Configurations>
+	<Project Path="ALL_BUILD.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="aefdf663-f9a4-344a-8c9c-4433459edd94" DefaultStartup="true">
+		<BuildDependency Project="CSGO_v2.vcxproj"/>
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="ext_animation.vcxproj"/>
+		<BuildDependency Project="ext_imgui.vcxproj"/>
+		<BuildDependency Project="ext_md5.vcxproj"/>
+		<BuildDependency Project="ext_minhook.vcxproj"/>
+		<Build Solution="Debug|*" Project="false"/>
+		<Build Solution="Release|*" Project="false"/>
+		<Build Solution="MinSizeRel|*" Project="false"/>
+		<Build Solution="RelWithDebInfo|*" Project="false"/>
+	</Project>
+	<Project Path="CSGO_v2.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="dc381a7d-9875-3014-9b4a-bd0936068b72">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="ext_animation.vcxproj"/>
+		<BuildDependency Project="ext_imgui.vcxproj"/>
+		<BuildDependency Project="ext_md5.vcxproj"/>
+		<BuildDependency Project="ext_minhook.vcxproj"/>
+	</Project>
+	<Project Path="ZERO_CHECK.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="fe06622a-c1c2-3e5b-ae54-abd33a567b85"/>
+	<Project Path="ext_animation.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="9b23692c-8377-3e4f-b47e-f729eadd6e09">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="ext_imgui.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="30ac88cc-a4d8-30bc-b40e-897155b65db5">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="ext_md5.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="205618f3-e4ee-3629-835e-d57f08f4a573">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="ext_minhook.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="fa10b8ec-e494-3e77-8b07-eb6763a27c5b">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+</Solution>

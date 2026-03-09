@@ -1,10 +1,10 @@
 // New Start for my csgo project :))
 #include <iostream>
 #include <Windows.h>
-#include "hook.h"
-#include "GUI.h"
-#include "Globals.h"
-#include "utils.h"
+#include "lib/Hooks/hook.h"
+#include "lib/Hooks/GUI/GUI.h"
+#include "SDK/Globals/Globals.h"
+#include "lib/utils/utils.h"
 
 /// Macros
 // Hash sum of game files to confirm the game's version

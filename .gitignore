@@ -17,3 +17,12 @@
 /.vs/slnx.sqlite
 /CSGO_v22/CSGO_v2/CSGO_v2/CSGO_v2.vcxproj.user
 /CSGO_v22/CSGO_v2/CSGO_Loader/x64/Debug/microsoft/STL
+
+# External reference sources (not part of the build)
+/external_sources/
+
+# Claude Code
+/.claude/
+
+# CMake build directory
+/CSGO_v22/CSGO_v2/build/

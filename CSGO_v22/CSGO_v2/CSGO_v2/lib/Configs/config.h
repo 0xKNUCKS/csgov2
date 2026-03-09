@@ -101,6 +101,7 @@ public:
 	} settings;
 
 	static std::string GetConfigDir();
+	static std::vector<std::string> ListConfigs();
 	bool Save(const std::string& name = "default") const;
 	bool Load(const std::string& name = "default");
 	void Reset();

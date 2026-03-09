@@ -66,7 +66,7 @@ add_library(CSGO_v2 SHARED
     CSGO_v2/lib/Memory/VMT.cpp
     CSGO_v2/lib/utils/utils.cpp
     CSGO_v2/lib/Configs/config.cpp
-    CSGO_v2/lib/Menu/UI.cpp
+    CSGO_v2/lib/Menu/Menu.cpp
 
     # dx9
     CSGO_v2/dx9/Drawing/drawing.cpp

@@ -1,5 +1,6 @@
 #include "config.h"
 #include "lib/utils/utils.h"
+#include "MD5.h"
 
 Hotkey::Hotkey(unsigned int key)
 	: virtualKey(key)
@@ -15,80 +16,138 @@ std::string Config::GetConfigDir()
 	return dir;
 }
 
+// Forward declare - defined after Save
+static bool VerifyConfig(const std::string& path);
+
+std::vector<std::string> Config::ListConfigs()
+{
+	std::vector<std::string> configs;
+	std::string dir = GetConfigDir();
+	for (auto& entry : std::filesystem::directory_iterator(dir)) {
+		if (entry.path().extension() == ".cfg" && VerifyConfig(entry.path().string()))
+			configs.push_back(entry.path().stem().string());
+	}
+	return configs;
+}
+
 // Simple key=value writer. One section per category, flat within.
+// First line is a header with MD5 checksum of the config body.
 bool Config::Save(const std::string& name) const
 {
 	std::string path = GetConfigDir() + "\\" + name + ".cfg";
+
+	// Build config body into a string first so we can hash it
+	std::ostringstream body;
+
+	body << "[aimbot]\n";
+	body << "Key=" << aimbot.Key.virtualKey << "\n";
+	body << "Enabled=" << aimbot.Enabled << "\n";
+	body << "Silent=" << aimbot.Silent << "\n";
+	body << "FOV=" << aimbot.FOV << "\n";
+	body << "Smooth=" << aimbot.Smooth << "\n";
+	body << "MaxPlayersInFov=" << aimbot.MaxPlayersInFov << "\n";
+	body << "DrawFov=" << aimbot.DrawFov << "\n";
+	body << "FriendlyFire=" << aimbot.FriendlyFire << "\n";
+
+	body << "\n[visuals]\n";
+	body << "Enabled=" << visuals.Enabled << "\n";
+	body << "Friendly=" << visuals.Friendly << "\n";
+
+	body << "\n[visuals.esp]\n";
+	body << "Enabled=" << visuals.esp.Enabled << "\n";
+	body << "Lines=" << visuals.esp.Lines << "\n";
+	body << "BoundingBox=" << visuals.esp.BoudningBox << "\n";
+	body << "Skeleton=" << visuals.esp.Skeleton << "\n";
+	body << "HealthBar=" << visuals.esp.HealthBar << "\n";
+	body << "Name=" << visuals.esp.Name << "\n";
+	body << "Dormant=" << visuals.esp.Dormant << "\n";
+	body << "BoxType=" << visuals.esp.boxType << "\n";
+	body << "Color=" << visuals.esp.color.r << "," << visuals.esp.color.g << ","
+	  << visuals.esp.color.b << "," << visuals.esp.color.a << "\n";
+
+	body << "\n[visuals.misc]\n";
+	body << "AspectRatio=" << visuals.misc.AspectRatio << "\n";
+	body << "ThirdPerson=" << visuals.misc.ThirdPerson << "\n";
+	body << "TPDistance=" << visuals.misc.TPDistance << "\n";
+	body << "CamFOV=" << visuals.misc.camFOV << "\n";
+	body << "SteadyCam=" << visuals.misc.SteadyCam << "\n";
+	body << "NoZoom=" << visuals.misc.noZoon << "\n";
+
+	body << "\n[visuals.viewmodel]\n";
+	body << "ViewModelFOV=" << visuals.viewmodel.ViewModelFOV << "\n";
+	body << "AlwaysDraw=" << visuals.viewmodel.AlwaysDraw << "\n";
+
+	body << "\n[misc.movement]\n";
+	body << "BunnyHop=" << misc.movement.BunnyHop << "\n";
+	body << "AirDuck=" << misc.movement.AirDuck << "\n";
+	body << "Strafe=" << misc.movement.Strafe << "\n";
+
+	body << "\n[misc.exploits]\n";
+	body << "InfDuck=" << misc.exploits.InfDuck << "\n";
+
+	body << "\n[settings]\n";
+	body << "StreamProof=" << settings.StreamProof << "\n";
+	body << "ShowDebug=" << settings.ShowDebug << "\n";
+	body << "AnimSpeed=" << settings.AnimSpeed << "\n";
+
+	body << "\n[settings.mouseTracer]\n";
+	body << "Enabled=" << settings.mouseTracer.Enabled << "\n";
+	body << "TrailLength=" << settings.mouseTracer.TrailLength << "\n";
+	body << "TrailThickness=" << settings.mouseTracer.TrailThickness << "\n";
+	body << "AlwaysOn=" << settings.mouseTracer.AlwaysOn << "\n";
+	body << "Color=" << settings.mouseTracer.Color.r << "," << settings.mouseTracer.Color.g << ","
+	  << settings.mouseTracer.Color.b << "," << settings.mouseTracer.Color.a << "\n";
+	body << "SecondColor=" << settings.mouseTracer.SecondColor.r << "," << settings.mouseTracer.SecondColor.g << ","
+	  << settings.mouseTracer.SecondColor.b << "," << settings.mouseTracer.SecondColor.a << "\n";
+
+	std::string bodyStr = body.str();
+	std::string hash = md5(bodyStr);
+
+	// Write header + body
 	std::ofstream f(path);
 	if (!f.is_open())
 		return false;
 
-	f << "[aimbot]\n";
-	f << "Key=" << aimbot.Key.virtualKey << "\n";
-	f << "Enabled=" << aimbot.Enabled << "\n";
-	f << "Silent=" << aimbot.Silent << "\n";
-	f << "FOV=" << aimbot.FOV << "\n";
-	f << "Smooth=" << aimbot.Smooth << "\n";
-	f << "MaxPlayersInFov=" << aimbot.MaxPlayersInFov << "\n";
-	f << "DrawFov=" << aimbot.DrawFov << "\n";
-	f << "FriendlyFire=" << aimbot.FriendlyFire << "\n";
-
-	f << "\n[visuals]\n";
-	f << "Enabled=" << visuals.Enabled << "\n";
-	f << "Friendly=" << visuals.Friendly << "\n";
-
-	f << "\n[visuals.esp]\n";
-	f << "Enabled=" << visuals.esp.Enabled << "\n";
-	f << "Lines=" << visuals.esp.Lines << "\n";
-	f << "BoundingBox=" << visuals.esp.BoudningBox << "\n";
-	f << "Skeleton=" << visuals.esp.Skeleton << "\n";
-	f << "HealthBar=" << visuals.esp.HealthBar << "\n";
-	f << "Name=" << visuals.esp.Name << "\n";
-	f << "Dormant=" << visuals.esp.Dormant << "\n";
-	f << "BoxType=" << visuals.esp.boxType << "\n";
-	f << "Color=" << visuals.esp.color.r << "," << visuals.esp.color.g << ","
-	  << visuals.esp.color.b << "," << visuals.esp.color.a << "\n";
-
-	f << "\n[visuals.misc]\n";
-	f << "AspectRatio=" << visuals.misc.AspectRatio << "\n";
-	f << "ThirdPerson=" << visuals.misc.ThirdPerson << "\n";
-	f << "TPDistance=" << visuals.misc.TPDistance << "\n";
-	f << "CamFOV=" << visuals.misc.camFOV << "\n";
-	f << "SteadyCam=" << visuals.misc.SteadyCam << "\n";
-	f << "NoZoom=" << visuals.misc.noZoon << "\n";
-
-	f << "\n[visuals.viewmodel]\n";
-	f << "ViewModelFOV=" << visuals.viewmodel.ViewModelFOV << "\n";
-	f << "AlwaysDraw=" << visuals.viewmodel.AlwaysDraw << "\n";
-
-	f << "\n[misc.movement]\n";
-	f << "BunnyHop=" << misc.movement.BunnyHop << "\n";
-	f << "AirDuck=" << misc.movement.AirDuck << "\n";
-	f << "Strafe=" << misc.movement.Strafe << "\n";
-
-	f << "\n[misc.exploits]\n";
-	f << "InfDuck=" << misc.exploits.InfDuck << "\n";
-
-	f << "\n[settings]\n";
-	f << "StreamProof=" << settings.StreamProof << "\n";
-	f << "ShowDebug=" << settings.ShowDebug << "\n";
-	f << "AnimSpeed=" << settings.AnimSpeed << "\n";
-
-	f << "\n[settings.mouseTracer]\n";
-	f << "Enabled=" << settings.mouseTracer.Enabled << "\n";
-	f << "TrailLength=" << settings.mouseTracer.TrailLength << "\n";
-	f << "TrailThickness=" << settings.mouseTracer.TrailThickness << "\n";
-	f << "AlwaysOn=" << settings.mouseTracer.AlwaysOn << "\n";
-	f << "Color=" << settings.mouseTracer.Color.r << "," << settings.mouseTracer.Color.g << ","
-	  << settings.mouseTracer.Color.b << "," << settings.mouseTracer.Color.a << "\n";
-	f << "SecondColor=" << settings.mouseTracer.SecondColor.r << "," << settings.mouseTracer.SecondColor.g << ","
-	  << settings.mouseTracer.SecondColor.b << "," << settings.mouseTracer.SecondColor.a << "\n";
+	f << "# CSGO_v2 cfg " << hash << "\n";
+	f << bodyStr;
 
 	return f.good();
 }
 
+// Header format: "# CSGO_v2 cfg <md5hash>"
+static const std::string CFG_HEADER_PREFIX = "# CSGO_v2 cfg ";
+
+// Verify a config file's integrity. Returns true if header + hash match body.
+static bool VerifyConfig(const std::string& path)
+{
+	std::ifstream f(path);
+	if (!f.is_open()) return false;
+
+	// Read header line
+	std::string header;
+	if (!std::getline(f, header)) return false;
+
+	// Trim \r
+	while (!header.empty() && header.back() == '\r')
+		header.pop_back();
+
+	// Check prefix
+	if (header.substr(0, CFG_HEADER_PREFIX.size()) != CFG_HEADER_PREFIX)
+		return false;
+
+	std::string expectedHash = header.substr(CFG_HEADER_PREFIX.size());
+	if (expectedHash.size() != 32) return false; // MD5 is always 32 hex chars
+
+	// Read the rest of the file (body)
+	std::string body((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+	std::string actualHash = md5(body);
+
+	return actualHash == expectedHash;
+}
+
 // Parse helpers
 namespace {
+	// Parses the INI body (skips the header line)
 	std::unordered_map<std::string, std::string> ParseINI(const std::string& path)
 	{
 		std::unordered_map<std::string, std::string> kv;
@@ -96,7 +155,11 @@ namespace {
 		if (!f.is_open()) return kv;
 
 		std::string line, section;
+		bool firstLine = true;
 		while (std::getline(f, line)) {
+			// Skip header line
+			if (firstLine) { firstLine = false; continue; }
+
 			// Trim whitespace
 			while (!line.empty() && (line.back() == '\r' || line.back() == ' '))
 				line.pop_back();
@@ -154,6 +217,9 @@ bool Config::Load(const std::string& name)
 {
 	std::string path = GetConfigDir() + "\\" + name + ".cfg";
 	if (!std::filesystem::exists(path))
+		return false;
+
+	if (!VerifyConfig(path))
 		return false;
 
 	auto kv = ParseINI(path);

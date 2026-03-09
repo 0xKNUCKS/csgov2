@@ -17,7 +17,7 @@
 #include "lib/utils/utils.h"
 #include "lib/Configs/config.h"
 #include "SDK/Entity/entity.h"
-#include "lib/Menu/UI.h"
+#include "lib/Menu/Menu.h"
 
 typedef uint32_t uint150_t;
 

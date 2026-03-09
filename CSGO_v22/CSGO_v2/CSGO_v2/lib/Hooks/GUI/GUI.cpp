@@ -225,7 +225,7 @@ void gui::SetupMenu(LPDIRECT3DDEVICE9 device) noexcept
 
 	ImGui::CreateContext();
 	//ImGui::StyleColorsDark();
-	ui::SetupTheme();
+	menu::SetupTheme();
 
 	ImGui_ImplWin32_Init(gui::Window);
 	ImGui_ImplDX9_Init(device);
@@ -286,7 +286,7 @@ void gui::Render() noexcept
 		return;
 
 	auto xWindowPadding = ImGui::GetStyle().WindowPadding.x * 3;
-	auto xWindowSize = (270 * 2) + xWindowPadding; // 270 because thats the width size i use for my groups, * 2 for 2 collums
+	auto xWindowSize = (menu::kColumnWidth * 2) + xWindowPadding;
 	auto windowSize = ImVec2(xWindowSize, xWindowSize * 1.25f);
 	auto animatedSize = windowSize * animPopUp.getValue();
 	static auto windowPos = ImVec2((ImGui::GetIO().DisplaySize - windowSize) / 2);
@@ -341,149 +341,118 @@ void gui::Render() noexcept
 		{
 			if (ImGui::BeginTabItem("Aim"))
 			{
-				ui::BeginGroup(ImVec2(270, 175), "General");
+				menu::LeftGroup("General", 6)
+					.Hotkey(cfg.aimbot.Key)
+					.Checkbox("Enabled", &cfg.aimbot.Enabled)
+					.Checkbox("Silent", &cfg.aimbot.Silent)
+					.Slider("FOV", &cfg.aimbot.FOV, 0, 180, "%.1f")
+					.Slider("Smooth", &cfg.aimbot.Smooth, 1, 10.0f, cfg.aimbot.Smooth > 1 ? "%.2f" : "None")
+					.Checkbox("Aim At Friendly", &cfg.aimbot.FriendlyFire)
+					.End();
 
-				ui::HotkeySelector(cfg.aimbot.Key);
-				ImGui::Checkbox("Enabled", &cfg.aimbot.Enabled);
-				ImGui::Checkbox("Silent", &cfg.aimbot.Silent);
-				ImGui::SliderFloat("##FOVval", &cfg.aimbot.FOV, 0, 180, "FOV %.1f");
-				ImGui::SliderFloat("##Smoothval", &cfg.aimbot.Smooth, 1, 10.0f, cfg.aimbot.Smooth > 1 ? "Smooth %.2f" : "Smooth None");
-				ImGui::Checkbox("Aim At Friendly", &cfg.aimbot.FriendlyFire);
-				ui::EndGroup();
+				menu::RightGroup("Visuals", 1)
+					.Checkbox("FOV Circle", &cfg.aimbot.DrawFov)
+					.End();
 
-				ImGui::SameLine();
-
-				// Right Side
-				ui::BeginGroup(ImVec2(270, 70), "Visuals");
-				ImGui::Checkbox("FOV Circle", &cfg.aimbot.DrawFov);
-				ui::EndGroup();
+				menu::LeftGroup("Performance", 1)
+					.SliderInt("Max Players Scan", &cfg.aimbot.MaxPlayersInFov, 2, 20, "%d",
+						"Max Amount of Players Scanned inside of the aim FOV")
+					.End();
 
 				ImGui::EndTabItem();
-
-				ui::BeginGroup(ImVec2(270, 70), "Performance");
-
-				ImGui::SliderInt("##MaxPlayersScanval", &cfg.aimbot.MaxPlayersInFov, 2, 20, "Max Players Scan %d");
-				ui::HelpMarker("Max Amount of Players Scanned inside of the aim FOV");
-				ui::EndGroup();
 			}
 
 			if (ImGui::BeginTabItem("Visuals"))
 			{
-				ui::BeginGroup(ImVec2(270, 220), "Player");
-				ImGui::Checkbox("Enabled", &cfg.visuals.Enabled);
-				ImGui::Checkbox("Bounding Box", &cfg.visuals.esp.BoudningBox); ImGui::SameLine();
+				menu::LeftGroup("Player", 8)
+					.Checkbox("Enabled", &cfg.visuals.Enabled)
+					.Custom([]{
+						ImGui::Checkbox("Bounding Box", &cfg.visuals.esp.BoudningBox);
+						ImGui::SameLine();
+						ImGui::PushItemWidth(menu::kColumnWidth * 0.3f);
+						ImGui::Combo("##ESPboxType", &cfg.visuals.esp.boxType, "Outlined\0Filled\0Box3d\0Corners\0");
+						ImGui::PopItemWidth();
+					})
+					.Checkbox("Show Skeleton", &cfg.visuals.esp.Skeleton)
+					.Checkbox("Health Bar", &cfg.visuals.esp.HealthBar)
+					.Checkbox("Snap Lines", &cfg.visuals.esp.Lines)
+					.Checkbox("Display Name", &cfg.visuals.esp.Name)
+					.Checkbox("Show Dormant", &cfg.visuals.esp.Dormant, "Show players that are not updated by the server. (kinda useless)")
+					.Checkbox("Show Friendly", &cfg.visuals.Friendly)
+					.End();
 
-				ImGui::PushItemWidth(270 * 0.3);
-				ImGui::Combo("##ESPboxType", &cfg.visuals.esp.boxType, "Outlined\0Filled\0Box3d\0Corners\0");
-				ImGui::PopItemWidth();
-				
-				ImGui::Checkbox("Show Skeleton", &cfg.visuals.esp.Skeleton);
-				ImGui::Checkbox("Health Bar", &cfg.visuals.esp.HealthBar);
-				ImGui::Checkbox("Snap Lines", &cfg.visuals.esp.Lines);
-				ImGui::Checkbox("Display Name", &cfg.visuals.esp.Name);
-				ImGui::Checkbox("Show Dormant", &cfg.visuals.esp.Dormant); ui::HelpMarker("Show players that are not updated by the server. (kinda useless)");
-				ImGui::Checkbox("Show Friendly", &cfg.visuals.Friendly);
-
-				ui::EndGroup();
-
-				ui::BeginGroup(ImVec2(270, 265), "Misc");
-				ImGui::Checkbox("Third Person", &cfg.visuals.misc.ThirdPerson);
-				ImGui::SliderFloat("##ThirdPersonDistance", &cfg.visuals.misc.TPDistance, 0.0f, 3.0f, "Distance %.2f");
-				ImGui::SliderFloat("##AspectRatio", &cfg.visuals.misc.AspectRatio, 0.0f, 3.0f, "Aspect Ratio %.2f");
-				ImGui::SliderFloat("##CAMFOV", &cfg.visuals.misc.camFOV, 40, 160.0f, "Cam Fov %.2f");
-				ImGui::Checkbox("Steady Cam", &cfg.visuals.misc.SteadyCam); ui::HelpMarker("Terminates the shaking effects in your Camera.");
-				ImGui::Checkbox("No Zoom", &cfg.visuals.misc.noZoon); ui::HelpMarker("Eliminates the zoom effect when using Scoping.");
-				ImGui::Spacing();
-
-				ui::BeginOutlineGroup("View Model");
-				ImGui::SliderFloat("##ViewModelFOV", &cfg.visuals.viewmodel.ViewModelFOV, 60, 140.0f, "FOV %.2f");
-				ImGui::Checkbox("Always Draw", &cfg.visuals.viewmodel.AlwaysDraw);
-				ui::EndOutlineGroup();
-
-				ui::EndGroup();
+				menu::RightGroup("Misc", 10)
+					.Checkbox("Third Person", &cfg.visuals.misc.ThirdPerson)
+					.Slider("Distance", &cfg.visuals.misc.TPDistance, 0.0f, 3.0f)
+					.Slider("Aspect Ratio", &cfg.visuals.misc.AspectRatio, 0.0f, 3.0f)
+					.Slider("Cam Fov", &cfg.visuals.misc.camFOV, 40.f, 160.0f)
+					.Checkbox("Steady Cam", &cfg.visuals.misc.SteadyCam, "Terminates the shaking effects in your Camera.")
+					.Checkbox("No Zoom", &cfg.visuals.misc.noZoon, "Eliminates the zoom effect when using Scoping.")
+					.Space()
+					.SubSection("View Model", [](auto& s) {
+						s.Slider("FOV", &cfg.visuals.viewmodel.ViewModelFOV, 60.f, 140.0f)
+						 .Checkbox("Always Draw", &cfg.visuals.viewmodel.AlwaysDraw);
+					})
+					.End();
 
 				ImGui::EndTabItem();
 			}
 
 			if (ImGui::BeginTabItem("Misc"))
 			{
-				ui::BeginGroup(ImVec2(270, 150), "Movement");
-				ImGui::Checkbox("Bunny Hop", &cfg.misc.movement.BunnyHop);
-				ImGui::Checkbox("Auto-Strafe", &cfg.misc.movement.Strafe);
-				ImGui::Checkbox("Air Duck", &cfg.misc.movement.AirDuck);
-				ui::EndGroup();
+				menu::LeftGroup("Movement", 3)
+					.Checkbox("Bunny Hop", &cfg.misc.movement.BunnyHop)
+					.Checkbox("Auto-Strafe", &cfg.misc.movement.Strafe)
+					.Checkbox("Air Duck", &cfg.misc.movement.AirDuck)
+					.End();
 
-				ui::BeginGroup(ImVec2(270, 80), "Exploits");
-				ImGui::Checkbox("Infinite Duck", &cfg.misc.exploits.InfDuck);
-				ui::EndGroup();
+				menu::LeftGroup("Exploits", 1)
+					.Checkbox("Infinite Duck", &cfg.misc.exploits.InfDuck)
+					.End();
 
 				ImGui::EndTabItem();
 			}
 
 			if (ImGui::BeginTabItem("Settings"))
 			{
-				//ImGui::Checkbox("Stream Proof", &cfg.settings.StreamProof); // No Work :)
-				ImGui::Checkbox("Show Debug Window", &cfg.settings.ShowDebug);
-				if (ImGui::Button("Unload [Pause]")) // the "Pause" key will also unload it :)
-				{
+				menu::Checkbox("Show Debug Window", &cfg.settings.ShowDebug);
+				if (menu::Button("Unload [Pause]"))
 					bUnloaded = true;
-				}
-				ImGui::SliderFloat("##Animations_Speed", &cfg.settings.AnimSpeed, 0.5f, 4.f, "Animations's Speed %.2f"); ui::HelpMarker("Modify the menu's animation speed.\n including the fade-in and out speed, etc");
+				menu::Slider("Animation Speed", &cfg.settings.AnimSpeed, 0.5f, 4.f, "%.2f",
+					"Modify the menu's animation speed.\n including the fade-in and out speed, etc");
 
 				ImGui::Spacing();
-				ui::BeginOutlineGroup("Config");
+
 				static char cfgName[64] = "default";
-				ImGui::InputText("##CfgName", cfgName, sizeof(cfgName));
-				if (ImGui::Button("Save")) cfg.Save(cfgName);
-				ImGui::SameLine();
-				if (ImGui::Button("Load")) cfg.Load(cfgName);
-				ImGui::SameLine();
-				if (ImGui::Button("Reset")) cfg.Reset();
-				ui::EndOutlineGroup();
+				menu::Section("Config")
+					.InputText("##CfgName", cfgName, sizeof(cfgName))
+					.Button("Save", [&]{ cfg.Save(cfgName); })
+					.SameLine()
+					.Button("Load", [&]{ cfg.Load(cfgName); })
+					.SameLine()
+					.Button("Reset", [&]{ cfg.Reset(); })
+					.ListBox("Configs", "##CfgList", Config::ListConfigs(), cfgName,
+						[&](const std::string& name) {
+							strncpy_s(cfgName, name.c_str(), sizeof(cfgName) - 1);
+							cfg.Load(name);
+						})
+					.End();
 
-				ui::BeginOutlineGroup("Mouse Tracer");
-				ImGui::Checkbox("Enabled##MouseTracer", &cfg.settings.mouseTracer.Enabled); ui::HelpMarker("Creates a trail behind your mouse tracing it!");
-				ImGui::SliderInt("##TrailLength", &cfg.settings.mouseTracer.TrailLength, 15, 100, "Trail Length %d");
+				menu::Gap();
 
-				static int curOption = 1; // "Thick" as default
+				static int curOption = 1;
 				const float ThicknessOptions[3] = { 1.f, 4.f, 8.f };
 				cfg.settings.mouseTracer.TrailThickness = ThicknessOptions[curOption];
-				ImGui::Text("Trail Thickness");
-				ImGui::Combo("##TailThcikness", &curOption, "Slim\0Thick\0Bold\0");
-				
-				// 1st color picker
-				{
-					if (ImGui::ColorButton("##Color1", ImVec4(cfg.settings.mouseTracer.Color.r, cfg.settings.mouseTracer.Color.g, cfg.settings.mouseTracer.Color.b, cfg.settings.mouseTracer.Color.a))) {
-						ImGui::OpenPopup("Color_1");
-					}
 
-					ImGui::SameLine();  ImGui::Text("Color");
-
-					if (ImGui::BeginPopup("Color_1"))
-					{
-						ImGui::ColorPicker4("Main Color", cfg.settings.mouseTracer.Color, ImGuiColorEditFlags_NoAlpha);
-						ImGui::EndPopup();
-					}
-				}
-
-				// 2nd color picker
-				{
-					if (ImGui::ColorButton("##SecondColor", ImVec4(cfg.settings.mouseTracer.SecondColor.r, cfg.settings.mouseTracer.SecondColor.g, cfg.settings.mouseTracer.SecondColor.b, cfg.settings.mouseTracer.SecondColor.a))) {
-						ImGui::OpenPopup("Color_2");
-					}
-
-					ImGui::SameLine();  ImGui::Text("Second Color");
-
-					if (ImGui::BeginPopup("Color_2"))
-					{
-						ImGui::ColorPicker4("Second Color", cfg.settings.mouseTracer.SecondColor, ImGuiColorEditFlags_NoAlpha);
-						ImGui::EndPopup();
-					}
-				}
-
-				ImGui::Checkbox("Always On", &cfg.settings.mouseTracer.AlwaysOn); ui::HelpMarker("Always show the tracer, even when the menu is closed.");
-
-				ui::EndOutlineGroup();
+				menu::Section("Mouse Tracer")
+					.Checkbox("Enabled##MouseTracer", &cfg.settings.mouseTracer.Enabled, "Creates a trail behind your mouse tracing it!")
+					.SliderInt("Trail Length", &cfg.settings.mouseTracer.TrailLength, 15, 100)
+					.Text("Trail Thickness")
+					.Combo("Thickness", &curOption, "Slim\0Thick\0Bold\0")
+					.ColorPicker("Color", cfg.settings.mouseTracer.Color)
+					.ColorPicker("Second Color", cfg.settings.mouseTracer.SecondColor)
+					.Checkbox("Always On", &cfg.settings.mouseTracer.AlwaysOn, "Always show the tracer, even when the menu is closed.")
+					.End();
 
 				ImGui::EndTabItem();
 			}
@@ -511,70 +480,68 @@ void gui::Render() noexcept
 
 void gui::DebugWindow() noexcept
 {
-	ImGui::Begin("DBG Window##DebugGame", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+	ImGui::Begin("Debug##DebugGame", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
-	if (ImGui::Button("Use globals::g_interfaces.Engine->ClientCmdUnrestricted"))
+	if (ImGui::CollapsingHeader("Actions", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		globals::g_interfaces.Engine->ClientCmdUnrestricted("say Hello World!");
-		globals::g_interfaces.Engine->ClientCmdUnrestricted("echo [Info] Hit Miss Wowowow!!");
+		ImGui::Checkbox("Enable AA", &hooks::viewRealAngles);
+		if (ImGui::Button("Run ClientCmdUnrestricted"))
+		{
+			globals::g_interfaces.Engine->ClientCmdUnrestricted("say Hello World!");
+			globals::g_interfaces.Engine->ClientCmdUnrestricted("echo [Info] Hit Miss Wowowow!!");
+		}
 	}
 
-	ImGui::Text(globals::g_interfaces.InputSystem->ButtonCodeToString(ButtonCode_t::KEY_INSERT));
-
-	ImGui::Checkbox("Enable AA", &hooks::viewRealAngles);
-
-	//ImGui::Text("FOV: %.1f\nEntity: %d\nDistance: %.1f", aimbot::Target.fov, aimbot::Target.ent.GetEnt(), aimbot::Target.distance);
-	//ImGui::Text("LocalPlayer Name = %s", LocalPlayer.GetName());
-	//ImGui::Spacing();
-	//ImGui::Text("LocalPlayer.GetTeamId() = %d", LocalPlayer.Get() ? LocalPlayer.GetTeamId() : 99);
-	//ImGui::Spacing();
-	//ImGui::Text("offsets::m_vecViewOffset = %d", (uintptr_t)globals::g_NetVars.FindOffset("CBasePlayer", "m_vecViewOffset[0]"));
-	////ImGui::Spacing();
-	//gEntity* enty = (gEntity*)LocalPlayer.Get();
-	////math::Vector Pos = LocalPlayer.Get() ? LocalPlayer.GetBonePos(8) : math::Vector{0, 0, 0};
-	//math::Vector Pos = LocalPlayer.Get() ? LocalPlayer.GetBonePos(8) : math::Vector{0, 0, 0};
-	//ImGui::Text("Local Head Pos: x.%.1f, y.%.1f, z.%.1f", Pos.x, Pos.y, Pos.z);
-	//ImGui::Spacing();
-	math::Vector Orgin = LocalPlayer.Get() ? LocalPlayer->getAbsOrigin() : math::Vector{0, 0, 0};
-	ImGui::Text("Local Player Orgin: x.%.1f, y.%.1f, z.%.1f", Orgin.x, Orgin.y, Orgin.z);
-	bool Flag = LocalPlayer.Get() ? LocalPlayer->flags() & PlayerFlag_OnGround : 0;
-	ImGui::Text("Local Player OnGround Flag: %d", Flag);
-	bool Flag2 = LocalPlayer.Get() ? LocalPlayer->flags() & PlayerFlag_Crouched : 0;
-	ImGui::Text("Local Player Crouched Flag: %d", Flag2);
-	bool Flag3 = LocalPlayer.Get() ? LocalPlayer->flags() & PlayerFlag_PartialGround : 0;
-	ImGui::Text("Local Player PartialGround Flag: %d", Flag2);
-	ImGui::Spacing();
-	ImGui::Text("g_interfaces.Engine->GetLocalPlayerIdx() = %d", globals::g_interfaces.Engine->GetLocalPlayerIdx());
-	ImGui::Spacing();
-	ImGui::Text("globals::g_interfaces.Engine->IsInGame() = %d", globals::g_interfaces.Engine->IsInGame());
-	ImGui::Spacing();
-	ImGui::Text("g_interfaces.BaseClient = 0x%d", globals::g_interfaces.BaseClient);
-	ImGui::Spacing();
-	ImGui::Text("g_interfaces.ClientEntity = 0x%d", globals::g_interfaces.ClientEntity);
-	ImGui::Spacing();
-	ImGui::Text("g_interfaces.Engine = 0x%d", globals::g_interfaces.Engine);
-	ImGui::Spacing();
-	ImGui::Text("input->cameraOffset = %.1f, %.1f, %.1f", hooks::input->cameraOffset.x, hooks::input->cameraOffset.y, hooks::input->cameraOffset.z);
-	ImGui::Text("input->isCameraInThirdPerson = %d", hooks::input->isCameraInThirdPerson);
-	if (ImGui::Button("Enable/Disable Third Person"))
-		hooks::input->isCameraInThirdPerson = !hooks::input->isCameraInThirdPerson;
-	ImGui::SliderFloat("Camera Z axis", &hooks::input->cameraOffset.z, 0, 800);
-	ImGui::Text("GlobalVars debug");
-	ImGui::Text("hooks::GlobalVars->absoluteframetime = %f\nhooks::GlobalVars->curtime = %f\nhooks::GlobalVars->frametime = %f\nhooks::GlobalVars->maxClients %d\n",
-		hooks::GlobalVars->absoluteframetime, hooks::GlobalVars->curtime, hooks::GlobalVars->frametime, hooks::GlobalVars->maxClients);
-
-	ImGui::Spacing();
-	ImGui::Text("WindowPos[%f, %f], WindowSize[%f, %f]", ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowSize().x, ImGui::GetWindowSize().y);
-
-	ImGui::Spacing();
-	if (globals::g_cmd)
+	if (ImGui::CollapsingHeader("Player", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		ImGui::SliderFloat3("cmd->AimDirection", &globals::g_cmd->aimdirection.x, 0, 1000);
-		ImGui::SliderFloat("cmd->SideMove", &globals::g_cmd->sidemove, 0, 1000);
-		ImGui::SliderFloat("cmd->ForwardMove", &globals::g_cmd->forwardmove, 0, 1000);
-		ImGui::Text("globals::g_cmd->tick_count: %d", globals::g_cmd->tick_count);
-		ImGui::SliderFloat3("cmd->viewangles", &globals::g_cmd->viewangles.x, -180, 180);
+		math::Vector origin = LocalPlayer.Get() ? LocalPlayer->getAbsOrigin() : math::Vector{ 0, 0, 0 };
+		ImGui::Text("Origin: %.1f, %.1f, %.1f", origin.x, origin.y, origin.z);
+
+		if (LocalPlayer.Get()) {
+			bool onGround = LocalPlayer->flags() & PlayerFlag_OnGround;
+			bool crouched = LocalPlayer->flags() & PlayerFlag_Crouched;
+			bool partialGround = LocalPlayer->flags() & PlayerFlag_PartialGround;
+			ImGui::Text("Flags: OnGround=%d  Crouched=%d  PartialGround=%d", onGround, crouched, partialGround);
+		}
+
+		ImGui::Text("LocalPlayerIdx: %d", globals::g_interfaces.Engine->GetLocalPlayerIdx());
+		ImGui::Text("IsInGame: %d", globals::g_interfaces.Engine->IsInGame());
 	}
+
+	if (ImGui::CollapsingHeader("Camera"))
+	{
+		ImGui::Text("Offset: %.1f, %.1f, %.1f", hooks::input->cameraOffset.x, hooks::input->cameraOffset.y, hooks::input->cameraOffset.z);
+		ImGui::Text("ThirdPerson: %d", hooks::input->isCameraInThirdPerson);
+		if (ImGui::Button("Toggle Third Person"))
+			hooks::input->isCameraInThirdPerson = !hooks::input->isCameraInThirdPerson;
+		ImGui::SliderFloat("Camera Z", &hooks::input->cameraOffset.z, 0, 800);
+	}
+
+	if (ImGui::CollapsingHeader("Interfaces"))
+	{
+		ImGui::Text("BaseClient   = 0x%p", globals::g_interfaces.BaseClient);
+		ImGui::Text("ClientEntity = 0x%p", globals::g_interfaces.ClientEntity);
+		ImGui::Text("Engine       = 0x%p", globals::g_interfaces.Engine);
+	}
+
+	if (ImGui::CollapsingHeader("GlobalVars"))
+	{
+		ImGui::Text("absoluteframetime: %f", hooks::GlobalVars->absoluteframetime);
+		ImGui::Text("curtime:           %f", hooks::GlobalVars->curtime);
+		ImGui::Text("frametime:         %f", hooks::GlobalVars->frametime);
+		ImGui::Text("maxClients:        %d", hooks::GlobalVars->maxClients);
+	}
+
+	if (globals::g_cmd && ImGui::CollapsingHeader("UserCmd"))
+	{
+		ImGui::SliderFloat3("AimDirection", &globals::g_cmd->aimdirection.x, 0, 1000);
+		ImGui::SliderFloat("SideMove", &globals::g_cmd->sidemove, 0, 1000);
+		ImGui::SliderFloat("ForwardMove", &globals::g_cmd->forwardmove, 0, 1000);
+		ImGui::Text("tick_count: %d", globals::g_cmd->tick_count);
+		ImGui::SliderFloat3("viewangles", &globals::g_cmd->viewangles.x, -180, 180);
+	}
+
+	ImGui::Text("Window: [%.0f, %.0f] %.0fx%.0f", ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowSize().x, ImGui::GetWindowSize().y);
 
 	ImGui::End();
 }

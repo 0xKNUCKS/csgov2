@@ -56,6 +56,9 @@ namespace hooks
 	inline CInput* input = nullptr;
 	inline CGlobalVarsBase* GlobalVars = nullptr;
 
+	// Cached from CreateMove for safe use in OverrideView (avoids virtual calls during map load)
+	inline math::Vector cachedEyePos = {};
+
 	// Hooks
 	inline hookManager d3dDeviceHk;
 	inline hookManager ClientModeHk;

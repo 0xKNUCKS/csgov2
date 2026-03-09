@@ -84,6 +84,13 @@ public:
 	VIRTUAL_METHOD(void, SetValue, 14, (const char* value), (this, value))
 	VIRTUAL_METHOD(void, SetValue, 15, (float value), (this, value))
 	VIRTUAL_METHOD(void, SetValue, 16, (int value), (this, value))
+
+	// Source Engine ConVar layout (32-bit):
+	// 0x34 = m_bHasMin, 0x38 = m_fMinVal, 0x3C = m_bHasMax, 0x40 = m_fMaxVal
+	void RemoveLimits() {
+		*(bool*)((uintptr_t)this + 0x34) = false;
+		*(bool*)((uintptr_t)this + 0x3C) = false;
+	}
 };
 
 class ICvar

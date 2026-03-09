@@ -161,8 +161,22 @@ void __stdcall hkCreateMove(int sequence_number, float input_sample_frametime, b
 
 	static int lastTick = cmd->tick_count;
 
-	// TODO: fix this bs, no work without sv_cheats on, also distance no work too, bad bad bad (also add keys pls thanks)
-	hooks::input->isCameraInThirdPerson = cfg.visuals.misc.ThirdPerson && LocalPlayer.Get();
+	// Third person: use netvar reads instead of virtual calls to avoid vtable crash during map transitions
+	if (cfg.visuals.misc.ThirdPerson && globals::g_interfaces.Engine->IsInGame() && LocalPlayer.Get()) {
+		// Read deadflag netvar directly (0 = alive) - avoids virtual isAlive() call
+		bool alive = *(int*)((uintptr_t)LocalPlayer.Get() + offsets::deadFlag) == 0;
+		if (alive) {
+			hooks::input->isCameraInThirdPerson = true;
+			// Eye position = abs origin + view offset
+			auto viewOffset = *(math::Vector*)((uintptr_t)LocalPlayer.Get() + offsets::m_vecViewOffset);
+			const auto& origin = LocalPlayer->getAbsOrigin();
+			hooks::cachedEyePos = { origin.x + viewOffset.x, origin.y + viewOffset.y, origin.z + viewOffset.z };
+		} else {
+			hooks::input->isCameraInThirdPerson = false;
+		}
+	} else {
+		hooks::input->isCameraInThirdPerson = false;
+	}
 
 	if (cfg.misc.exploits.InfDuck)
 		cmd->buttons |= cmd->IN_BULLRUSH;
@@ -241,16 +255,47 @@ void __stdcall hkOverrideView(CViewSetup* pSetup)
 	hooks::ClientModeHk.callOriginal<void, index::ClientMode::OverrideView>(pSetup);
 	if (!hooks::setupComplete) return;
 
-	if (LocalPlayer.Get())
-	{
-		// Show Real Angles when 3rd Person :) (no workie :( gotta use prediction, thats what im planning on, its a TODO)
-		//if (hooks::input->isCameraInThirdPerson)
-		//	*(math::Vector*)(LocalPlayer.Get() + offsets::deadFlag + 0x4) = math::Vector(0, 89, 0);
-	}
+	// Third person camera distance with wall collision
+	if (hooks::input->isCameraInThirdPerson) {
+		float dist = 150.f * cfg.visuals.misc.TPDistance;
 
-	// not perfect but eh im okay
-	//if (hooks::input->isCameraInThirdPerson) // verry shitty dont use (big TODO: IMPROVE THIRD PERSON FFS!!!)
-	//	pSetup->origin += input->cameraOffset.z * cfg.visuals.misc.TPDistance;
+		float pitch = pSetup->angles.x * (3.14159265f / 180.f);
+		float yaw   = pSetup->angles.y * (3.14159265f / 180.f);
+
+		math::Vector forward;
+		forward.x = cosf(pitch) * cosf(yaw);
+		forward.y = cosf(pitch) * sinf(yaw);
+		forward.z = -sinf(pitch);
+
+		math::Vector eyePos = hooks::cachedEyePos;
+		math::Vector camPos;
+		camPos.x = eyePos.x - forward.x * dist;
+		camPos.y = eyePos.y - forward.y * dist;
+		camPos.z = eyePos.z - forward.z * dist;
+
+		// Trace from eye to desired camera position to avoid clipping through walls
+		if (globals::g_interfaces.EngineTrace) {
+			Ray_t ray(eyePos, camPos);
+			ITraceFilter filter(LocalPlayer.Get());
+			trace_t trace;
+
+			__try {
+				globals::g_interfaces.EngineTrace->TraceRay(ray, MASK_SOLID, filter, trace);
+			} __except (EXCEPTION_EXECUTE_HANDLER) {
+				pSetup->origin = camPos;
+				return; // trace failed, use unclipped position
+			}
+
+			if (trace.fraction < 1.0f) {
+				// Hit a wall — pull camera to the hit point with a small offset
+				camPos.x = eyePos.x + (camPos.x - eyePos.x) * trace.fraction * 0.95f;
+				camPos.y = eyePos.y + (camPos.y - eyePos.y) * trace.fraction * 0.95f;
+				camPos.z = eyePos.z + (camPos.z - eyePos.z) * trace.fraction * 0.95f;
+			}
+		}
+
+		pSetup->origin = camPos;
+	}
 
 	if (cfg.visuals.misc.SteadyCam) {
 		pSetup->angles = globals::g_interfaces.Engine->GetViewAngles(); // LOL xD
@@ -261,7 +306,7 @@ void __stdcall hkOverrideView(CViewSetup* pSetup)
 	globals::g_interfaces.Cvar->FindVar("zoom_sensitivity_ratio_mouse")->SetValue(temp_zoom_sensitivity_ratio_mouse); // restore the zoom sens ratio
 
 	// if currently zooming
-	if (LocalPlayer.Get() && cfg.visuals.misc.noZoon && ( LocalPlayer->isScoped() || pSetup->fov != cfg.visuals.misc.camFOV)) {
+	if (LocalPlayer.Get() && cfg.visuals.misc.NoZoom && ( LocalPlayer->isScoped() || pSetup->fov != cfg.visuals.misc.camFOV)) {
 		pSetup->fov = cfg.visuals.misc.camFOV;
 		globals::g_interfaces.Cvar->FindVar("zoom_sensitivity_ratio_mouse")->SetValue(0.f);
 		

@@ -34,9 +34,25 @@ public:
 		bool Silent = false;
 		float FOV = 10.0f;
 		float Smooth = 10.0f;
+		float SmoothX = 1.0f; // pitch smooth multiplier (1.0 = same as Smooth)
+		float SmoothY = 1.0f; // yaw smooth multiplier
 		int MaxPlayersInFov = 4;
 		bool DrawFov = true;
 		bool FriendlyFire = false;
+		bool VisibilityCheck = true;
+		int AimBone = 0; // 0=Head, 1=Neck, 2=Chest, 3=Stomach
+
+		// Recoil Control
+		bool RCS = false;
+		bool StandaloneRCS = true; // RCS works even without aimbot target
+		float RCSAmountX = 2.0f; // pitch compensation (2.0 = full)
+		float RCSAmountY = 2.0f; // yaw compensation (2.0 = full)
+		int RCSStartBullet = 1; // start compensating after N shots
+		float RCSSmooth = 1.0f; // 1.0 = instant, higher = smoother application
+
+		// Auto shoot
+		bool AutoShoot = false;
+		float AutoShootFov = 2.0f; // how close aim needs to be to auto-fire
 	} aimbot;
 
 	struct Visuals
@@ -47,7 +63,7 @@ public:
 		{
 			bool Enabled = false;
 			bool Lines = false;
-			bool BoudningBox = false;
+			bool BoundingBox = false;
 			bool Skeleton = false;
 			bool HealthBar = false;
 			bool Name = false;
@@ -62,7 +78,7 @@ public:
 			float TPDistance = 1.0f;
 			float camFOV = 90.0f; // 90 is the default FOV
 			bool SteadyCam = false;
-			bool noZoon = false;
+			bool NoZoom = false;
 		} misc;
 		struct ViewModel
 		{

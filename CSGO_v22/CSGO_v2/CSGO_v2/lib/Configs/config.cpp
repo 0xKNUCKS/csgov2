@@ -45,9 +45,21 @@ bool Config::Save(const std::string& name) const
 	body << "Silent=" << aimbot.Silent << "\n";
 	body << "FOV=" << aimbot.FOV << "\n";
 	body << "Smooth=" << aimbot.Smooth << "\n";
+	body << "SmoothX=" << aimbot.SmoothX << "\n";
+	body << "SmoothY=" << aimbot.SmoothY << "\n";
 	body << "MaxPlayersInFov=" << aimbot.MaxPlayersInFov << "\n";
 	body << "DrawFov=" << aimbot.DrawFov << "\n";
 	body << "FriendlyFire=" << aimbot.FriendlyFire << "\n";
+	body << "VisibilityCheck=" << aimbot.VisibilityCheck << "\n";
+	body << "AimBone=" << aimbot.AimBone << "\n";
+	body << "RCS=" << aimbot.RCS << "\n";
+	body << "StandaloneRCS=" << aimbot.StandaloneRCS << "\n";
+	body << "RCSAmountX=" << aimbot.RCSAmountX << "\n";
+	body << "RCSAmountY=" << aimbot.RCSAmountY << "\n";
+	body << "RCSStartBullet=" << aimbot.RCSStartBullet << "\n";
+	body << "RCSSmooth=" << aimbot.RCSSmooth << "\n";
+	body << "AutoShoot=" << aimbot.AutoShoot << "\n";
+	body << "AutoShootFov=" << aimbot.AutoShootFov << "\n";
 
 	body << "\n[visuals]\n";
 	body << "Enabled=" << visuals.Enabled << "\n";
@@ -56,7 +68,7 @@ bool Config::Save(const std::string& name) const
 	body << "\n[visuals.esp]\n";
 	body << "Enabled=" << visuals.esp.Enabled << "\n";
 	body << "Lines=" << visuals.esp.Lines << "\n";
-	body << "BoundingBox=" << visuals.esp.BoudningBox << "\n";
+	body << "BoundingBox=" << visuals.esp.BoundingBox << "\n";
 	body << "Skeleton=" << visuals.esp.Skeleton << "\n";
 	body << "HealthBar=" << visuals.esp.HealthBar << "\n";
 	body << "Name=" << visuals.esp.Name << "\n";
@@ -71,7 +83,7 @@ bool Config::Save(const std::string& name) const
 	body << "TPDistance=" << visuals.misc.TPDistance << "\n";
 	body << "CamFOV=" << visuals.misc.camFOV << "\n";
 	body << "SteadyCam=" << visuals.misc.SteadyCam << "\n";
-	body << "NoZoom=" << visuals.misc.noZoon << "\n";
+	body << "NoZoom=" << visuals.misc.NoZoom << "\n";
 
 	body << "\n[visuals.viewmodel]\n";
 	body << "ViewModelFOV=" << visuals.viewmodel.ViewModelFOV << "\n";
@@ -238,6 +250,18 @@ bool Config::Load(const std::string& name)
 	aimbot.MaxPlayersInFov = GetInt(kv, "aimbot.MaxPlayersInFov", defaults.aimbot.MaxPlayersInFov);
 	aimbot.DrawFov       = GetBool(kv, "aimbot.DrawFov", defaults.aimbot.DrawFov);
 	aimbot.FriendlyFire  = GetBool(kv, "aimbot.FriendlyFire", defaults.aimbot.FriendlyFire);
+	aimbot.SmoothX       = GetFloat(kv, "aimbot.SmoothX", defaults.aimbot.SmoothX);
+	aimbot.SmoothY       = GetFloat(kv, "aimbot.SmoothY", defaults.aimbot.SmoothY);
+	aimbot.VisibilityCheck = GetBool(kv, "aimbot.VisibilityCheck", defaults.aimbot.VisibilityCheck);
+	aimbot.AimBone       = GetInt(kv, "aimbot.AimBone", defaults.aimbot.AimBone);
+	aimbot.RCS           = GetBool(kv, "aimbot.RCS", defaults.aimbot.RCS);
+	aimbot.StandaloneRCS = GetBool(kv, "aimbot.StandaloneRCS", defaults.aimbot.StandaloneRCS);
+	aimbot.RCSAmountX    = GetFloat(kv, "aimbot.RCSAmountX", defaults.aimbot.RCSAmountX);
+	aimbot.RCSAmountY    = GetFloat(kv, "aimbot.RCSAmountY", defaults.aimbot.RCSAmountY);
+	aimbot.RCSStartBullet = GetInt(kv, "aimbot.RCSStartBullet", defaults.aimbot.RCSStartBullet);
+	aimbot.RCSSmooth     = GetFloat(kv, "aimbot.RCSSmooth", defaults.aimbot.RCSSmooth);
+	aimbot.AutoShoot     = GetBool(kv, "aimbot.AutoShoot", defaults.aimbot.AutoShoot);
+	aimbot.AutoShootFov  = GetFloat(kv, "aimbot.AutoShootFov", defaults.aimbot.AutoShootFov);
 
 	// Visuals
 	visuals.Enabled  = GetBool(kv, "visuals.Enabled", defaults.visuals.Enabled);
@@ -246,7 +270,7 @@ bool Config::Load(const std::string& name)
 	// Visuals ESP
 	visuals.esp.Enabled     = GetBool(kv, "visuals.esp.Enabled", defaults.visuals.esp.Enabled);
 	visuals.esp.Lines       = GetBool(kv, "visuals.esp.Lines", defaults.visuals.esp.Lines);
-	visuals.esp.BoudningBox = GetBool(kv, "visuals.esp.BoundingBox", defaults.visuals.esp.BoudningBox);
+	visuals.esp.BoundingBox = GetBool(kv, "visuals.esp.BoundingBox", defaults.visuals.esp.BoundingBox);
 	visuals.esp.Skeleton    = GetBool(kv, "visuals.esp.Skeleton", defaults.visuals.esp.Skeleton);
 	visuals.esp.HealthBar   = GetBool(kv, "visuals.esp.HealthBar", defaults.visuals.esp.HealthBar);
 	visuals.esp.Name        = GetBool(kv, "visuals.esp.Name", defaults.visuals.esp.Name);
@@ -260,7 +284,7 @@ bool Config::Load(const std::string& name)
 	visuals.misc.TPDistance  = GetFloat(kv, "visuals.misc.TPDistance", defaults.visuals.misc.TPDistance);
 	visuals.misc.camFOV      = GetFloat(kv, "visuals.misc.CamFOV", defaults.visuals.misc.camFOV);
 	visuals.misc.SteadyCam   = GetBool(kv, "visuals.misc.SteadyCam", defaults.visuals.misc.SteadyCam);
-	visuals.misc.noZoon      = GetBool(kv, "visuals.misc.NoZoom", defaults.visuals.misc.noZoon);
+	visuals.misc.NoZoom      = GetBool(kv, "visuals.misc.NoZoom", defaults.visuals.misc.NoZoom);
 
 	// Visuals ViewModel
 	visuals.viewmodel.ViewModelFOV = GetFloat(kv, "visuals.viewmodel.ViewModelFOV", defaults.visuals.viewmodel.ViewModelFOV);

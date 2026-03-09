@@ -5,6 +5,22 @@
 
 class gEntity;
 
+// 16-byte aligned vector matching Source Engine's VectorAligned
+// Required for Ray_t - the engine expects SSE-aligned members
+struct __declspec(align(16)) VectorAligned : public math::Vector
+{
+	VectorAligned() : math::Vector{} {}
+	VectorAligned(float x, float y, float z) : math::Vector{ x, y, z } {}
+	VectorAligned(const math::Vector& v) : math::Vector{ v.x, v.y, v.z } {}
+
+	VectorAligned& operator=(const math::Vector& v) {
+		x = v.x; y = v.y; z = v.z;
+		return *this;
+	}
+
+	float w = 0.f; // padding to 16 bytes
+};
+
 // Contents flags
 #define	CONTENTS_EMPTY			0		// No contents
 
@@ -144,19 +160,25 @@ enum TraceType_t : int
 	TRACE_EVERYTHING_FILTER_PROPS,	// NOTE: This version will pass the IHandleEntity for props through the filter, unlike all other filters
 };
 
-struct Ray_t
+struct __declspec(align(16)) Ray_t
 {
 public:
+	Ray_t() : m_pWorldAxisTransform(nullptr), m_IsRay(true), m_IsSwept(false) {}
+
 	Ray_t(const math::Vector& src, const math::Vector& dest) {
 		m_Start = src;
 		m_Delta = dest - src;
+		m_StartOffset = {};
+		m_Extents = {};
+		m_pWorldAxisTransform = nullptr;
+		m_IsRay = true;
 		m_IsSwept = m_Delta.x || m_Delta.y || m_Delta.z;
 	}
 
-	math::Vector  m_Start;	// starting point, centered within the extents
-	math::Vector  m_Delta;	// direction + length of the ray
-	math::Vector  m_StartOffset;	// Add this to m_Start to get the actual ray start
-	math::Vector  m_Extents;	// Describes an axis aligned box extruded along a ray
+	VectorAligned  m_Start;	// starting point, centered within the extents
+	VectorAligned  m_Delta;	// direction + length of the ray
+	VectorAligned  m_StartOffset;	// Add this to m_Start to get the actual ray start
+	VectorAligned  m_Extents;	// Describes an axis aligned box extruded along a ray
 	const math::Matrix3x4* m_pWorldAxisTransform;
 	bool	m_IsRay;	// are the extents zero?
 	bool	m_IsSwept;	// is delta != 0?
@@ -165,10 +187,10 @@ public:
 class ITraceFilter
 {
 public:
-	ITraceFilter() {}
-	ITraceFilter(const void* entity) { EntSkip = entity; }
-	virtual bool ShouldHitEntity(gEntity* pEntity, int) { return pEntity != EntSkip; };
-	//TraceType_t	GetTraceType();
+	ITraceFilter() : EntSkip(nullptr) {}
+	ITraceFilter(const void* entity) : EntSkip(entity) {}
+	virtual bool ShouldHitEntity(gEntity* pEntity, int) { return pEntity != EntSkip; }
+	virtual TraceType_t GetTraceType() const { return TRACE_EVERYTHING; }
 	const void* EntSkip;
 };
 
@@ -236,7 +258,9 @@ public:
 	// Otherwise, this is the hitbox index.
 	int			hitbox;					// box hit by trace in studio
 
-	trace_t() {};
+	trace_t() : fraction(0.f), contents(0), dispFlags(0), allsolid(false), startsolid(false),
+		fractionleftsolid(0.f), hitgroup(0), physicsbone(0), worldSurfaceIndex(0),
+		pEntity(nullptr), hitbox(0) {};
 
 private:
 	// No copy constructors allowed

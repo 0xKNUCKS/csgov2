@@ -89,6 +89,8 @@ namespace offsets
     inline uintptr_t m_bIsScoped;
     inline uintptr_t deadFlag;
     inline uintptr_t m_vecVelocity;
+    inline uintptr_t m_vecViewOffset;
+    inline uintptr_t m_aimPunchAngle;
 }
 
 // fuck this shit idek wtf is this, pasted from NEPS. sad.
@@ -135,6 +137,7 @@ public:
     NETVAR_DECL(isScoped, bool, offsets::m_bIsScoped)
     NETVAR_DECL(getViewingAngles, math::Vector, offsets::deadFlag + 0x4)
     NETVAR_DECL(getVelocity, math::Vector, offsets::m_vecVelocity)
+    NETVAR_DECL(getAimPunch, math::Vector, offsets::m_aimPunchAngle)
 
     // custom functions
 

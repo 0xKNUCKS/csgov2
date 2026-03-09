@@ -72,7 +72,9 @@ bool NetVars_t::Init()
     offsets::m_fFlags =      findAndValidate("DT_BasePlayer", "m_fFlags");
     offsets::m_bIsScoped =   findAndValidate("DT_CSPlayer", "m_bIsScoped");
     offsets::deadFlag =      findAndValidate("DT_BasePlayer", "deadflag");
-    offsets::m_vecVelocity = findAndValidate("DT_BasePlayer", "m_vecVelocity[0]");
+    offsets::m_vecVelocity =  findAndValidate("DT_BasePlayer", "m_vecVelocity[0]");
+    offsets::m_vecViewOffset = findAndValidate("DT_BasePlayer", "m_vecViewOffset[0]");
+    offsets::m_aimPunchAngle = findAndValidate("DT_BasePlayer", "m_aimPunchAngle");
 
     if (!allOk)
         Log::Err("NetVars", "Some netvar offsets failed to resolve - features may crash");

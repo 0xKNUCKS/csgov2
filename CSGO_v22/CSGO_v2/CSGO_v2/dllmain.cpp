@@ -1,6 +1,10 @@
 // New Start for my csgo project :))
 #include <iostream>
+#include <Windows.h>
 #include "hook.h"
+#include "GUI.h"
+#include "Globals.h"
+#include "utils.h"
 
 /// Macros
 // Hash sum of game files to confirm the game's version
@@ -10,6 +14,10 @@
 DWORD WINAPI Main(HMODULE hModule)
 {
     while (!GetModuleHandle("serverbrowser.dll")) { Sleep(100); }
+
+    // Initialize game interfaces and netvars now that all game modules are loaded
+    globals::g_interfaces.init();
+    globals::g_NetVars.Init();
 
     if (gui::Setup())
     {

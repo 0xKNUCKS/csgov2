@@ -2,7 +2,7 @@
 #include "netvars.h"
 #include <iostream>
 #include <vector>
-#include "math.h"
+#include "GameMath.h"
 
 #define STR_MERGE_IMPL(a, b) a##b
 #define STR_MERGE(a, b) STR_MERGE_IMPL(a,b)
@@ -12,7 +12,7 @@
 #define NETVAR_DECL(name, type, offset) \
     type name() noexcept \
 {\
-    return *(type*)(this + offset); \
+    return *(type*)((uintptr_t)this + offset); \
 }
 
 // bounding box
@@ -34,7 +34,7 @@ struct BBox {
     math::Vector brt; // Back Right Top
 
     // Dimensions
-    int w, h;
+    float w, h;
 
     bool isValid = false;
 };

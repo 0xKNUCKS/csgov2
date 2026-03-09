@@ -1,6 +1,6 @@
 #pragma once
 #include "VirtualMethod.h"
-#include "math.h"
+#include "GameMath.h"
 #include "Pad.h"
 
 // Macros

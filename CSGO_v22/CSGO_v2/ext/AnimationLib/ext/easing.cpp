@@ -1,6 +1,4 @@
 #include <cmath>
-#include <map>
-
 #include "easing.h"
 
 #ifndef PI
@@ -12,7 +10,8 @@ double easeInSine(double t) {
 }
 
 double easeOutSine(double t) {
-    return 1 + sin(1.5707963 * (--t));
+    t -= 1.0;
+    return 1 + sin(1.5707963 * t);
 }
 
 double easeInOutSine(double t) {
@@ -36,32 +35,36 @@ double easeInCubic(double t) {
 }
 
 double easeOutCubic(double t) {
-    return 1 + (--t) * t * t;
+    t -= 1.0;
+    return 1 + t * t * t;
 }
 
 double easeInOutCubic(double t) {
-    return t < 0.5 ? 4 * t * t * t : 1 + (--t) * (2 * (--t)) * (2 * t);
+    if (t < 0.5)
+        return 4 * t * t * t;
+    t -= 1.0;
+    return 1 + 4 * t * t * t;
 }
 
 double easeInQuart(double t) {
-    t *= t;
-    return t * t;
+    double t2 = t * t;
+    return t2 * t2;
 }
 
 double easeOutQuart(double t) {
-    t = (--t) * t;
-    return 1 - t * t;
+    t -= 1.0;
+    double t2 = t * t;
+    return 1 - t2 * t2;
 }
 
 double easeInOutQuart(double t) {
     if (t < 0.5) {
-        t *= t;
-        return 8 * t * t;
+        double t2 = t * t;
+        return 8 * t2 * t2;
     }
-    else {
-        t = (--t) * t;
-        return 1 - 8 * t * t;
-    }
+    t -= 1.0;
+    double t2 = t * t;
+    return 1 - 8 * t2 * t2;
 }
 
 double easeInQuint(double t) {
@@ -70,20 +73,19 @@ double easeInQuint(double t) {
 }
 
 double easeOutQuint(double t) {
-    double t2 = (--t) * t;
+    t -= 1.0;
+    double t2 = t * t;
     return 1 + t * t2 * t2;
 }
 
 double easeInOutQuint(double t) {
-    double t2;
     if (t < 0.5) {
-        t2 = t * t;
+        double t2 = t * t;
         return 16 * t * t2 * t2;
     }
-    else {
-        t2 = (--t) * t;
-        return 1 + 16 * t * t2 * t2;
-    }
+    t -= 1.0;
+    double t2 = t * t;
+    return 1 + 16 * t * t2 * t2;
 }
 
 double easeInExpo(double t) {
@@ -98,9 +100,7 @@ double easeInOutExpo(double t) {
     if (t < 0.5) {
         return (pow(2, 16 * t) - 1) / 510;
     }
-    else {
-        return 1 - 0.5 * pow(2, -16 * (t - 0.5));
-    }
+    return 1 - 0.5 * pow(2, -16 * (t - 0.5));
 }
 
 double easeInCirc(double t) {
@@ -115,9 +115,7 @@ double easeInOutCirc(double t) {
     if (t < 0.5) {
         return (1 - sqrt(1 - 2 * t)) * 0.5;
     }
-    else {
-        return (1 + sqrt(2 * t - 1)) * 0.5;
-    }
+    return (1 + sqrt(2 * t - 1)) * 0.5;
 }
 
 double easeInBack(double t) {
@@ -125,16 +123,16 @@ double easeInBack(double t) {
 }
 
 double easeOutBack(double t) {
-    return 1 + (--t) * t * (2.70158 * t + 1.70158);
+    t -= 1.0;
+    return 1 + t * t * (2.70158 * t + 1.70158);
 }
 
 double easeInOutBack(double t) {
     if (t < 0.5) {
         return t * t * (7 * t - 2.5) * 2;
     }
-    else {
-        return 1 + (--t) * t * 2 * (7 * t + 2.5);
-    }
+    t -= 1.0;
+    return 1 + t * t * 2 * (7 * t + 2.5);
 }
 
 double easeInElastic(double t) {
@@ -148,18 +146,15 @@ double easeOutElastic(double t) {
 }
 
 double easeInOutElastic(double t) {
-    double t2;
     if (t < 0.45) {
-        t2 = t * t;
+        double t2 = t * t;
         return 8 * t2 * t2 * sin(t * PI * 9);
     }
-    else if (t < 0.55) {
+    if (t < 0.55) {
         return 0.5 + 0.75 * sin(t * PI * 4);
     }
-    else {
-        t2 = (t - 1) * (t - 1);
-        return 1 - 8 * t2 * t2 * sin(t * PI * 9);
-    }
+    double t2 = (t - 1) * (t - 1);
+    return 1 - 8 * t2 * t2 * sin(t * PI * 9);
 }
 
 double easeInBounce(double t) {
@@ -174,53 +169,31 @@ double easeInOutBounce(double t) {
     if (t < 0.5) {
         return 8 * pow(2, 8 * (t - 1)) * abs(sin(t * PI * 7));
     }
-    else {
-        return 1 - 8 * pow(2, -8 * t) * abs(sin(t * PI * 7));
-    }
+    return 1 - 8 * pow(2, -8 * t) * abs(sin(t * PI * 7));
 }
 
 double linear(double t) {
     return t;
 }
 
+// Simple array lookup — enum values are sequential 0..30
+static const easingFunction easingTable[] = {
+    easeInSine, easeOutSine, easeInOutSine,
+    easeInQuad, easeOutQuad, easeInOutQuad,
+    easeInCubic, easeOutCubic, easeInOutCubic,
+    easeInQuart, easeOutQuart, easeInOutQuart,
+    easeInQuint, easeOutQuint, easeInOutQuint,
+    easeInExpo, easeOutExpo, easeInOutExpo,
+    easeInCirc, easeOutCirc, easeInOutCirc,
+    easeInBack, easeOutBack, easeInOutBack,
+    easeInElastic, easeOutElastic, easeInOutElastic,
+    easeInBounce, easeOutBounce, easeInOutBounce,
+    linear
+};
+
 easingFunction getEasingFunction(easing_functions function)
 {
-    static std::map< easing_functions, easingFunction > easingFunctions;
-    if (easingFunctions.empty())
-    {
-        easingFunctions.insert(std::make_pair(EaseInSine, easeInSine));
-        easingFunctions.insert(std::make_pair(EaseOutSine, easeOutSine));
-        easingFunctions.insert(std::make_pair(EaseInOutSine, easeInOutSine));
-        easingFunctions.insert(std::make_pair(EaseInQuad, easeInQuad));
-        easingFunctions.insert(std::make_pair(EaseOutQuad, easeOutQuad));
-        easingFunctions.insert(std::make_pair(EaseInOutQuad, easeInOutQuad));
-        easingFunctions.insert(std::make_pair(EaseInCubic, easeInCubic));
-        easingFunctions.insert(std::make_pair(EaseOutCubic, easeOutCubic));
-        easingFunctions.insert(std::make_pair(EaseInOutCubic, easeInOutCubic));
-        easingFunctions.insert(std::make_pair(EaseInQuart, easeInQuart));
-        easingFunctions.insert(std::make_pair(EaseOutQuart, easeOutQuart));
-        easingFunctions.insert(std::make_pair(EaseInOutQuart, easeInOutQuart));
-        easingFunctions.insert(std::make_pair(EaseInQuint, easeInQuint));
-        easingFunctions.insert(std::make_pair(EaseOutQuint, easeOutQuint));
-        easingFunctions.insert(std::make_pair(EaseInOutQuint, easeInOutQuint));
-        easingFunctions.insert(std::make_pair(EaseInExpo, easeInExpo));
-        easingFunctions.insert(std::make_pair(EaseOutExpo, easeOutExpo));
-        easingFunctions.insert(std::make_pair(EaseInOutExpo, easeInOutExpo));
-        easingFunctions.insert(std::make_pair(EaseInCirc, easeInCirc));
-        easingFunctions.insert(std::make_pair(EaseOutCirc, easeOutCirc));
-        easingFunctions.insert(std::make_pair(EaseInOutCirc, easeInOutCirc));
-        easingFunctions.insert(std::make_pair(EaseInBack, easeInBack));
-        easingFunctions.insert(std::make_pair(EaseOutBack, easeOutBack));
-        easingFunctions.insert(std::make_pair(EaseInOutBack, easeInOutBack));
-        easingFunctions.insert(std::make_pair(EaseInElastic, easeInElastic));
-        easingFunctions.insert(std::make_pair(EaseOutElastic, easeOutElastic));
-        easingFunctions.insert(std::make_pair(EaseInOutElastic, easeInOutElastic));
-        easingFunctions.insert(std::make_pair(EaseInBounce, easeInBounce));
-        easingFunctions.insert(std::make_pair(EaseOutBounce, easeOutBounce));
-        easingFunctions.insert(std::make_pair(EaseInOutBounce, easeInOutBounce));
-        easingFunctions.insert(std::make_pair(Linear, linear));
-    }
-
-    auto it = easingFunctions.find(function);
-    return it == easingFunctions.end() ? nullptr : it->second;
+    if (function < 0 || function > Linear)
+        return linear;
+    return easingTable[function];
 }

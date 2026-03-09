@@ -6,17 +6,9 @@ class localplayer_t
 public:
     gEntity* Get();
 
-    localplayer_t()
-    {
-        Get();
-    }
-
     gEntity* operator->() {
-        return Local;
+        return Get();
     }
-
-protected:
-    gEntity* Local;
 };
 
 inline localplayer_t LocalPlayer;

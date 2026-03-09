@@ -2,7 +2,7 @@
 #include <Windows.h>
 #include "Pad.h"
 #include "CRC.h"
-#include "math.h"
+#include "GameMath.h"
 
 struct CUserCmd
 {

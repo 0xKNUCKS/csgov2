@@ -3,8 +3,6 @@
 #include "config.h"
 #include "entity.h"
 
-#define norm(x) (float)(int)x
-
 struct cTarget
 {
     float fov = 0.0f;

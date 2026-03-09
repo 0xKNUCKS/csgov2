@@ -3,6 +3,9 @@
 
 gEntity* localplayer_t::Get()
 {
-	Local = globals::g_interfaces.ClientEntity->GetClientEntity(1);
-	return Local;
+	if (!globals::g_interfaces.Engine || !globals::g_interfaces.ClientEntity)
+		return nullptr;
+
+	int localIdx = globals::g_interfaces.Engine->GetLocalPlayerIdx();
+	return globals::g_interfaces.ClientEntity->GetClientEntity(localIdx);
 }

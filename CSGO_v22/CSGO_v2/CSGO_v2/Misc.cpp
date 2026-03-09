@@ -3,10 +3,7 @@
 
 // Constants for CS:GO movement
 constexpr float AIR_ACCELERATION = 0.025f;
-constexpr float GROUND_ACCELERATION = 0.15f;
 constexpr float MAX_SPEED = 350.0f;
-constexpr float FRICTION = 0.95f;
-constexpr float EDGE_BUG_THRESHOLD = 0.1f;
 
 void misc::BunnyHop(CUserCmd* cmd)
 {
@@ -35,16 +32,6 @@ void misc::BunnyHop(CUserCmd* cmd)
 				float optimalAngle = 0.0f;
 				if (currentSpeed > 0.0f) {
 					optimalAngle = std::atan2(velocity.y, velocity.x);
-				}
-
-				// Check for edge bug
-				bool isEdgeBug = false;
-				if (LocalPlayer->flags() & PlayerFlag_OnGround) {
-					auto origin = LocalPlayer->getAbsOrigin();
-					auto nextOrigin = origin + velocity * 0.1f;
-					if (std::abs(nextOrigin.z - origin.z) < EDGE_BUG_THRESHOLD) {
-						isEdgeBug = true;
-					}
 				}
 
 				// Get keyboard input
@@ -93,7 +80,7 @@ void misc::BunnyHop(CUserCmd* cmd)
 					float deltaYaw = targetYaw - currentYaw;
 					
 					// Apply acceleration based on speed
-					float acceleration = isEdgeBug ? GROUND_ACCELERATION : AIR_ACCELERATION;
+					float acceleration = AIR_ACCELERATION;
 					float speedFactor = min(currentSpeed / MAX_SPEED, 1.0f);
 					float moveSpeed = 450.0f * (1.0f - speedFactor * 0.5f);
 					
@@ -121,7 +108,7 @@ void misc::BunnyHop(CUserCmd* cmd)
 						float deltaYaw = targetYaw - lastYaw;
 						
 						// Apply acceleration based on speed
-						float acceleration = isEdgeBug ? GROUND_ACCELERATION : AIR_ACCELERATION;
+						float acceleration = AIR_ACCELERATION;
 						float speedFactor = min(currentSpeed / MAX_SPEED, 1.0f);
 						float moveSpeed = 450.0f * (1.0f - speedFactor * 0.5f);
 						

@@ -34,7 +34,7 @@ void aimbot::Run(CUserCmd* cmd)
 	float bestDistance = FLT_MAX;
 	Target.ent = nullptr;
 
-	for (int i = 0; i <= hooks::GlobalVars->maxClients; i++)
+	for (int i = 1; i <= hooks::GlobalVars->maxClients; i++)
 	{
 		auto ent = globals::g_interfaces.ClientEntity->GetClientEntity(i);
 

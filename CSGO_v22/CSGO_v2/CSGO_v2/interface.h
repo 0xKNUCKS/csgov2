@@ -11,19 +11,14 @@ class interfaces_t
 {
 public:
 
-    interfaces_t()
-    {
-        interfaces_t::init();
-    }
-
-    IClientEntityList* ClientEntity; // = (IClientEntityList*)FindInterface("client.dll", "VClientEntityList003");
-    IBaseClientDLL* BaseClient; // = (IBaseClientDLL*)FindInterface("client.dll", "VClient018");
-    IVEngineClient* Engine;
-    CInputSystem* InputSystem;
-    IVModelInfo* ModelInfo;
-    IEngineTrace* EngineTrace;
-    ICvar* Cvar;
-    ISurface* Surface;
+    IClientEntityList* ClientEntity = nullptr;
+    IBaseClientDLL* BaseClient = nullptr;
+    IVEngineClient* Engine = nullptr;
+    CInputSystem* InputSystem = nullptr;
+    IVModelInfo* ModelInfo = nullptr;
+    IEngineTrace* EngineTrace = nullptr;
+    ICvar* Cvar = nullptr;
+    ISurface* Surface = nullptr;
 
     void init();
 

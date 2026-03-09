@@ -12,8 +12,7 @@
 #define PROC_NAME "csgo.exe"
 #define WIND_NAME "Counter-Strike: Global Offensive - Direct3D 9"
 #define CLSS_NAME "Valve001"
-#define DLL_PATH  "CSGO_v2_Debug.dll"
-               // "E:\\Projects\\C++\\CSGO v3\\Release\\CSGO_v3.dll"
+#define DLL_PATH  "build\\Debug\\CSGO_v2.dll"
 
 // CSGO process class
 proc_t csgo(PROC_NAME, DLL_PATH, WIND_NAME, CLSS_NAME);

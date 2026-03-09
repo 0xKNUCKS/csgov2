@@ -434,7 +434,7 @@ void gui::Render() noexcept
 				
 				// 1st color picker
 				{
-					if (ImGui::ColorButton("##Color1", cfg.settings.mouseTracer.Color)) {
+					if (ImGui::ColorButton("##Color1", ImVec4(cfg.settings.mouseTracer.Color.r, cfg.settings.mouseTracer.Color.g, cfg.settings.mouseTracer.Color.b, cfg.settings.mouseTracer.Color.a))) {
 						ImGui::OpenPopup("Color_1");
 					}
 
@@ -442,14 +442,14 @@ void gui::Render() noexcept
 
 					if (ImGui::BeginPopup("Color_1"))
 					{
-						ImGui::ColorPicker4("Main Color", &cfg.settings.mouseTracer.Color.Value.x, ImGuiColorEditFlags_NoAlpha);
+						ImGui::ColorPicker4("Main Color", cfg.settings.mouseTracer.Color, ImGuiColorEditFlags_NoAlpha);
 						ImGui::EndPopup();
 					}
 				}
 
 				// 2nd color picker
 				{
-					if (ImGui::ColorButton("##SecondColor", cfg.settings.mouseTracer.SecondColor)) {
+					if (ImGui::ColorButton("##SecondColor", ImVec4(cfg.settings.mouseTracer.SecondColor.r, cfg.settings.mouseTracer.SecondColor.g, cfg.settings.mouseTracer.SecondColor.b, cfg.settings.mouseTracer.SecondColor.a))) {
 						ImGui::OpenPopup("Color_2");
 					}
 
@@ -457,7 +457,7 @@ void gui::Render() noexcept
 
 					if (ImGui::BeginPopup("Color_2"))
 					{
-						ImGui::ColorPicker4("Second Color", &cfg.settings.mouseTracer.SecondColor.Value.x, ImGuiColorEditFlags_NoAlpha);
+						ImGui::ColorPicker4("Second Color", cfg.settings.mouseTracer.SecondColor, ImGuiColorEditFlags_NoAlpha);
 						ImGui::EndPopup();
 					}
 				}

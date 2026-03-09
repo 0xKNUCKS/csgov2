@@ -1,20 +1,8 @@
 #pragma once
-#pragma comment(lib, "libMinHook.x86.lib")
-#include <Windows.h>
-#include <intrin.h>
-#include <MinHook.h>
-#include "classes.h"
-#include "interface.h"
-#include "GUI.h"
-#include "drawing.h"
-#include "Globals.h"
-#include "aimbot.h"
-#include "Misc.h"
-#include "ESP.h"
+#include <cstddef>
+#include "hooksManager.h"
 #include "Input.h"
 #include "GlobalVars.h"
-#include "ViewSetup.h"
-#include "hooksManager.h"
 
 namespace index
 {
@@ -70,4 +58,5 @@ namespace hooks
 	inline hookManager BaseClientHk;
 	inline hookManager EngineHk;
 	inline hookManager SurfaceHk;
+
 }

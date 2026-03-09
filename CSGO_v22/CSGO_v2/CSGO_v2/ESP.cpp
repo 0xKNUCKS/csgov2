@@ -1,6 +1,10 @@
 #include "ESP.h"
 #include "hook.h"
-#include <math.h>
+#include "Globals.h"
+#include "utils.h"
+#include "aimbot.h"
+#include "imgui.h"
+#include <cmath>
 #include <format>
 #include <string>
 #include <vector>
@@ -15,11 +19,11 @@ void ESP::Render()
 		return;
 	}
 
-	for (int i = 0; i <= hooks::GlobalVars->maxClients; i++)
+	for (int i = 1; i <= hooks::GlobalVars->maxClients; i++)
 	{
 		auto ent = globals::g_interfaces.ClientEntity->GetClientEntity(i);
 
-		if (!ent->isValidState() ||
+		if (!ent || !ent->isValidState() ||
 			(ent->isTeammate() && !cfg.visuals.Friendly) ||
 			(ent->isDormant() && !cfg.visuals.esp.Dormant))
 			continue;
@@ -67,7 +71,7 @@ void ESP::Render()
 
 void ESP::DrawLine(BBox bbox)
 {
-	Render::Line(ImGui::GetIO().DisplaySize.x / 2, ImGui::GetIO().DisplaySize.y, norm(bbox.topLeft.x) + (bbox.w / 2), norm(bbox.bottomLeft.y), 1.0f, ImColor(1.f, 1.f, 1.f, baseOpacity));
+	Render::Line(ImGui::GetIO().DisplaySize.x / 2, ImGui::GetIO().DisplaySize.y, truncf_to_int(bbox.topLeft.x) + (bbox.w / 2), truncf_to_int(bbox.bottomLeft.y), 1.0f, ImColor(1.f, 1.f, 1.f, baseOpacity));
 }
 
 void ESP::DrawBoundingRect(BBox bbox, bool filled)

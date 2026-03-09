@@ -4,8 +4,6 @@
 
 #include <d3d9.h>
 #include <d3dx9.h>
-#pragma comment(lib, "d3d9.lib")
-#pragma comment(lib, "d3dx9.lib")
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "../ext/ImGui/imgui_internal.h"

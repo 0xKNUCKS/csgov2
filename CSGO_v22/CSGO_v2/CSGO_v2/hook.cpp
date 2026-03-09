@@ -1,7 +1,20 @@
 #include "hook.h"
-#include "../ext/AnimationLib/Animation.h"
-#include "hooksManager.h"
+#include <Windows.h>
+#include <d3d9.h>
+#include "classes.h"
+#include "interface.h"
+#include "GUI.h"
+#include "drawing.h"
+#include "Globals.h"
+#include "aimbot.h"
+#include "Misc.h"
+#include "ESP.h"
+#include "ViewSetup.h"
 #include "localplayer.h"
+#include "config.h"
+#include "imgui.h"
+#include "imgui_impl_dx9.h"
+#include "../ext/AnimationLib/Animation.h"
 
 // FINALLLYY FIXED IT :skull:
 void hooks::Destroy() noexcept
@@ -64,7 +77,7 @@ long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept
 	gui::Render();
 
 	// Draw the Mouse Tracer
-	if (cfg.settings.mouseTracer.Enabled && (cfg.settings.mouseTracer.AlwaysOn && gui::bOpen))
+	if (cfg.settings.mouseTracer.Enabled && (cfg.settings.mouseTracer.AlwaysOn || gui::bOpen))
 	{
 		ImVec2 mousePos = ImGui::GetIO().MousePos;
 		static std::vector<ImVec2> mousePoints = {};
@@ -72,13 +85,13 @@ long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice) noexcept
 		mousePoints.insert(mousePoints.begin(), mousePos);
 		mousePoints.resize(cfg.settings.mouseTracer.TrailLength); // limit the points to a certrain value (in a way the "length")
 
-		for (int i = 0; i < mousePoints.size(); i++)
+		for (size_t i = 0; i < mousePoints.size(); i++)
 		{
 			ImVec2 Point = mousePoints[i];
 			float scale = (float)(1.0f - (float)i / (mousePoints.size() - 1));
 
-			ImVec4 FirstColor = cfg.settings.mouseTracer.Color;
-			ImVec4 SecondColor = cfg.settings.mouseTracer.SecondColor;
+			ImVec4 FirstColor(cfg.settings.mouseTracer.Color.r, cfg.settings.mouseTracer.Color.g, cfg.settings.mouseTracer.Color.b, cfg.settings.mouseTracer.Color.a);
+			ImVec4 SecondColor(cfg.settings.mouseTracer.SecondColor.r, cfg.settings.mouseTracer.SecondColor.g, cfg.settings.mouseTracer.SecondColor.b, cfg.settings.mouseTracer.SecondColor.a);
 			ImColor FinalColor = ImColor(SecondColor + (FirstColor - SecondColor) * ImVec4(scale, scale, scale, 0));
 			FinalColor.Value.w = 0.85f * scale;
 

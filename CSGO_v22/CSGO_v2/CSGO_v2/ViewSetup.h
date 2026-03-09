@@ -1,5 +1,5 @@
 #pragma once
-#include "math.h"
+#include "GameMath.h"
 #include "Pad.h"
 
 class CViewSetup

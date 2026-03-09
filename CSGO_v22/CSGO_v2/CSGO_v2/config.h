@@ -1,17 +1,22 @@
 #pragma once
 #include <Windows.h>
-#include "drawing.h"
-#include "ESP.h"
+#include <string>
+
+// Simple color struct to avoid ImGui dependency in config
+struct CfgColor {
+	float r, g, b, a;
+	CfgColor(float r = 1.f, float g = 1.f, float b = 1.f, float a = 1.f) : r(r), g(g), b(b), a(a) {}
+	CfgColor(int r, int g, int b, int a = 255)
+		: r(r / 255.f), g(g / 255.f), b(b / 255.f), a(a / 255.f) {}
+	operator float*() { return &r; }
+};
 
 struct Hotkey {
 	unsigned int virtualKey = 0x0;
 	bool searching = false;
 	std::string label = "None";
 
-	Hotkey(unsigned int key) {
-		virtualKey = key;
-		label = utils::VirtualKeyToString(this->virtualKey);
-	}
+	Hotkey(unsigned int key);
 };
 
 class Config
@@ -44,7 +49,7 @@ public:
 			bool Name = false;
 			bool Dormant = false;
 			int boxType = 0; // eBoxType
-			ImColor color = ImColor(255,255,255);
+			CfgColor color = CfgColor(255,255,255);
 		} esp;
 		struct Misc
 		{
@@ -86,8 +91,8 @@ public:
 			int TrailLength = 40;
 			float TrailThickness = 4.f;
 			bool AlwaysOn = false;
-			ImColor Color = ImColor(94, 156, 255, 255);
-			ImColor SecondColor = ImColor(255, 255, 255, 255);
+			CfgColor Color = CfgColor(94, 156, 255, 255);
+			CfgColor SecondColor = CfgColor(255, 255, 255, 255);
 		} mouseTracer;
 	} settings;
 };

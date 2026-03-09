@@ -24,18 +24,12 @@ class NetVars_t
 public:
     intptr_t FindOffset(const char* tablename, const char* netvarName);
 
-    // Temporary fix
-    NetVars_t()
-    {
-        Init();
-    }
+    void Init();
 
 private:
     inline intptr_t GetOffset(RecvTable* table, const char* tablename, const char* netvarName);
 
     inline intptr_t GetNetVarOffset(const char* tablename, const char* netvarName, ClientClass* clientclass);
-
-    void Init();
 };
 
 //extern NetVars_t g_NetVars;

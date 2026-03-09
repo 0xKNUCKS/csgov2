@@ -4,6 +4,9 @@
 
 #define ABS(x) ((x < 0) ? (-x) : (x))
 
+// Truncate float to integer, return as float (floor towards zero)
+inline float truncf_to_int(float x) { return static_cast<float>(static_cast<int>(x)); }
+
 constexpr float PI = 3.14159265358979f;
 constexpr float RAD_TO_DEG = 180.0f / PI;
 constexpr float DEG_TO_RAD = PI / 180.0f;

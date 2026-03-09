@@ -1,10 +1,11 @@
 #include "utils.h"
 #include <chrono>
 #include "Globals.h"
+#include "imgui.h"
 #pragma warning(disable : 4996)
 
 std::string utils::RandomString(const int len) {
-    srand(_Xtime_get_ticks());
+    srand(static_cast<unsigned int>(_Xtime_get_ticks()));
 
     static const char alphanum[] =
         "0123456789"
@@ -28,7 +29,7 @@ const char* utils::GetFileMD5(const char* file)
 
     //Find length of file
     inBigArrayfile.seekg(0, std::ios::end);
-    long Length = inBigArrayfile.tellg();
+    auto Length = static_cast<size_t>(inBigArrayfile.tellg());
     inBigArrayfile.seekg(0, std::ios::beg);
 
     //read in the data from your file
@@ -127,7 +128,7 @@ void utils::SetupConsole()
     HWND conWindow = GetConsoleWindow();
     if (conStream && conWindow) {
         ::ShowWindow(conWindow, SW_SHOW);
-        printf("Console Window Addr: 0x%x \n", conWindow != NULL ? conWindow : 0x0);
+        printf("Console Window Addr: 0x%p \n", static_cast<void*>(conWindow));
         std::cout << "Allocated a Console!\n";
     }
     system("echo %cd%");

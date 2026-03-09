@@ -1,12 +1,13 @@
 #include "entity.h"
 #include "Globals.h"
 #include "localplayer.h"
+#include "utils.h"
 #include <cmath>
 
 std::string gEntity::getName()
 {
     player_info_s pinfo;
-    if (this != nullptr && globals::g_interfaces.Engine->getPlayerInfo(this->index(), pinfo))
+    if (globals::g_interfaces.Engine->getPlayerInfo(this->index(), pinfo))
         return pinfo.name;
     else
         return std::string();
@@ -16,11 +17,7 @@ BBox gEntity::GetBoundingBox()
 {
     BBox bbox;
 
-    // Getting the entity's orgin and model bounds
 	math::Vector origin = this->getRenderOrigin();
-    auto model = this->getModel();
-    math::Vector min, max;
-    min = model->mins; max = model->maxs;
 
     math::Vector headPos = this->getBonePosFromChache(8);
     math::Vector top = { origin.x, origin.y, headPos.z + 4.f };
@@ -68,18 +65,17 @@ BBox gEntity::GetBoundingBox()
 
 bool gEntity::isValidState()
 {
-    if (LocalPlayer.Get() == nullptr)
-        return 0;
-    if (this == nullptr)
-        return 0;
-    if (this == LocalPlayer.Get())
-        return 0;
+    auto local = LocalPlayer.Get();
+    if (!local)
+        return false;
+    if (this == local)
+        return false;
     if (this->health() <= 0)
-        return 0;
+        return false;
     if (!this->isAlive())
-        return 0;
+        return false;
 
-    return 1;
+    return true;
 }
 
 bool gEntity::isTeammate()

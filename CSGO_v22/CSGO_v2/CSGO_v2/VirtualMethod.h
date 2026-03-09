@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstddef>
-#include <print>
+#include <cstdio>
 #include <type_traits>
 
 namespace VirtualMethod

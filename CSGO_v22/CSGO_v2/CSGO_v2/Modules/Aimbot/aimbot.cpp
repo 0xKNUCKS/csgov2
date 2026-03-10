@@ -3,6 +3,7 @@
 #include "SDK/Entity/localplayer.h"
 #include "SDK/Classes/EngineTrace/TraceTypes.h"
 #include "lib/Hooks/hook.h"
+#include "lib/Notify/Notify.h"
 #include <cmath>
 
 // Bone indices for CS:GO skeleton
@@ -86,7 +87,7 @@ void aimbot::Run(CUserCmd* cmd)
 	__try {
 		aimbot::RunInternal(cmd);
 	} __except (EXCEPTION_EXECUTE_HANDLER) {
-		// Silently catch crashes during map transitions / entity invalidation
+		Notify::Warn("Aimbot recovered from crash (map transition?)");
 	}
 }
 
@@ -95,13 +96,10 @@ void aimbot::RunInternal(CUserCmd* cmd)
 	if (!cfg.aimbot.Enabled)
 		return;
 
-	if (!GetAsyncKeyState(cfg.aimbot.Key.virtualKey))
-		return;
-
 	if (!globals::g_interfaces.Engine->IsInGame() || !LocalPlayer.Get() || !hooks::GlobalVars)
 		return;
 
-	// Track shot count for RCS start bullet
+	// Track shot count for RCS start bullet (always, regardless of aim key)
 	bool isShooting = (cmd->buttons & cmd->IN_ATTACK) != 0;
 	if (isShooting && !wasShooting)
 		shotsFired++;
@@ -111,131 +109,144 @@ void aimbot::RunInternal(CUserCmd* cmd)
 		shotsFired = 0;
 	wasShooting = isShooting;
 
+	// --- Aimbot (requires aim key) ---
+	bool aimKeyHeld = GetAsyncKeyState(cfg.aimbot.Key.virtualKey) != 0;
 	gEntity* bestTarget = nullptr;
-	float bestFov = cfg.aimbot.FOV;
-	float bestDistance = FLT_MAX;
-	math::Vector bestAimAngles = {};
-	Target.ent = nullptr;
 
-	// Use netvar-based eye position (safe during map transitions, no virtual call)
-	auto viewOffset = *(math::Vector*)((uintptr_t)LocalPlayer.Get() + offsets::m_vecViewOffset);
-	const auto& origin = LocalPlayer->getAbsOrigin();
-	math::Vector localPos = { origin.x + viewOffset.x, origin.y + viewOffset.y, origin.z + viewOffset.z };
-	math::Vector viewAngles = globals::g_interfaces.Engine->GetViewAngles();
-
-	int boneIndex = GetBoneIndex(cfg.aimbot.AimBone);
-
-	// Compensate view angles for punch when doing FOV comparison
-	math::Vector compensatedAngles = viewAngles;
-	if (cfg.aimbot.RCS) {
-		math::Vector punch = LocalPlayer->getAimPunch();
-		compensatedAngles.x -= punch.x * cfg.aimbot.RCSAmountX;
-		compensatedAngles.y -= punch.y * cfg.aimbot.RCSAmountY;
-	}
-
-	for (int i = 1; i <= hooks::GlobalVars->maxClients; i++)
+	if (aimKeyHeld)
 	{
-		auto ent = globals::g_interfaces.ClientEntity->GetClientEntity(i);
+		float bestFov = cfg.aimbot.FOV;
+		float bestDistance = FLT_MAX;
+		math::Vector bestAimAngles = {};
+		Target.ent = nullptr;
 
-		if (!ent || !ent->isValidState() || ent->isDormant() ||
-			(ent->isTeammate() && !cfg.aimbot.FriendlyFire))
-			continue;
+		// Use netvar-based eye position (safe during map transitions, no virtual call)
+		auto viewOffset = *(math::Vector*)((uintptr_t)LocalPlayer.Get() + offsets::m_vecViewOffset);
+		const auto& origin = LocalPlayer->getAbsOrigin();
+		math::Vector localPos = { origin.x + viewOffset.x, origin.y + viewOffset.y, origin.z + viewOffset.z };
+		math::Vector viewAngles = globals::g_interfaces.Engine->GetViewAngles();
 
-		math::Vector targetPos;
-		if (!GetBonePos(ent, boneIndex, targetPos))
-			continue;
+		int boneIndex = GetBoneIndex(cfg.aimbot.AimBone);
 
-		// Visibility check - skip targets behind walls
-		if (cfg.aimbot.VisibilityCheck && !IsVisible(localPos, targetPos, LocalPlayer.Get(), ent))
-			continue;
-
-		math::Vector aimAngles = CalcAimAngles(localPos, targetPos);
-		float fov = (compensatedAngles - aimAngles).length2D();
-		float distance = (targetPos - localPos).length();
-
-		if (fov < bestFov || (fov == bestFov && distance < bestDistance))
-		{
-			bestFov = fov;
-			bestDistance = distance;
-			bestTarget = ent;
-			bestAimAngles = aimAngles;
-
-			Target.fov = bestFov;
-			Target.distance = bestDistance;
-			Target.ent = bestTarget;
-		}
-	}
-
-	if (bestTarget)
-	{
-		// Apply recoil compensation (only after N shots)
-		if (cfg.aimbot.RCS && shotsFired >= cfg.aimbot.RCSStartBullet) {
+		// Compensate view angles for punch when doing FOV comparison
+		math::Vector compensatedAngles = viewAngles;
+		if (cfg.aimbot.RCS) {
 			math::Vector punch = LocalPlayer->getAimPunch();
-			bestAimAngles.x -= punch.x * cfg.aimbot.RCSAmountX;
-			bestAimAngles.y -= punch.y * cfg.aimbot.RCSAmountY;
+			compensatedAngles.x -= punch.x * cfg.aimbot.RCSAmountX;
+			compensatedAngles.y -= punch.y * cfg.aimbot.RCSAmountY;
 		}
 
-		math::Vector currentAngles = globals::g_interfaces.Engine->GetViewAngles();
-		math::Vector delta = bestAimAngles - currentAngles;
+		for (int i = 1; i <= hooks::GlobalVars->maxClients; i++)
+		{
+			auto ent = globals::g_interfaces.ClientEntity->GetClientEntity(i);
 
-		delta.normalizeDeg();
-		delta.normalize();
+			if (!ent || !ent->isValidState() || ent->isDormant() ||
+				(ent->isTeammate() && !cfg.aimbot.FriendlyFire))
+				continue;
 
-		// Per-axis smooth: base smooth * axis multiplier
-		float smoothX = cfg.aimbot.Smooth * cfg.aimbot.SmoothX;
-		float smoothY = cfg.aimbot.Smooth * cfg.aimbot.SmoothY;
+			math::Vector targetPos;
+			if (!GetBonePos(ent, boneIndex, targetPos))
+				continue;
 
-		math::Vector finalAngles;
-		finalAngles.x = currentAngles.x + delta.x / smoothX;
-		finalAngles.y = currentAngles.y + delta.y / smoothY;
-		finalAngles.z = 0.f;
+			// Visibility check - skip targets behind walls
+			if (cfg.aimbot.VisibilityCheck && !IsVisible(localPos, targetPos, LocalPlayer.Get(), ent))
+				continue;
 
-		bool isSilent = cfg.aimbot.Silent;
+			math::Vector aimAngles = CalcAimAngles(localPos, targetPos);
+			float fov = (compensatedAngles - aimAngles).length2D();
+			float distance = (targetPos - localPos).length();
 
-		// Auto shoot - fire when we're close enough to the target
-		if (cfg.aimbot.AutoShoot) {
-			float aimDiff = (finalAngles - bestAimAngles).length2D();
-			if (aimDiff < cfg.aimbot.AutoShootFov)
-				cmd->buttons |= cmd->IN_ATTACK;
+			if (fov < bestFov || (fov == bestFov && distance < bestDistance))
+			{
+				bestFov = fov;
+				bestDistance = distance;
+				bestTarget = ent;
+				bestAimAngles = aimAngles;
+
+				Target.fov = bestFov;
+				Target.distance = bestDistance;
+				Target.ent = bestTarget;
+			}
 		}
 
-		if (cmd->buttons & cmd->IN_ATTACK)
-			cmd->viewangles = isSilent ? bestAimAngles : finalAngles;
-		if (!isSilent)
-			globals::g_interfaces.Engine->SetViewAngles(finalAngles);
+		if (bestTarget)
+		{
+			// Apply recoil compensation (only after N shots)
+			if (cfg.aimbot.RCS && shotsFired >= cfg.aimbot.RCSStartBullet) {
+				math::Vector punch = LocalPlayer->getAimPunch();
+				bestAimAngles.x -= punch.x * cfg.aimbot.RCSAmountX;
+				bestAimAngles.y -= punch.y * cfg.aimbot.RCSAmountY;
+			}
 
-		AdjustMovement(cmd, currentAngles, finalAngles);
+			math::Vector currentAngles = globals::g_interfaces.Engine->GetViewAngles();
+			math::Vector delta = bestAimAngles - currentAngles;
+
+			delta.normalizeDeg();
+			delta.normalize();
+
+			// Per-axis smooth: base smooth * axis multiplier
+			float smoothX = cfg.aimbot.Smooth * cfg.aimbot.SmoothX;
+			float smoothY = cfg.aimbot.Smooth * cfg.aimbot.SmoothY;
+
+			math::Vector finalAngles;
+			finalAngles.x = currentAngles.x + delta.x / smoothX;
+			finalAngles.y = currentAngles.y + delta.y / smoothY;
+			finalAngles.z = 0.f;
+
+			bool isSilent = cfg.aimbot.Silent;
+
+			// Auto shoot - fire when we're close enough to the target
+			if (cfg.aimbot.AutoShoot) {
+				float aimDiff = (finalAngles - bestAimAngles).length2D();
+				if (aimDiff < cfg.aimbot.AutoShootFov)
+					cmd->buttons |= cmd->IN_ATTACK;
+			}
+
+			if (cmd->buttons & cmd->IN_ATTACK)
+				cmd->viewangles = isSilent ? bestAimAngles : finalAngles;
+			if (!isSilent)
+				globals::g_interfaces.Engine->SetViewAngles(finalAngles);
+
+			AdjustMovement(cmd, currentAngles, finalAngles);
+		}
 	}
 
-	// Standalone RCS (no target needed, just compensate recoil while shooting)
+	// --- Standalone RCS (no aim key or target needed, just compensate recoil while shooting) ---
 	if (!bestTarget && cfg.aimbot.RCS && cfg.aimbot.StandaloneRCS) {
-		static math::Vector lastPunch = {};
+		// Track total compensation applied to the view so far (absolute, not per-frame delta)
+		static math::Vector totalApplied = {};
 
 		if ((cmd->buttons & cmd->IN_ATTACK) && shotsFired >= cfg.aimbot.RCSStartBullet) {
 			math::Vector punch = LocalPlayer->getAimPunch();
 
-			math::Vector punchDelta;
-			punchDelta.x = (punch.x - lastPunch.x) * cfg.aimbot.RCSAmountX;
-			punchDelta.y = (punch.y - lastPunch.y) * cfg.aimbot.RCSAmountY;
-			punchDelta.z = 0.f;
+			// Target = how much total the view should be shifted right now
+			math::Vector target;
+			target.x = punch.x * cfg.aimbot.RCSAmountX;
+			target.y = punch.y * cfg.aimbot.RCSAmountY;
 
-			// Apply RCS smoothing
+			// How much more we need to apply this frame
+			math::Vector delta;
+			delta.x = target.x - totalApplied.x;
+			delta.y = target.y - totalApplied.y;
+
+			// Apply RCS smoothing (exponential convergence — always catches up)
 			if (cfg.aimbot.RCSSmooth > 1.0f) {
-				punchDelta.x /= cfg.aimbot.RCSSmooth;
-				punchDelta.y /= cfg.aimbot.RCSSmooth;
+				delta.x /= cfg.aimbot.RCSSmooth;
+				delta.y /= cfg.aimbot.RCSSmooth;
 			}
 
 			math::Vector angles = globals::g_interfaces.Engine->GetViewAngles();
-			angles.x -= punchDelta.x;
-			angles.y -= punchDelta.y;
+			angles.x -= delta.x;
+			angles.y -= delta.y;
 			angles.normalize();
 
 			globals::g_interfaces.Engine->SetViewAngles(angles);
 			cmd->viewangles = angles;
 
-			lastPunch = punch;
+			totalApplied.x += delta.x;
+			totalApplied.y += delta.y;
 		} else if (!(cmd->buttons & cmd->IN_ATTACK)) {
-			lastPunch = {};
+			totalApplied = {};
 		}
 	}
 }

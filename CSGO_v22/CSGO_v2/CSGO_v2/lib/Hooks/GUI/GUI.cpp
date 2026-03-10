@@ -12,6 +12,8 @@
 #include "imgui_internal.h"
 
 #include "SDK/Entity/localplayer.h"
+#include "build_timestamp.h"
+#include "lib/Notify/Notify.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(
 	HWND hWnd,
@@ -235,19 +237,27 @@ void gui::SetupMenu(LPDIRECT3DDEVICE9 device) noexcept
 
 void gui::Destroy() noexcept
 {
-	ImGui_ImplDX9_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();
+	// Restore the original WindowProc FIRST so no window messages reach our callback during teardown
+	if (gui::oWindowProc) {
+		SetWindowLongA(
+			gui::Window,
+			GWLP_WNDPROC,
+			(LONG_PTR)(gui::oWindowProc)
+		);
+		gui::oWindowProc = nullptr;
+	}
 
 	// Restore the input
-	globals::g_interfaces.InputSystem->EnableInput(1);
+	if (globals::g_interfaces.InputSystem)
+		globals::g_interfaces.InputSystem->EnableInput(1);
 
-	// Restore the original WindowProc to the game's window
-	SetWindowLongA(
-		gui::Window,
-		GWLP_WNDPROC,
-		(LONG_PTR)(gui::oWindowProc)
-	);
+	// Now safe to tear down ImGui — no WndProc will call into it
+	if (gui::init) {
+		ImGui_ImplDX9_Shutdown();
+		ImGui_ImplWin32_Shutdown();
+		ImGui::DestroyContext();
+		gui::init = false;
+	}
 
 	DestroyDirectX();
 }
@@ -281,7 +291,7 @@ void gui::Render() noexcept
 	windowFade.Switch(gui::bOpen);
 
 	// Don't render anything when fully closed (no ghost windows)
-	bool isAnimating = animPopUp.getValue() > 0.01f || windowFade.getValue() > 0.01f;
+	bool isAnimating = animPopUp.getValue() > 0.05f || windowFade.getValue() > 0.05f;
 	if (!gui::bOpen && !isAnimating)
 		return;
 
@@ -332,9 +342,9 @@ void gui::Render() noexcept
 			txtFade.Update();
 			animPopUp.getValue() == 1.f ? txtFade.Switch(1) : txtFade.Switch(0);
 
-			const char* txt = "(Build: " __DATE__ " - " __TIME__ ")";
-			ImVec2 txtSize = ImGui::CalcTextSize(txt);
-			Render::OutLinedText(txt, (ImGui::GetWindowPos().x + ImGui::GetWindowSize().x - (txtSize.x)), (ImGui::GetWindowPos().y +ImGui::GetWindowSize().y + 3), ImGui::GetForegroundDrawList(), ImColor(1.f, 1.f, 1.f, txtFade.getValue()));
+			auto txt = std::format("(Build: {})", BUILD_TIMESTAMP);
+			ImVec2 txtSize = ImGui::CalcTextSize(txt.c_str());
+			Render::OutLinedText(txt.c_str(), (ImGui::GetWindowPos().x + ImGui::GetWindowSize().x - (txtSize.x)), (ImGui::GetWindowPos().y +ImGui::GetWindowSize().y + 3), ImGui::GetForegroundDrawList(), ImColor(1.f, 1.f, 1.f, txtFade.getValue()));
 		}
 
 		if (ImGui::BeginTabBar("##TabsBar"))
@@ -444,15 +454,26 @@ void gui::Render() noexcept
 				static char cfgName[64] = "default";
 				menu::Section("Config")
 					.InputText("##CfgName", cfgName, sizeof(cfgName))
-					.Button("Save", [&]{ cfg.Save(cfgName); })
+					.Button("Save", [&]{
+						if (cfg.Save(cfgName))
+							Notify::Success("Config saved");
+						else
+							Notify::Error("Failed to save config");
+					})
 					.SameLine()
-					.Button("Load", [&]{ cfg.Load(cfgName); })
+					.Button("Load", [&]{
+						if (cfg.Load(cfgName))
+							Notify::Success("Config loaded");
+						else
+							Notify::Error("Failed to load config");
+					})
 					.SameLine()
-					.Button("Reset", [&]{ cfg.Reset(); })
+					.Button("Reset", [&]{ cfg.Reset(); Notify::Info("Config reset to defaults"); })
 					.ListBox("Configs", "##CfgList", Config::ListConfigs(), cfgName,
 						[&](const std::string& name) {
 							strncpy_s(cfgName, name.c_str(), sizeof(cfgName) - 1);
-							cfg.Load(name);
+							if (cfg.Load(name))
+								Notify::Success("Config loaded");
 						})
 					.End();
 
@@ -573,6 +594,10 @@ LRESULT CALLBACK WindowProcess(
 	LPARAM lParam
 )
 {
+	// During teardown, fall straight through to the original WndProc
+	if (!hooks::setupComplete)
+		return CallWindowProc(gui::oWindowProc, hWnd, msg, wParam, lParam);
+
 	// toggle menu wewe
 	if (GetAsyncKeyState(gui::menuKey) & 1)
 		gui::bOpen = !gui::bOpen;

@@ -73,7 +73,7 @@ CSGO_v22/CSGO_v2/
 - NO auto-resize child windows (that's 1.89+)
 - `BeginChild` with height 0 fills available space, cannot shrink to content
 - Line-count based height calculation for groups
-- **Side-by-side layout**: LeftGroup/RightGroup wrap children in `BeginGroup()`/`EndGroup()`. `EndGroup()` tracks bounding box so the next row starts below the taller group. See `imgui_demo.cpp:7033-7073`.
+- **Side-by-side layout**: LeftGroup/RightGroup use independent Y cursor tracking per column via `SetCursorPos`. Each column stacks groups without gaps. `SetCursorPos` going backwards is safe — `CursorMaxPos` only grows (imgui.cpp:8380). Call `menu::EndRow()` before `EndTabItem()` to finalize.
 - ImGui source/docs at `ext/ImGui/` — `imgui_demo.cpp` is the best reference for layout patterns
 
 ## Conventions

@@ -83,6 +83,7 @@ target_include_directories(CSGO_v2 PRIVATE
     ext/ImGui
     ext/MD5
     ext/AnimationLib
+    ext/ImGuiNotify/example/src
 )
 
 target_include_directories(CSGO_v2 SYSTEM PRIVATE

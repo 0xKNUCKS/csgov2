@@ -1,6 +1,7 @@
 #include "Menu.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui_internal.h"
+#include "imgui_notify.h"
 
 // =========================================================
 // Internal helpers — the actual ImGui rendering logic.
@@ -435,6 +436,7 @@ void menu::EndOutlineGroup()
 void menu::SetupTheme()
 {
 	ImGui::GetIO().Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Verdana.ttf", 13.0f);
+	ImGui::MergeIconsWithLatestFont(13.0f, false);
 	ImGui::GetStyle().FrameRounding = 4.0f;
 	ImGui::GetStyle().GrabRounding = 4.0f;
 	ImGui::GetStyle().ChildRounding = 6.f;

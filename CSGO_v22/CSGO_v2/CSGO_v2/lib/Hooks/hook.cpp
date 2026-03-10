@@ -16,10 +16,21 @@
 #include "lib/Configs/config.h"
 #include "imgui.h"
 #include "imgui_impl_dx9.h"
+#include "imgui_notify.h"
+#include "lib/Notify/Notify.h"
 #include "Animation.h"
 
 void hooks::Destroy() noexcept
 {
+	// FIRST: stop all hook logic immediately so no hook function runs against torn-down state
+	setupComplete = false;
+
+	// Remove the vectored exception handler before unloading (dangling pointer = crash)
+	if (hVEH) {
+		RemoveVectoredExceptionHandler(hVEH);
+		hVEH = nullptr;
+	}
+
 	// Restore each hookManager properly (handles both DETOUR and VMT)
 	d3dDeviceHk.restore();
 	ClientModeHk.restore();
@@ -34,8 +45,14 @@ void hooks::Destroy() noexcept
 // Runs on a separate thread so we don't tear down hooks while inside a hooked function
 void hooks::Unload() noexcept
 {
-	// Small delay to let the current hooked frame finish
-	Sleep(100);
+	// Stop all hook logic first — no hook function will run past its setupComplete check after this
+	setupComplete = false;
+
+	// Wait for any in-flight hook calls to finish (at 60fps a frame is ~16ms, give several frames)
+	Sleep(500);
+
+	// Restore WindowProc BEFORE destroying ImGui — prevents WndProc calling into freed ImGui context
+	gui::Destroy();
 
 #ifdef _DEBUG
 	::ShowWindow(GetConsoleWindow(), SW_HIDE);
@@ -43,7 +60,6 @@ void hooks::Unload() noexcept
 #endif
 
 	hooks::Destroy();
-	gui::Destroy();
 
 	// Actually unload the DLL from the process
 	FreeLibraryAndExitThread(hooks::hModule, 0);
@@ -117,6 +133,13 @@ long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice)
 			}
 		}
 
+		// Render notifications (toast popups) on top of everything
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 5.f);
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(43/255.f, 43/255.f, 43/255.f, 100/255.f));
+		ImGui::RenderNotifications();
+		ImGui::PopStyleVar(1);
+		ImGui::PopStyleColor(1);
+
 		gui::EndFrame();
 
 		// Unload: spawn a thread so we don't tear down hooks while inside one
@@ -129,6 +152,7 @@ long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice)
 		CrashLog::Write("[EndScene] C++ exception caught");
 		Log::Fatal("Hooks", "Exception in hkEndScene - overlay disabled");
 		Log::DumpToFile("csgo_v2_errors.log");
+		Notify::Error("Overlay crash caught — check csgo_v2_errors.log");
 	}
 
 	return result;
@@ -386,7 +410,7 @@ bool hooks::Setup()
 	Log::Info("Hooks", "Starting hook setup...");
 
 	// Install process-wide crash handler so we catch crashes on the game's render thread too
-	AddVectoredExceptionHandler(1, GlobalCrashHandler);
+	hVEH = AddVectoredExceptionHandler(1, GlobalCrashHandler);
 
 	// Validate critical interfaces before dereferencing them
 	if (!globals::g_interfaces.BaseClient) {

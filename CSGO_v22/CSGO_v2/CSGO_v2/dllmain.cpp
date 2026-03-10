@@ -8,6 +8,7 @@
 #include "lib/Configs/config.h"
 #include "lib/Error/Log.h"
 #include "lib/Error/CrashLog.h"
+#include "lib/Notify/Notify.h"
 
 /// Macros
 // Hash sum of game files to confirm the game's version
@@ -59,16 +60,22 @@ static DWORD InitMain(HMODULE hModule)
     }
 
     // Load saved config (silently falls back to defaults if no config exists)
-    if (cfg.Load())
+    if (cfg.Load()) {
         Log::Info("Main", "Config loaded from file");
+        Notify::Success("Config loaded");
+    }
 
     CrashLog::Write("[Main] Init complete");
     Log::Info("Main", "Initialization complete - {} warnings, {} errors",
         Log::Count(Error::Severity::Warning), Log::Count(Error::Severity::Error));
 
     // Dump any warnings to log file even on success
-    if (Log::Count(Error::Severity::Warning) > 0)
+    if (Log::Count(Error::Severity::Warning) > 0) {
         Log::DumpToFile("csgo_v2_errors.log");
+        Notify::Warn("Init completed with warnings — check csgo_v2_errors.log");
+    } else {
+        Notify::Success("Initialized successfully");
+    }
 
     return TRUE;
 }

@@ -222,6 +222,7 @@
     <ClInclude Include="..\ext\MinHook\hde\table64.h" />
     <ClInclude Include="..\ext\MinHook\MinHook.h" />
     <ClInclude Include="..\ext\MinHook\trampoline.h" />
+    <ClInclude Include="build_timestamp.h" />
     <ClInclude Include="aimbot.h" />
     <ClInclude Include="classes.h" />
     <ClInclude Include="config.h" />
@@ -251,6 +252,12 @@
     <ClInclude Include="VirtualMethod.h" />
     <ClInclude Include="VMT.h" />
   </ItemGroup>
+  <ItemDefinitionGroup>
+    <PreBuildEvent>
+      <Command>copy /b "$(ProjectDir)build_timestamp.h" +,, "$(ProjectDir)build_timestamp.h" >nul 2>&amp;1</Command>
+      <Message>Touching build_timestamp.h to refresh build date...</Message>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

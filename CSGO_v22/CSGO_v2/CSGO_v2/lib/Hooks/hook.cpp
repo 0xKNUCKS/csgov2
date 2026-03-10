@@ -91,10 +91,18 @@ long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice)
 
 		Render::OutLinedText(std::format(" [{}fps]", (int)ImGui::GetIO().Framerate).c_str(), 0, 5, ImGui::GetBackgroundDrawList());
 
-		if (cfg.aimbot.DrawFov && cfg.aimbot.Enabled && LocalPlayer.Get()) {
+		if (cfg.aimbot.Enabled && LocalPlayer.Get()) {
 			auto DispSize = ImGui::GetIO().DisplaySize;
-			float r = cfg.aimbot.FOV / globals::camFOV * DispSize.x / 2;
-			Render::OutLinedCircle(DispSize.x / 2, DispSize.y / 2, r);
+			float cx = DispSize.x / 2, cy = DispSize.y / 2;
+
+			if (cfg.aimbot.DrawFov) {
+				float r = cfg.aimbot.FOV / globals::camFOV * DispSize.x / 2;
+				Render::OutLinedCircle(cx, cy, r);
+			}
+			if (cfg.aimbot.DrawAutoShootFov && cfg.aimbot.AutoShoot) {
+				float r = cfg.aimbot.AutoShootFov / globals::camFOV * DispSize.x / 2;
+				Render::OutLinedCircle(cx, cy, r, ImColor(255, 50, 50, 180));
+			}
 		}
 
 		if (LocalPlayer.Get() && cfg.misc.movement.BunnyHop) {

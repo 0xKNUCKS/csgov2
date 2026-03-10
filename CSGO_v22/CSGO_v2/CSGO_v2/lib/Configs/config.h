@@ -53,6 +53,7 @@ public:
 		// Auto shoot
 		bool AutoShoot = false;
 		float AutoShootFov = 2.0f; // how close aim needs to be to auto-fire
+		bool DrawAutoShootFov = false;
 	} aimbot;
 
 	struct Visuals

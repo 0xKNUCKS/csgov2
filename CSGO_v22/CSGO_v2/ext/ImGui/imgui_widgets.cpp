@@ -2986,9 +2986,24 @@ bool ImGui::SliderScalar(const char* label, ImGuiDataType data_type, void* p_dat
     if (value_changed)
         MarkItemEdited(id);
 
-    // Render grab
+    // Render grab with smooth animation (uses offset from frame edge so window movement doesn't trigger animation)
     if (grab_bb.Max.x > grab_bb.Min.x)
-        window->DrawList->AddRectFilled(grab_bb.Min, grab_bb.Max, GetColorU32(g.ActiveId == id ? ImGuiCol_SliderGrabActive : ImGuiCol_SliderGrab), style.GrabRounding);
+    {
+        static ImGuiStorage s_sliderAnim;
+        float grabHalfW = (grab_bb.Max.x - grab_bb.Min.x) * 0.5f;
+        // Store as offset from frame left edge — immune to window movement
+        float targetOffset = (grab_bb.Min.x + grab_bb.Max.x) * 0.5f - frame_bb.Min.x;
+
+        float* animOffset = s_sliderAnim.GetFloatRef(id, targetOffset);
+        float speed = g.IO.DeltaTime * 15.f;
+        if (speed > 1.f) speed = 1.f;
+        *animOffset += (targetOffset - *animOffset) * speed;
+        if (ImAbs(*animOffset - targetOffset) < 0.5f) *animOffset = targetOffset;
+
+        float animCenterX = frame_bb.Min.x + *animOffset;
+        ImRect animGrab(ImVec2(animCenterX - grabHalfW, grab_bb.Min.y), ImVec2(animCenterX + grabHalfW, grab_bb.Max.y));
+        window->DrawList->AddRectFilled(animGrab.Min, animGrab.Max, GetColorU32(g.ActiveId == id ? ImGuiCol_SliderGrabActive : ImGuiCol_SliderGrab), style.GrabRounding);
+    }
 
     // Display value using user-provided display format so user can add prefix/suffix/decorations to the value.
     char value_buf[64];
@@ -8114,8 +8129,56 @@ bool    ImGui::TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, 
     const ImU32 tab_col = GetColorU32((held || hovered) ? ImGuiCol_TabActive : ImGuiCol_Tab);
     TabItemBackground(display_draw_list, bb, flags, tab_col);
     RenderNavHighlight(bb, id);
-    if (tab_contents_visible && tab_bar_focused)
-        GetForegroundDrawList()->AddLine(ImVec2(bb.Min.x, bb.Max.y), bb.Max - ImVec2(1, 0), GetColorU32(ImGuiCol_TabHovered), 3.f);
+    // Animated underline: smoothly slides only when switching tabs
+    if (tab_bar_focused)
+    {
+        static ImGuiID s_lastBarId = 0;
+        static float s_lineX1 = 0.f, s_lineX2 = 0.f;
+        static float s_lineY = 0.f;
+        static ImVec2 s_lastWinPos(0.f, 0.f);
+
+        if (tab_contents_visible)
+        {
+            float targetX1 = bb.Min.x;
+            float targetX2 = bb.Max.x - 1.f;
+            float targetY  = bb.Max.y;
+            ImVec2 winPos = window->Pos;
+
+            // First frame or bar switch — snap
+            if (s_lastBarId != tab_bar->ID || (s_lineX1 == 0.f && s_lineX2 == 0.f))
+            {
+                s_lineX1 = targetX1;
+                s_lineX2 = targetX2;
+                s_lineY  = targetY;
+                s_lastBarId = tab_bar->ID;
+            }
+            else
+            {
+                // If window moved, shift stored positions by the same delta (no animation)
+                float dx = winPos.x - s_lastWinPos.x;
+                float dy = winPos.y - s_lastWinPos.y;
+                if (dx != 0.f || dy != 0.f)
+                {
+                    s_lineX1 += dx;
+                    s_lineX2 += dx;
+                    s_lineY  += dy;
+                }
+
+                // Animate only the tab-switch movement
+                float speed = g.IO.DeltaTime * 12.f;
+                if (speed > 1.f) speed = 1.f;
+                s_lineX1 += (targetX1 - s_lineX1) * speed;
+                s_lineX2 += (targetX2 - s_lineX2) * speed;
+                s_lineY   = targetY;
+            }
+
+            s_lastWinPos = winPos;
+
+            GetForegroundDrawList()->AddLine(
+                ImVec2(s_lineX1, s_lineY), ImVec2(s_lineX2, s_lineY),
+                GetColorU32(ImGuiCol_TabHovered), 3.f);
+        }
+    }
 
     // Select with right mouse button. This is so the common idiom for context menu automatically highlight the current widget.
     const bool hovered_unblocked = IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);

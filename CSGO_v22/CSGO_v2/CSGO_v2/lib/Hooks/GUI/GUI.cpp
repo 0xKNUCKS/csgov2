@@ -368,10 +368,11 @@ void gui::Render() noexcept
 					.Checkbox("Auto Shoot", &cfg.aimbot.AutoShoot)
 					.End();
 
-				menu::RightGroup("Target", 3)
+				menu::RightGroup("Target", 4)
 					.Combo("Aim Bone", &cfg.aimbot.AimBone, "Head\0Neck\0Chest\0Stomach\0")
-					.Slider("Auto Shoot FOV", &cfg.aimbot.AutoShootFov, 0.5f, 10.0f, "%.1f",
+					.Slider("Auto Shoot FOV", &cfg.aimbot.AutoShootFov, 0.5f, 180.0f, "%.1f",
 						"How close aim must be to target to auto-fire")
+					.Checkbox("Draw Auto Shoot FOV", &cfg.aimbot.DrawAutoShootFov)
 					.Checkbox("FOV Circle", &cfg.aimbot.DrawFov)
 					.End();
 
@@ -424,8 +425,6 @@ void gui::Render() noexcept
 						 .Checkbox("Always Draw", &cfg.visuals.viewmodel.AlwaysDraw);
 					})
 					.End();
-
-				menu::EndRow();
 
 				menu::LeftGroup("Crosshair", 11)
 					.Checkbox("Enabled", &cfg.visuals.crosshair.Enabled)

@@ -60,6 +60,7 @@ bool Config::Save(const std::string& name) const
 	body << "RCSSmooth=" << aimbot.RCSSmooth << "\n";
 	body << "AutoShoot=" << aimbot.AutoShoot << "\n";
 	body << "AutoShootFov=" << aimbot.AutoShootFov << "\n";
+	body << "DrawAutoShootFov=" << aimbot.DrawAutoShootFov << "\n";
 
 	body << "\n[visuals]\n";
 	body << "Enabled=" << visuals.Enabled << "\n";
@@ -276,6 +277,7 @@ bool Config::Load(const std::string& name)
 	aimbot.RCSSmooth     = GetFloat(kv, "aimbot.RCSSmooth", defaults.aimbot.RCSSmooth);
 	aimbot.AutoShoot     = GetBool(kv, "aimbot.AutoShoot", defaults.aimbot.AutoShoot);
 	aimbot.AutoShootFov  = GetFloat(kv, "aimbot.AutoShootFov", defaults.aimbot.AutoShootFov);
+	aimbot.DrawAutoShootFov = GetBool(kv, "aimbot.DrawAutoShootFov", defaults.aimbot.DrawAutoShootFov);
 
 	// Visuals
 	visuals.Enabled  = GetBool(kv, "visuals.Enabled", defaults.visuals.Enabled);

@@ -7,19 +7,22 @@ CS:GO internal cheat (DLL injection) with ImGui overlay menu, aimbot, ESP, movem
 - **Target**: CS:GO (32-bit Source Engine process)
 
 ## Build Commands
+Use the build scripts in `CSGO_v22/CSGO_v2/scripts/`:
 ```bash
-# CMake path (VS 18 Insiders)
-CMAKE="/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe"
-
-# Configure (only needed once)
-"$CMAKE" -S CSGO_v22/CSGO_v2 -B CSGO_v22/CSGO_v2/build -A Win32
-
-# Build Debug (what gets injected)
-"$CMAKE" --build CSGO_v22/CSGO_v2/build --config Debug
+# Build Debug (what gets injected) — USE THIS
+cmd.exe /c "CSGO_v22\\CSGO_v2\\scripts\\build-debug.bat"
 
 # Build Release
-"$CMAKE" --build CSGO_v22/CSGO_v2/build --config Release
+cmd.exe /c "CSGO_v22\\CSGO_v2\\scripts\\build-release.bat"
+
+# Clean build
+cmd.exe /c "CSGO_v22\\CSGO_v2\\scripts\\clean.bat"
+
+# Reconfigure CMake
+cmd.exe /c "CSGO_v22\\CSGO_v2\\scripts\\configure.bat"
 ```
+- Scripts auto-configure if build dir doesn't exist
+- ALWAYS prefer scripts over manual cmake commands
 
 ## Key Architecture
 
@@ -83,6 +86,22 @@ CSGO_v22/CSGO_v2/
 - Use `menu::` namespace for all menu widgets, never raw ImGui in GUI.cpp render code
 - LNK1168 error = DLL still loaded in game, must unload first
 - Debug builds are what gets injected, not Release
+
+## External References
+- `external_sources/Osiris-csgo/` — Open-source CSGO cheat (C++). Can be used as a reference when stuck.
+- `external_sources/csgo-2018-source-main/` — Valve's official CSGO 2018 source code. Useful for SDK/engine internals.
+- **IMPORTANT**: These are references ONLY. Always find a BETTER approach first before copying patterns from Osiris. The goal is for this cheat to be superior in code quality, design, and features. Only fall back to reference code when there's no clearly better alternative.
+
+## Debugging Techniques
+- **Crash analysis via binary disassembly**: When VEH reports a crash offset, use WSL Kali:
+  ```bash
+  wsl -d kali-linux -- objdump -d -M intel --start-address=$((0x10000000 + OFFSET)) --stop-address=$((0x10000000 + OFFSET + 0x40)) '/mnt/c/.../CSGO_v2.dll'
+  ```
+  - DLL image base: `0x10000000`. Crash offset from VEH = RVA
+  - Find callers: `objdump | grep 'call.*<target_address>'`, check jmp thunk tables
+  - Trace the null pointer to identify which game entity/virtual call returned null
+- **Build timestamp**: `build_timestamp.h` is force-touched by CMake pre-build step. Init notification shows `"CSGO_v2 loaded [<date> - <time>]"` to confirm new DLL injection
+- **MSVC debug `= {}` pitfall**: `math::Vector v = {};` compiles as copy-from-NULL in debug. Use `math::Vector v(0.f, 0.f, 0.f);` and `v.x = 0.f; v.y = 0.f; v.z = 0.f;` for reset
 
 ## Common Pitfalls
 - Forward declare functions used before definition in .cpp files (C3861)

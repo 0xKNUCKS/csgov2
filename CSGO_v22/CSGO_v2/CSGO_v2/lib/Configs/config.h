@@ -85,6 +85,19 @@ public:
 			float ViewModelFOV = 60.0f;
 			bool AlwaysDraw = false;
 		} viewmodel;
+		struct Crosshair
+		{
+			bool Enabled = false;
+			int Style = 0; // 0=Cross, 1=Circle, 2=Dot, 3=Cross+Dot
+			float Size = 5.f;
+			float Gap = 2.f;
+			float Thickness = 1.f;
+			bool Outline = true;
+			CfgColor Color = CfgColor(0, 255, 0);
+			bool RecoilCrosshair = false;
+			CfgColor RecoilColor = CfgColor(255, 50, 50);
+			bool SniperCrosshair = false;
+		} crosshair;
 	} visuals;
 
 	struct Misc

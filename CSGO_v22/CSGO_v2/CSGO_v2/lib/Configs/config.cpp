@@ -89,6 +89,20 @@ bool Config::Save(const std::string& name) const
 	body << "ViewModelFOV=" << visuals.viewmodel.ViewModelFOV << "\n";
 	body << "AlwaysDraw=" << visuals.viewmodel.AlwaysDraw << "\n";
 
+	body << "\n[visuals.crosshair]\n";
+	body << "Enabled=" << visuals.crosshair.Enabled << "\n";
+	body << "Style=" << visuals.crosshair.Style << "\n";
+	body << "Size=" << visuals.crosshair.Size << "\n";
+	body << "Gap=" << visuals.crosshair.Gap << "\n";
+	body << "Thickness=" << visuals.crosshair.Thickness << "\n";
+	body << "Outline=" << visuals.crosshair.Outline << "\n";
+	body << "Color=" << visuals.crosshair.Color.r << "," << visuals.crosshair.Color.g << ","
+	  << visuals.crosshair.Color.b << "," << visuals.crosshair.Color.a << "\n";
+	body << "RecoilCrosshair=" << visuals.crosshair.RecoilCrosshair << "\n";
+	body << "RecoilColor=" << visuals.crosshair.RecoilColor.r << "," << visuals.crosshair.RecoilColor.g << ","
+	  << visuals.crosshair.RecoilColor.b << "," << visuals.crosshair.RecoilColor.a << "\n";
+	body << "SniperCrosshair=" << visuals.crosshair.SniperCrosshair << "\n";
+
 	body << "\n[misc.movement]\n";
 	body << "BunnyHop=" << misc.movement.BunnyHop << "\n";
 	body << "AirDuck=" << misc.movement.AirDuck << "\n";
@@ -289,6 +303,18 @@ bool Config::Load(const std::string& name)
 	// Visuals ViewModel
 	visuals.viewmodel.ViewModelFOV = GetFloat(kv, "visuals.viewmodel.ViewModelFOV", defaults.visuals.viewmodel.ViewModelFOV);
 	visuals.viewmodel.AlwaysDraw   = GetBool(kv, "visuals.viewmodel.AlwaysDraw", defaults.visuals.viewmodel.AlwaysDraw);
+
+	// Visuals Crosshair
+	visuals.crosshair.Enabled         = GetBool(kv, "visuals.crosshair.Enabled", defaults.visuals.crosshair.Enabled);
+	visuals.crosshair.Style           = GetInt(kv, "visuals.crosshair.Style", defaults.visuals.crosshair.Style);
+	visuals.crosshair.Size            = GetFloat(kv, "visuals.crosshair.Size", defaults.visuals.crosshair.Size);
+	visuals.crosshair.Gap             = GetFloat(kv, "visuals.crosshair.Gap", defaults.visuals.crosshair.Gap);
+	visuals.crosshair.Thickness       = GetFloat(kv, "visuals.crosshair.Thickness", defaults.visuals.crosshair.Thickness);
+	visuals.crosshair.Outline         = GetBool(kv, "visuals.crosshair.Outline", defaults.visuals.crosshair.Outline);
+	visuals.crosshair.Color           = GetColor(kv, "visuals.crosshair.Color", defaults.visuals.crosshair.Color);
+	visuals.crosshair.RecoilCrosshair = GetBool(kv, "visuals.crosshair.RecoilCrosshair", defaults.visuals.crosshair.RecoilCrosshair);
+	visuals.crosshair.RecoilColor     = GetColor(kv, "visuals.crosshair.RecoilColor", defaults.visuals.crosshair.RecoilColor);
+	visuals.crosshair.SniperCrosshair = GetBool(kv, "visuals.crosshair.SniperCrosshair", defaults.visuals.crosshair.SniperCrosshair);
 
 	// Misc Movement
 	misc.movement.BunnyHop = GetBool(kv, "misc.movement.BunnyHop", defaults.misc.movement.BunnyHop);

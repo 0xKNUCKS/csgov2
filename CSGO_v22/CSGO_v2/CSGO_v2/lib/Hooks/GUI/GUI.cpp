@@ -15,6 +15,10 @@
 #include "build_timestamp.h"
 #include "lib/Notify/Notify.h"
 
+#ifdef _DEBUG
+#include "lib/Error/AuditLog.h"
+#endif
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(
 	HWND hWnd,
 	UINT msg,
@@ -422,6 +426,22 @@ void gui::Render() noexcept
 					.End();
 
 				menu::EndRow();
+
+				menu::LeftGroup("Crosshair", 11)
+					.Checkbox("Enabled", &cfg.visuals.crosshair.Enabled)
+					.Combo("Style", &cfg.visuals.crosshair.Style, "Cross\0Circle\0Dot\0Cross + Dot\0")
+					.Slider("Size", &cfg.visuals.crosshair.Size, 1.f, 20.f, "%.0f")
+					.Slider("Gap", &cfg.visuals.crosshair.Gap, 0.f, 10.f, "%.0f")
+					.Slider("Thickness", &cfg.visuals.crosshair.Thickness, 0.5f, 5.f, "%.1f")
+					.Checkbox("Outline", &cfg.visuals.crosshair.Outline)
+					.ColorPicker("Color", cfg.visuals.crosshair.Color, true)
+					.Space()
+					.Checkbox("Recoil Crosshair", &cfg.visuals.crosshair.RecoilCrosshair, "Shows where bullets actually land")
+					.ColorPicker("Recoil Color", cfg.visuals.crosshair.RecoilColor, true)
+					.Checkbox("Sniper Crosshair", &cfg.visuals.crosshair.SniperCrosshair, "Draw crosshair when scoped")
+					.End();
+
+				menu::EndRow();
 				ImGui::EndTabItem();
 			}
 
@@ -495,6 +515,55 @@ void gui::Render() noexcept
 
 				ImGui::EndTabItem();
 			}
+
+
+#ifdef _DEBUG
+			if (ImGui::BeginTabItem("Audit Log"))
+			{
+				// Header row: entry count, copy, clear buttons
+				ImGui::Text("Entries: %d", AuditLog::Size());
+				ImGui::SameLine();
+				if (ImGui::Button("Copy All")) {
+					std::string all = AuditLog::FormatAll();
+					if (!all.empty())
+						ImGui::SetClipboardText(all.c_str());
+					Notify::Success("Audit log copied to clipboard");
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Clear")) {
+					AuditLog::Clear();
+				}
+				ImGui::Separator();
+
+				// Scrollable log area
+				ImGui::BeginChild("##AuditScroll", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+				{
+					std::lock_guard lock(AuditLog::g_mutex);
+					// Render newest first
+					for (int i = (int)AuditLog::g_entries.size() - 1; i >= 0; i--) {
+						const auto& e = AuditLog::g_entries[i];
+
+						// Color by severity
+						ImVec4 col = ImVec4(1, 1, 1, 1);
+						if (e.severity == "WARN")       col = ImVec4(1.0f, 0.9f, 0.3f, 1.0f);
+						else if (e.severity == "ERR")   col = ImVec4(1.0f, 0.3f, 0.3f, 1.0f);
+						else if (e.severity == "FATAL") col = ImVec4(1.0f, 0.1f, 0.1f, 1.0f);
+						else if (e.severity == "INFO")  col = ImVec4(0.7f, 0.7f, 0.7f, 1.0f);
+
+						if (e.count > 1) {
+							ImGui::TextColored(col, "[%s] [%s] %s (x%d)",
+								e.timestamp.c_str(), e.severity.c_str(), e.message.c_str(), e.count);
+						} else {
+							ImGui::TextColored(col, "[%s] [%s] %s",
+								e.timestamp.c_str(), e.severity.c_str(), e.message.c_str());
+						}
+					}
+				}
+				ImGui::EndChild();
+
+				ImGui::EndTabItem();
+			}
+#endif // _DEBUG
 
 			ImGui::EndTabBar();
 		}

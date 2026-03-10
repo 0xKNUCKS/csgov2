@@ -75,6 +75,7 @@ add_library(CSGO_v2 SHARED
     CSGO_v2/Modules/Aimbot/aimbot.cpp
     CSGO_v2/Modules/Misc/Misc.cpp
     CSGO_v2/Modules/Visuals/ESP.cpp
+    CSGO_v2/Modules/Visuals/Crosshair.cpp
 )
 
 target_include_directories(CSGO_v2 PRIVATE
@@ -153,6 +154,12 @@ if(MSVC)
         /Zc:__cplusplus
     )
 endif()
+
+# Force build_timestamp.h to recompile every build (updates __DATE__/__TIME__)
+add_custom_command(TARGET CSGO_v2 PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} -E touch
+        "${CMAKE_CURRENT_SOURCE_DIR}/CSGO_v2/build_timestamp.h"
+)
 
 # Copy DLL next to loader exe after build so the default path works
 add_custom_command(TARGET CSGO_Loader POST_BUILD

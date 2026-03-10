@@ -11,6 +11,7 @@
 #include "Modules/Aimbot/aimbot.h"
 #include "Modules/Misc/Misc.h"
 #include "Modules/Visuals/ESP.h"
+#include "Modules/Visuals/Crosshair.h"
 #include "SDK/Classes/ViewSetup/ViewSetup.h"
 #include "SDK/Entity/localplayer.h"
 #include "lib/Configs/config.h"
@@ -19,6 +20,10 @@
 #include "imgui_notify.h"
 #include "lib/Notify/Notify.h"
 #include "Animation.h"
+
+#ifdef _DEBUG
+#include "lib/Error/AuditLog.h"
+#endif
 
 void hooks::Destroy() noexcept
 {
@@ -104,6 +109,7 @@ long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice)
 		}
 
 		ESP::Render();
+		Crosshair::Render();
 
 		gui::Render();
 
@@ -153,6 +159,9 @@ long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice)
 		Log::Fatal("Hooks", "Exception in hkEndScene - overlay disabled");
 		Log::DumpToFile("csgo_v2_errors.log");
 		Notify::Error("Overlay crash caught — check csgo_v2_errors.log");
+#ifdef _DEBUG
+		AuditLog::Fatal("EndScene C++ exception — overlay may be unstable");
+#endif
 	}
 
 	return result;
@@ -401,6 +410,15 @@ static LONG WINAPI GlobalCrashHandler(EXCEPTION_POINTERS* ep)
 	}
 
 	Log::DumpToFile("csgo_v2_errors.log");
+
+#ifdef _DEBUG
+	// Build a short summary for the audit log (can't use std::format in SEH-safe code,
+	// but this runs after CrashLog so it's OK to use C++ here)
+	char auditBuf[128];
+	snprintf(auditBuf, sizeof(auditBuf), "VEH exception 0x%08X at offset 0x%X",
+		code, hSelf ? (unsigned)((uintptr_t)addr - (uintptr_t)hSelf) : 0);
+	AuditLog::Fatal(auditBuf);
+#endif
 
 	return EXCEPTION_CONTINUE_SEARCH;
 }

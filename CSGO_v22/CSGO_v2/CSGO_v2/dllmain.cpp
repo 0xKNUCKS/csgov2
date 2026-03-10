@@ -9,6 +9,7 @@
 #include "lib/Error/Log.h"
 #include "lib/Error/CrashLog.h"
 #include "lib/Notify/Notify.h"
+#include "build_timestamp.h"
 
 /// Macros
 // Hash sum of game files to confirm the game's version
@@ -74,7 +75,9 @@ static DWORD InitMain(HMODULE hModule)
         Log::DumpToFile("csgo_v2_errors.log");
         Notify::Warn("Init completed with warnings — check csgo_v2_errors.log");
     } else {
-        Notify::Success("Initialized successfully");
+        char buildMsg[128];
+        snprintf(buildMsg, sizeof(buildMsg), "CSGO_v2 loaded [%s]", BUILD_TIMESTAMP);
+        Notify::Success(buildMsg);
     }
 
     return TRUE;

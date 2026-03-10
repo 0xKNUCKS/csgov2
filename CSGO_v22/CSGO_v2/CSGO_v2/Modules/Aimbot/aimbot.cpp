@@ -84,10 +84,21 @@ static bool wasShooting = false;
 
 void aimbot::Run(CUserCmd* cmd)
 {
+	// After a crash, pause aimbot for 2 seconds to avoid SEH-unwind spam tanking FPS
+	static DWORD crashCooldown = 0;
+	if (crashCooldown && GetTickCount() < crashCooldown)
+		return;
+
 	__try {
 		aimbot::RunInternal(cmd);
 	} __except (EXCEPTION_EXECUTE_HANDLER) {
-		Notify::Warn("Aimbot recovered from crash (map transition?)");
+		crashCooldown = GetTickCount() + 2000;
+		static DWORD lastNotifyTime = 0;
+		DWORD now = GetTickCount();
+		if (now - lastNotifyTime > 5000) {
+			lastNotifyTime = now;
+			Notify::Warn("Aimbot recovered from crash — pausing 2s");
+		}
 	}
 }
 
@@ -96,7 +107,18 @@ void aimbot::RunInternal(CUserCmd* cmd)
 	if (!cfg.aimbot.Enabled)
 		return;
 
-	if (!globals::g_interfaces.Engine->IsInGame() || !LocalPlayer.Get() || !hooks::GlobalVars)
+	if (!globals::g_interfaces.Engine->IsInGame() || !hooks::GlobalVars)
+		return;
+
+	// Cache local player pointer ONCE — LocalPlayer.Get() does 2 virtual calls each time,
+	// and the entity can become null between calls (map transitions, respawns, etc.)
+	gEntity* lp = LocalPlayer.Get();
+	if (!lp)
+		return;
+
+	// Don't run aimbot/RCS if player is dead (entity data may be invalid)
+	bool alive = *(int*)((uintptr_t)lp + offsets::deadFlag) == 0;
+	if (!alive)
 		return;
 
 	// Track shot count for RCS start bullet (always, regardless of aim key)
@@ -121,8 +143,8 @@ void aimbot::RunInternal(CUserCmd* cmd)
 		Target.ent = nullptr;
 
 		// Use netvar-based eye position (safe during map transitions, no virtual call)
-		auto viewOffset = *(math::Vector*)((uintptr_t)LocalPlayer.Get() + offsets::m_vecViewOffset);
-		const auto& origin = LocalPlayer->getAbsOrigin();
+		auto viewOffset = *(math::Vector*)((uintptr_t)lp + offsets::m_vecViewOffset);
+		const auto& origin = lp->getAbsOrigin();
 		math::Vector localPos = { origin.x + viewOffset.x, origin.y + viewOffset.y, origin.z + viewOffset.z };
 		math::Vector viewAngles = globals::g_interfaces.Engine->GetViewAngles();
 
@@ -131,7 +153,7 @@ void aimbot::RunInternal(CUserCmd* cmd)
 		// Compensate view angles for punch when doing FOV comparison
 		math::Vector compensatedAngles = viewAngles;
 		if (cfg.aimbot.RCS) {
-			math::Vector punch = LocalPlayer->getAimPunch();
+			math::Vector punch = lp->getAimPunch();
 			compensatedAngles.x -= punch.x * cfg.aimbot.RCSAmountX;
 			compensatedAngles.y -= punch.y * cfg.aimbot.RCSAmountY;
 		}
@@ -149,7 +171,7 @@ void aimbot::RunInternal(CUserCmd* cmd)
 				continue;
 
 			// Visibility check - skip targets behind walls
-			if (cfg.aimbot.VisibilityCheck && !IsVisible(localPos, targetPos, LocalPlayer.Get(), ent))
+			if (cfg.aimbot.VisibilityCheck && !IsVisible(localPos, targetPos, lp, ent))
 				continue;
 
 			math::Vector aimAngles = CalcAimAngles(localPos, targetPos);
@@ -173,7 +195,7 @@ void aimbot::RunInternal(CUserCmd* cmd)
 		{
 			// Apply recoil compensation (only after N shots)
 			if (cfg.aimbot.RCS && shotsFired >= cfg.aimbot.RCSStartBullet) {
-				math::Vector punch = LocalPlayer->getAimPunch();
+				math::Vector punch = lp->getAimPunch();
 				bestAimAngles.x -= punch.x * cfg.aimbot.RCSAmountX;
 				bestAimAngles.y -= punch.y * cfg.aimbot.RCSAmountY;
 			}
@@ -214,17 +236,24 @@ void aimbot::RunInternal(CUserCmd* cmd)
 	// --- Standalone RCS (no aim key or target needed, just compensate recoil while shooting) ---
 	if (!bestTarget && cfg.aimbot.RCS && cfg.aimbot.StandaloneRCS) {
 		// Track total compensation applied to the view so far (absolute, not per-frame delta)
-		static math::Vector totalApplied = {};
+		static math::Vector totalApplied(0.f, 0.f, 0.f);
 
-		if ((cmd->buttons & cmd->IN_ATTACK) && shotsFired >= cfg.aimbot.RCSStartBullet) {
-			math::Vector punch = LocalPlayer->getAimPunch();
+		bool shooting = (cmd->buttons & cmd->IN_ATTACK) && shotsFired >= cfg.aimbot.RCSStartBullet;
+		math::Vector punch = lp->getAimPunch();
 
-			// Target = how much total the view should be shifted right now
-			math::Vector target;
-			target.x = punch.x * cfg.aimbot.RCSAmountX;
-			target.y = punch.y * cfg.aimbot.RCSAmountY;
+		// Target = how much total the view should be shifted right now
+		math::Vector target;
+		target.x = punch.x * cfg.aimbot.RCSAmountX;
+		target.y = punch.y * cfg.aimbot.RCSAmountY;
 
-			// How much more we need to apply this frame
+		// Punch has fully decayed and we've unwound — clean reset
+		if (!shooting && std::abs(punch.x) < 0.01f && std::abs(punch.y) < 0.01f) {
+			totalApplied.x = 0.f;
+			totalApplied.y = 0.f;
+			totalApplied.z = 0.f;
+		}
+		// Actively shooting OR still unwinding previous compensation as punch decays
+		else if (shooting || std::abs(totalApplied.x) > 0.01f || std::abs(totalApplied.y) > 0.01f) {
 			math::Vector delta;
 			delta.x = target.x - totalApplied.x;
 			delta.y = target.y - totalApplied.y;
@@ -245,8 +274,6 @@ void aimbot::RunInternal(CUserCmd* cmd)
 
 			totalApplied.x += delta.x;
 			totalApplied.y += delta.y;
-		} else if (!(cmd->buttons & cmd->IN_ATTACK)) {
-			totalApplied = {};
 		}
 	}
 }

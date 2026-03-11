@@ -73,9 +73,15 @@ add_library(CSGO_v2 SHARED
 
     # Modules
     CSGO_v2/Modules/Aimbot/aimbot.cpp
+    CSGO_v2/Modules/Aimbot/Backtrack.cpp
     CSGO_v2/Modules/Misc/Misc.cpp
     CSGO_v2/Modules/Visuals/ESP.cpp
     CSGO_v2/Modules/Visuals/Crosshair.cpp
+    CSGO_v2/Modules/Visuals/Glow.cpp
+    CSGO_v2/Modules/Visuals/Hitmarker.cpp
+    CSGO_v2/Modules/Visuals/Chams.cpp
+    CSGO_v2/SDK/Classes/KeyValues.cpp
+    CSGO_v2/Modules/Analysis/RuntimeDumper.cpp
 )
 
 target_include_directories(CSGO_v2 PRIVATE
@@ -102,6 +108,7 @@ target_link_libraries(CSGO_v2 PRIVATE
     ext_animation
     d3d9.lib
     d3dx9.lib
+    Shell32.lib
 )
 
 target_compile_definitions(CSGO_v2 PRIVATE

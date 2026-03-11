@@ -7,7 +7,8 @@ struct cTarget
 {
     float fov = 0.0f;
     float distance = 0.0f;
-    gEntity* ent;
+    gEntity* ent = nullptr;
+    math::Vector bonePos; // target bone position for visuals
 };
 
 namespace aimbot

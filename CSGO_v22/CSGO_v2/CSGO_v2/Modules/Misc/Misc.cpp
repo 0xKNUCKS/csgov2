@@ -1,5 +1,8 @@
 #include "Misc.h"
 #include "SDK/Entity/localplayer.h"
+#include "SDK/Globals/Globals.h"
+#include "lib/Hooks/hook.h"
+#include <cmath>
 
 // Constants for CS:GO movement
 constexpr float AIR_ACCELERATION = 0.025f;
@@ -141,4 +144,157 @@ void misc::BunnyHop(CUserCmd* cmd)
 			}
 		}
 	}
+}
+
+void misc::AutoStop(CUserCmd* cmd)
+{
+	if (!cfg.misc.movement.AutoStop)
+		return;
+
+	if (!LocalPlayer.Get())
+		return;
+
+	// Stop movement whenever IN_ATTACK is set (after aimbot/auto-shoot)
+	bool attacking = (cmd->buttons & CUserCmd::IN_ATTACK) != 0;
+	if (!attacking)
+		return;
+
+	// Mode filtering: 0=All, 1=Manual Only, 2=Auto-Shoot Only
+	// misc::manualAttack is set BEFORE aimbot runs — true if user held mouse1
+	switch (cfg.misc.movement.AutoStopMode)
+	{
+	case 1: // Manual Only
+		if (!manualAttack) return;
+		break;
+	case 2: // Auto-Shoot Only
+		if (manualAttack) return;
+		break;
+	default: // 0 = All
+		break;
+	}
+
+	// Don't stop in air
+	if (!(LocalPlayer->flags() & PlayerFlag_OnGround))
+		return;
+
+	auto velocity = LocalPlayer->getVelocity();
+	float speed = velocity.length2D();
+
+	if (speed < 1.f)
+		return;
+
+	// Calculate reverse movement direction relative to view angles
+	float direction = std::atan2(velocity.y, velocity.x) * RAD_TO_DEG;
+	float viewYaw = cmd->viewangles.y;
+	float delta = (direction - viewYaw) * DEG_TO_RAD;
+
+	cmd->forwardmove = -std::cos(delta) * 450.f;
+	cmd->sidemove = std::sin(delta) * 450.f;
+}
+
+void misc::RadarHack()
+{
+	if (!cfg.misc.RadarHack)
+		return;
+
+	if (!globals::g_interfaces.Engine->IsInGame())
+		return;
+
+	if (!LocalPlayer.Get())
+		return;
+
+	for (int i = 1; i <= hooks::GlobalVars->maxClients; i++)
+	{
+		gEntity* ent = globals::g_interfaces.ClientEntity->GetClientEntity(i);
+		if (!ent || ent == LocalPlayer.Get())
+			continue;
+
+		if (ent->isDormant())
+			continue;
+
+		// Set spotted = true so they appear on the in-game radar
+		*(bool*)((uintptr_t)ent + offsets::m_bSpotted) = true;
+	}
+}
+
+void misc::AntiFlash()
+{
+	if (!cfg.misc.AntiFlash)
+		return;
+
+	if (!globals::g_interfaces.Engine->IsInGame())
+		return;
+
+	if (!LocalPlayer.Get())
+		return;
+
+	// Clamp flash alpha so we can still see through flashbangs
+	float* flashAlpha = (float*)((uintptr_t)LocalPlayer.Get() + offsets::m_flFlashMaxAlpha);
+	if (*flashAlpha > cfg.misc.FlashMaxAlpha)
+		*flashAlpha = cfg.misc.FlashMaxAlpha;
+}
+
+void misc::NightMode()
+{
+	static bool lastState = false;
+	static float lastBrightness = -1.f;
+
+	bool active = cfg.visuals.misc.NightMode;
+	float brightness = cfg.visuals.misc.NightModeBrightness;
+
+	// Only update convar when state or value changes
+	if (active == lastState && brightness == lastBrightness)
+		return;
+
+	if (!globals::g_interfaces.Cvar)
+		return;
+
+	ConVar* cv = globals::g_interfaces.Cvar->FindVar("mat_force_tonemap_scale");
+	if (cv)
+		cv->SetValue(active ? brightness : 0.f); // 0 = game default
+
+	lastState = active;
+	lastBrightness = brightness;
+}
+
+void misc::FakeLag(CUserCmd* cmd, bool* bSendPacket)
+{
+	if (!cfg.misc.exploits.FakeLag)
+	{
+		chokedTickCount = 0;
+		return;
+	}
+
+	if (!LocalPlayer.Get())
+		return;
+
+	// Don't fake lag when dead
+	bool alive = *(int*)((uintptr_t)LocalPlayer.Get() + offsets::deadFlag) == 0;
+	if (!alive)
+		return;
+
+	// Don't choke while shooting — send packets immediately for accurate hit reg
+	if (cmd->buttons & CUserCmd::IN_ATTACK)
+	{
+		*bSendPacket = true;
+		lastSentOrigin = LocalPlayer->getAbsOrigin();
+		chokedTickCount = 0;
+		return;
+	}
+
+	static int chokedTicks = 0;
+	int maxChoke = cfg.misc.exploits.FakeLagAmount;
+	if (maxChoke < 1) maxChoke = 1;
+	if (maxChoke > 14) maxChoke = 14;
+
+	if (chokedTicks < maxChoke) {
+		*bSendPacket = false;
+		chokedTicks++;
+	} else {
+		*bSendPacket = true;
+		lastSentOrigin = LocalPlayer->getAbsOrigin();
+		chokedTicks = 0;
+	}
+
+	chokedTickCount = chokedTicks;
 }

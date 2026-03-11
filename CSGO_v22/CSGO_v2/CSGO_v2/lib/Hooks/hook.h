@@ -26,6 +26,10 @@ namespace index
 	{
 		GetScreenAspectRatio = 101
 	};
+	enum ModelRender : unsigned int
+	{
+		DrawModelExecute = 21
+	};
 	enum Surface : unsigned int
 	{
 		LockCursor = 67
@@ -65,6 +69,7 @@ namespace hooks
 	inline hookManager ClientModeHk;
 	inline hookManager BaseClientHk;
 	inline hookManager EngineHk;
+	inline hookManager ModelRenderHk;
 	inline hookManager SurfaceHk;
 
 }

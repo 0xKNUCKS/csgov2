@@ -1,6 +1,9 @@
 #pragma once
 #pragma warning (disable : 4430) 
 #include "SDK/Classes/classes.h"
+#include "SDK/Classes/GameEventManager.h"
+#include "SDK/Classes/MaterialSystem.h"
+#include "SDK/Classes/ModelRender.h"
 #include "SDK/Models/Model.h"
 
 // Macros
@@ -19,6 +22,10 @@ public:
     IEngineTrace* EngineTrace = nullptr;
     ICvar* Cvar = nullptr;
     ISurface* Surface = nullptr;
+    IGameEventManager2* GameEventMgr = nullptr;
+    IMaterialSystem* MaterialSystem = nullptr;
+    IVModelRender* ModelRender = nullptr;
+    IStudioRender* StudioRender = nullptr;
 
     bool init();
 

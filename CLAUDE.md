@@ -87,10 +87,30 @@ CSGO_v22/CSGO_v2/
 - LNK1168 error = DLL still loaded in game, must unload first
 - Debug builds are what gets injected, not Release
 
+## Menu Design Rules
+- **Balance left/right columns**: ALWAYS distribute groups so left and right sides are roughly equal height. Never let one side be significantly taller.
+- **Inline color pickers**: Put color pickers on the SAME LINE as the checkbox they belong to using `.SameLine().ColorPicker("##hiddenId", color, true)`. The `##` prefix hides the label text.
+- **GearPopup for sub-options**: Features with extra settings use a gear icon popup (`.GearPopup("id", lambda)`), not separate rows.
+- **Group sizing**: Use the minimum `lines` count that fits the content. Keep groups compact.
+- **Toggle style**: iOS-style toggle switches by default (configurable via Settings > Toggle Style).
+
 ## External References
 - `external_sources/Osiris-csgo/` — Open-source CSGO cheat (C++). Can be used as a reference when stuck.
 - `external_sources/csgo-2018-source-main/` — Valve's official CSGO 2018 source code. Useful for SDK/engine internals.
 - **IMPORTANT**: These are references ONLY. Always find a BETTER approach first before copying patterns from Osiris. The goal is for this cheat to be superior in code quality, design, and features. Only fall back to reference code when there's no clearly better alternative.
+
+## Static Analysis Toolkit
+- **Script**: `tools/analyze_dll.py` — PE parser, RTTI extractor, vtable mapper, interface finder
+- **CS:GO path**: `D:\SteamLibrary\steamapps\common\Counter-Strike Global Offensive\`
+- **Key commands**:
+  ```bash
+  python tools/analyze_dll.py --interfaces      # All interface version strings
+  python tools/analyze_dll.py --netvars          # NetVar properties in client.dll
+  python tools/analyze_dll.py --xref             # Validate SDK vtable indices
+  python tools/analyze_dll.py --find-class Name  # RTTI + vtable for a class
+  python tools/analyze_dll.py --convars engine   # ConVar strings
+  ```
+- **WSL Kali** has `objdump`, `strings`, `readelf`, `nm` for deeper binary analysis
 
 ## Debugging Techniques
 - **Crash analysis via binary disassembly**: When VEH reports a crash offset, use WSL Kali:

@@ -8,6 +8,32 @@ Hotkey::Hotkey(unsigned int key)
 {
 }
 
+Hotkey::Hotkey(unsigned int key, HotkeyMode m)
+	: virtualKey(key)
+	, label(utils::VirtualKeyToString(key))
+	, mode(m)
+{
+}
+
+bool Hotkey::isActive()
+{
+	if (mode == HotkeyMode::AlwaysOn)
+		return true;
+
+	bool keyDown = virtualKey != 0 && (GetAsyncKeyState(virtualKey) & 0x8000) != 0;
+
+	if (mode == HotkeyMode::Toggle) {
+		// Rising edge detection
+		if (keyDown && !lastKeyState)
+			toggled = !toggled;
+		lastKeyState = keyDown;
+		return toggled;
+	}
+
+	// Hold mode
+	return keyDown;
+}
+
 // Config directory lives next to the log directory
 std::string Config::GetConfigDir()
 {
@@ -41,6 +67,7 @@ bool Config::Save(const std::string& name) const
 
 	body << "[aimbot]\n";
 	body << "Key=" << aimbot.Key.virtualKey << "\n";
+	body << "KeyMode=" << static_cast<int>(aimbot.Key.mode) << "\n";
 	body << "Enabled=" << aimbot.Enabled << "\n";
 	body << "Silent=" << aimbot.Silent << "\n";
 	body << "FOV=" << aimbot.FOV << "\n";
@@ -48,19 +75,33 @@ bool Config::Save(const std::string& name) const
 	body << "SmoothX=" << aimbot.SmoothX << "\n";
 	body << "SmoothY=" << aimbot.SmoothY << "\n";
 	body << "MaxPlayersInFov=" << aimbot.MaxPlayersInFov << "\n";
-	body << "DrawFov=" << aimbot.DrawFov << "\n";
 	body << "FriendlyFire=" << aimbot.FriendlyFire << "\n";
 	body << "VisibilityCheck=" << aimbot.VisibilityCheck << "\n";
 	body << "AimBone=" << aimbot.AimBone << "\n";
 	body << "RCS=" << aimbot.RCS << "\n";
 	body << "StandaloneRCS=" << aimbot.StandaloneRCS << "\n";
+	body << "SilentRCS=" << aimbot.SilentRCS << "\n";
 	body << "RCSAmountX=" << aimbot.RCSAmountX << "\n";
 	body << "RCSAmountY=" << aimbot.RCSAmountY << "\n";
 	body << "RCSStartBullet=" << aimbot.RCSStartBullet << "\n";
 	body << "RCSSmooth=" << aimbot.RCSSmooth << "\n";
-	body << "AutoShoot=" << aimbot.AutoShoot << "\n";
-	body << "AutoShootFov=" << aimbot.AutoShootFov << "\n";
+	body << "AutoShootEnabled=" << aimbot.autoShoot.Enabled << "\n";
+	body << "AutoShootFov=" << aimbot.autoShoot.FOV << "\n";
+	body << "AutoShootDelay=" << aimbot.autoShoot.DelayMs << "\n";
+	body << "BacktrackEnabled=" << aimbot.backtrack.Enabled << "\n";
+	body << "BacktrackTimeLimit=" << aimbot.backtrack.TimeLimit << "\n";
+	body << "BacktrackDrawTicks=" << aimbot.backtrack.DrawTicks << "\n";
+	body << "BacktrackTickColor=" << aimbot.backtrack.TickColor.r << "," << aimbot.backtrack.TickColor.g << ","
+	  << aimbot.backtrack.TickColor.b << "," << aimbot.backtrack.TickColor.a << "\n";
+	body << "DrawFov=" << aimbot.DrawFov << "\n";
+	body << "FovColor=" << aimbot.FovColor.r << "," << aimbot.FovColor.g << ","
+	  << aimbot.FovColor.b << "," << aimbot.FovColor.a << "\n";
 	body << "DrawAutoShootFov=" << aimbot.DrawAutoShootFov << "\n";
+	body << "AutoShootFovColor=" << aimbot.AutoShootFovColor.r << "," << aimbot.AutoShootFovColor.g << ","
+	  << aimbot.AutoShootFovColor.b << "," << aimbot.AutoShootFovColor.a << "\n";
+	body << "DrawTarget=" << aimbot.DrawTarget << "\n";
+	body << "TargetColor=" << aimbot.TargetColor.r << "," << aimbot.TargetColor.g << ","
+	  << aimbot.TargetColor.b << "," << aimbot.TargetColor.a << "\n";
 
 	body << "\n[visuals]\n";
 	body << "Enabled=" << visuals.Enabled << "\n";
@@ -81,14 +122,62 @@ bool Config::Save(const std::string& name) const
 	body << "\n[visuals.misc]\n";
 	body << "AspectRatio=" << visuals.misc.AspectRatio << "\n";
 	body << "ThirdPerson=" << visuals.misc.ThirdPerson << "\n";
+	body << "TPKey=" << visuals.misc.ThirdPersonKey.virtualKey << "\n";
+	body << "TPKeyMode=" << static_cast<int>(visuals.misc.ThirdPersonKey.mode) << "\n";
 	body << "TPDistance=" << visuals.misc.TPDistance << "\n";
 	body << "CamFOV=" << visuals.misc.camFOV << "\n";
 	body << "SteadyCam=" << visuals.misc.SteadyCam << "\n";
 	body << "NoZoom=" << visuals.misc.NoZoom << "\n";
+	body << "NightMode=" << visuals.misc.NightMode << "\n";
+	body << "NightModeBrightness=" << visuals.misc.NightModeBrightness << "\n";
 
 	body << "\n[visuals.viewmodel]\n";
 	body << "ViewModelFOV=" << visuals.viewmodel.ViewModelFOV << "\n";
 	body << "AlwaysDraw=" << visuals.viewmodel.AlwaysDraw << "\n";
+
+	body << "\n[visuals.glow]\n";
+	body << "Enabled=" << visuals.glow.Enabled << "\n";
+	body << "Friendly=" << visuals.glow.Friendly << "\n";
+	body << "LocalPlayer=" << visuals.glow.LocalPlayer << "\n";
+	body << "SyncWithChams=" << visuals.glow.SyncWithChams << "\n";
+	body << "Intensity=" << visuals.glow.Intensity << "\n";
+	body << "Style=" << visuals.glow.Style << "\n";
+	body << "EnemyColor=" << visuals.glow.EnemyColor.r << "," << visuals.glow.EnemyColor.g << ","
+	  << visuals.glow.EnemyColor.b << "," << visuals.glow.EnemyColor.a << "\n";
+	body << "FriendlyColor=" << visuals.glow.FriendlyColor.r << "," << visuals.glow.FriendlyColor.g << ","
+	  << visuals.glow.FriendlyColor.b << "," << visuals.glow.FriendlyColor.a << "\n";
+	body << "LocalColor=" << visuals.glow.LocalColor.r << "," << visuals.glow.LocalColor.g << ","
+	  << visuals.glow.LocalColor.b << "," << visuals.glow.LocalColor.a << "\n";
+
+	body << "\n[visuals.hitmarker]\n";
+	body << "Enabled=" << visuals.hitmarker.Enabled << "\n";
+	body << "ShowDamage=" << visuals.hitmarker.ShowDamage << "\n";
+	body << "Sound=" << visuals.hitmarker.Sound << "\n";
+	body << "Size=" << visuals.hitmarker.Size << "\n";
+	body << "Gap=" << visuals.hitmarker.Gap << "\n";
+	body << "Thickness=" << visuals.hitmarker.Thickness << "\n";
+	body << "Duration=" << visuals.hitmarker.Duration << "\n";
+	body << "Color=" << visuals.hitmarker.Color.r << "," << visuals.hitmarker.Color.g << ","
+	  << visuals.hitmarker.Color.b << "," << visuals.hitmarker.Color.a << "\n";
+	body << "HeadshotColor=" << visuals.hitmarker.HeadshotColor.r << "," << visuals.hitmarker.HeadshotColor.g << ","
+	  << visuals.hitmarker.HeadshotColor.b << "," << visuals.hitmarker.HeadshotColor.a << "\n";
+	body << "KillColor=" << visuals.hitmarker.KillColor.r << "," << visuals.hitmarker.KillColor.g << ","
+	  << visuals.hitmarker.KillColor.b << "," << visuals.hitmarker.KillColor.a << "\n";
+
+	body << "\n[visuals.chams]\n";
+	body << "Enabled=" << visuals.chams.Enabled << "\n";
+	body << "Teammates=" << visuals.chams.Teammates << "\n";
+	body << "LocalPlayer=" << visuals.chams.LocalPlayer << "\n";
+	body << "ThroughWalls=" << visuals.chams.ThroughWalls << "\n";
+	body << "Style=" << visuals.chams.Style << "\n";
+	body << "EnemyVisibleColor=" << visuals.chams.EnemyVisibleColor.r << "," << visuals.chams.EnemyVisibleColor.g << ","
+	  << visuals.chams.EnemyVisibleColor.b << "," << visuals.chams.EnemyVisibleColor.a << "\n";
+	body << "EnemyInvisibleColor=" << visuals.chams.EnemyInvisibleColor.r << "," << visuals.chams.EnemyInvisibleColor.g << ","
+	  << visuals.chams.EnemyInvisibleColor.b << "," << visuals.chams.EnemyInvisibleColor.a << "\n";
+	body << "FriendlyVisibleColor=" << visuals.chams.FriendlyVisibleColor.r << "," << visuals.chams.FriendlyVisibleColor.g << ","
+	  << visuals.chams.FriendlyVisibleColor.b << "," << visuals.chams.FriendlyVisibleColor.a << "\n";
+	body << "LocalVisibleColor=" << visuals.chams.LocalVisibleColor.r << "," << visuals.chams.LocalVisibleColor.g << ","
+	  << visuals.chams.LocalVisibleColor.b << "," << visuals.chams.LocalVisibleColor.a << "\n";
 
 	body << "\n[visuals.crosshair]\n";
 	body << "Enabled=" << visuals.crosshair.Enabled << "\n";
@@ -104,18 +193,29 @@ bool Config::Save(const std::string& name) const
 	  << visuals.crosshair.RecoilColor.b << "," << visuals.crosshair.RecoilColor.a << "\n";
 	body << "SniperCrosshair=" << visuals.crosshair.SniperCrosshair << "\n";
 
+	body << "\n[misc]\n";
+	body << "RadarHack=" << misc.RadarHack << "\n";
+	body << "AntiFlash=" << misc.AntiFlash << "\n";
+	body << "FlashMaxAlpha=" << misc.FlashMaxAlpha << "\n";
+
 	body << "\n[misc.movement]\n";
 	body << "BunnyHop=" << misc.movement.BunnyHop << "\n";
 	body << "AirDuck=" << misc.movement.AirDuck << "\n";
 	body << "Strafe=" << misc.movement.Strafe << "\n";
+	body << "AutoStop=" << misc.movement.AutoStop << "\n";
+	body << "AutoStopMode=" << misc.movement.AutoStopMode << "\n";
 
 	body << "\n[misc.exploits]\n";
 	body << "InfDuck=" << misc.exploits.InfDuck << "\n";
+	body << "FakeLag=" << misc.exploits.FakeLag << "\n";
+	body << "FakeLagAmount=" << misc.exploits.FakeLagAmount << "\n";
+	body << "FakeLagVis=" << misc.exploits.FakeLagVis << "\n";
 
 	body << "\n[settings]\n";
 	body << "StreamProof=" << settings.StreamProof << "\n";
 	body << "ShowDebug=" << settings.ShowDebug << "\n";
 	body << "AnimSpeed=" << settings.AnimSpeed << "\n";
+	body << "ToggleStyle=" << settings.ToggleStyle << "\n";
 
 	body << "\n[settings.mouseTracer]\n";
 	body << "Enabled=" << settings.mouseTracer.Enabled << "\n";
@@ -258,6 +358,7 @@ bool Config::Load(const std::string& name)
 	// Aimbot
 	unsigned int key = (unsigned int)GetInt(kv, "aimbot.Key", defaults.aimbot.Key.virtualKey);
 	aimbot.Key = Hotkey(key);
+	aimbot.Key.mode = static_cast<HotkeyMode>(GetInt(kv, "aimbot.KeyMode", static_cast<int>(defaults.aimbot.Key.mode)));
 	aimbot.Enabled      = GetBool(kv, "aimbot.Enabled", defaults.aimbot.Enabled);
 	aimbot.Silent        = GetBool(kv, "aimbot.Silent", defaults.aimbot.Silent);
 	aimbot.FOV           = GetFloat(kv, "aimbot.FOV", defaults.aimbot.FOV);
@@ -271,13 +372,28 @@ bool Config::Load(const std::string& name)
 	aimbot.AimBone       = GetInt(kv, "aimbot.AimBone", defaults.aimbot.AimBone);
 	aimbot.RCS           = GetBool(kv, "aimbot.RCS", defaults.aimbot.RCS);
 	aimbot.StandaloneRCS = GetBool(kv, "aimbot.StandaloneRCS", defaults.aimbot.StandaloneRCS);
+	aimbot.SilentRCS     = GetBool(kv, "aimbot.SilentRCS", defaults.aimbot.SilentRCS);
 	aimbot.RCSAmountX    = GetFloat(kv, "aimbot.RCSAmountX", defaults.aimbot.RCSAmountX);
 	aimbot.RCSAmountY    = GetFloat(kv, "aimbot.RCSAmountY", defaults.aimbot.RCSAmountY);
 	aimbot.RCSStartBullet = GetInt(kv, "aimbot.RCSStartBullet", defaults.aimbot.RCSStartBullet);
 	aimbot.RCSSmooth     = GetFloat(kv, "aimbot.RCSSmooth", defaults.aimbot.RCSSmooth);
-	aimbot.AutoShoot     = GetBool(kv, "aimbot.AutoShoot", defaults.aimbot.AutoShoot);
-	aimbot.AutoShootFov  = GetFloat(kv, "aimbot.AutoShootFov", defaults.aimbot.AutoShootFov);
+	// Auto Shoot (support both old "AutoShoot" and new "AutoShootEnabled" keys)
+	aimbot.autoShoot.Enabled = GetBool(kv, "aimbot.AutoShootEnabled",
+		GetBool(kv, "aimbot.AutoShoot", defaults.aimbot.autoShoot.Enabled));
+	aimbot.autoShoot.FOV     = GetFloat(kv, "aimbot.AutoShootFov", defaults.aimbot.autoShoot.FOV);
+	aimbot.autoShoot.DelayMs = GetInt(kv, "aimbot.AutoShootDelay", defaults.aimbot.autoShoot.DelayMs);
+	// Backtrack
+	aimbot.backtrack.Enabled   = GetBool(kv, "aimbot.BacktrackEnabled", defaults.aimbot.backtrack.Enabled);
+	aimbot.backtrack.TimeLimit = GetInt(kv, "aimbot.BacktrackTimeLimit", defaults.aimbot.backtrack.TimeLimit);
+	aimbot.backtrack.DrawTicks = GetBool(kv, "aimbot.BacktrackDrawTicks", defaults.aimbot.backtrack.DrawTicks);
+	aimbot.backtrack.TickColor = GetColor(kv, "aimbot.BacktrackTickColor", defaults.aimbot.backtrack.TickColor);
+	// Aimbot Visuals
+	aimbot.DrawFov       = GetBool(kv, "aimbot.DrawFov", defaults.aimbot.DrawFov);
+	aimbot.FovColor      = GetColor(kv, "aimbot.FovColor", defaults.aimbot.FovColor);
 	aimbot.DrawAutoShootFov = GetBool(kv, "aimbot.DrawAutoShootFov", defaults.aimbot.DrawAutoShootFov);
+	aimbot.AutoShootFovColor = GetColor(kv, "aimbot.AutoShootFovColor", defaults.aimbot.AutoShootFovColor);
+	aimbot.DrawTarget    = GetBool(kv, "aimbot.DrawTarget", defaults.aimbot.DrawTarget);
+	aimbot.TargetColor   = GetColor(kv, "aimbot.TargetColor", defaults.aimbot.TargetColor);
 
 	// Visuals
 	visuals.Enabled  = GetBool(kv, "visuals.Enabled", defaults.visuals.Enabled);
@@ -297,14 +413,55 @@ bool Config::Load(const std::string& name)
 	// Visuals Misc
 	visuals.misc.AspectRatio = GetFloat(kv, "visuals.misc.AspectRatio", defaults.visuals.misc.AspectRatio);
 	visuals.misc.ThirdPerson = GetBool(kv, "visuals.misc.ThirdPerson", defaults.visuals.misc.ThirdPerson);
+	{
+		unsigned int tpKey = (unsigned int)GetInt(kv, "visuals.misc.TPKey", defaults.visuals.misc.ThirdPersonKey.virtualKey);
+		visuals.misc.ThirdPersonKey = Hotkey(tpKey);
+		visuals.misc.ThirdPersonKey.mode = static_cast<HotkeyMode>(GetInt(kv, "visuals.misc.TPKeyMode", static_cast<int>(defaults.visuals.misc.ThirdPersonKey.mode)));
+	}
 	visuals.misc.TPDistance  = GetFloat(kv, "visuals.misc.TPDistance", defaults.visuals.misc.TPDistance);
 	visuals.misc.camFOV      = GetFloat(kv, "visuals.misc.CamFOV", defaults.visuals.misc.camFOV);
 	visuals.misc.SteadyCam   = GetBool(kv, "visuals.misc.SteadyCam", defaults.visuals.misc.SteadyCam);
 	visuals.misc.NoZoom      = GetBool(kv, "visuals.misc.NoZoom", defaults.visuals.misc.NoZoom);
+	visuals.misc.NightMode   = GetBool(kv, "visuals.misc.NightMode", defaults.visuals.misc.NightMode);
+	visuals.misc.NightModeBrightness = GetFloat(kv, "visuals.misc.NightModeBrightness", defaults.visuals.misc.NightModeBrightness);
 
 	// Visuals ViewModel
 	visuals.viewmodel.ViewModelFOV = GetFloat(kv, "visuals.viewmodel.ViewModelFOV", defaults.visuals.viewmodel.ViewModelFOV);
 	visuals.viewmodel.AlwaysDraw   = GetBool(kv, "visuals.viewmodel.AlwaysDraw", defaults.visuals.viewmodel.AlwaysDraw);
+
+	// Visuals Glow
+	visuals.glow.Enabled       = GetBool(kv, "visuals.glow.Enabled", defaults.visuals.glow.Enabled);
+	visuals.glow.Friendly      = GetBool(kv, "visuals.glow.Friendly", defaults.visuals.glow.Friendly);
+	visuals.glow.LocalPlayer   = GetBool(kv, "visuals.glow.LocalPlayer", defaults.visuals.glow.LocalPlayer);
+	visuals.glow.SyncWithChams = GetBool(kv, "visuals.glow.SyncWithChams", defaults.visuals.glow.SyncWithChams);
+	visuals.glow.Intensity     = GetFloat(kv, "visuals.glow.Intensity", defaults.visuals.glow.Intensity);
+	visuals.glow.Style         = GetInt(kv, "visuals.glow.Style", defaults.visuals.glow.Style);
+	visuals.glow.EnemyColor    = GetColor(kv, "visuals.glow.EnemyColor", defaults.visuals.glow.EnemyColor);
+	visuals.glow.FriendlyColor = GetColor(kv, "visuals.glow.FriendlyColor", defaults.visuals.glow.FriendlyColor);
+	visuals.glow.LocalColor    = GetColor(kv, "visuals.glow.LocalColor", defaults.visuals.glow.LocalColor);
+
+	// Visuals Hitmarker
+	visuals.hitmarker.Enabled      = GetBool(kv, "visuals.hitmarker.Enabled", defaults.visuals.hitmarker.Enabled);
+	visuals.hitmarker.ShowDamage   = GetBool(kv, "visuals.hitmarker.ShowDamage", defaults.visuals.hitmarker.ShowDamage);
+	visuals.hitmarker.Sound        = GetBool(kv, "visuals.hitmarker.Sound", defaults.visuals.hitmarker.Sound);
+	visuals.hitmarker.Size         = GetFloat(kv, "visuals.hitmarker.Size", defaults.visuals.hitmarker.Size);
+	visuals.hitmarker.Gap          = GetFloat(kv, "visuals.hitmarker.Gap", defaults.visuals.hitmarker.Gap);
+	visuals.hitmarker.Thickness    = GetFloat(kv, "visuals.hitmarker.Thickness", defaults.visuals.hitmarker.Thickness);
+	visuals.hitmarker.Duration     = GetInt(kv, "visuals.hitmarker.Duration", defaults.visuals.hitmarker.Duration);
+	visuals.hitmarker.Color        = GetColor(kv, "visuals.hitmarker.Color", defaults.visuals.hitmarker.Color);
+	visuals.hitmarker.HeadshotColor = GetColor(kv, "visuals.hitmarker.HeadshotColor", defaults.visuals.hitmarker.HeadshotColor);
+	visuals.hitmarker.KillColor    = GetColor(kv, "visuals.hitmarker.KillColor", defaults.visuals.hitmarker.KillColor);
+
+	// Visuals Chams
+	visuals.chams.Enabled            = GetBool(kv, "visuals.chams.Enabled", defaults.visuals.chams.Enabled);
+	visuals.chams.Teammates          = GetBool(kv, "visuals.chams.Teammates", defaults.visuals.chams.Teammates);
+	visuals.chams.LocalPlayer        = GetBool(kv, "visuals.chams.LocalPlayer", defaults.visuals.chams.LocalPlayer);
+	visuals.chams.ThroughWalls       = GetBool(kv, "visuals.chams.ThroughWalls", defaults.visuals.chams.ThroughWalls);
+	visuals.chams.Style              = GetInt(kv, "visuals.chams.Style", defaults.visuals.chams.Style);
+	visuals.chams.EnemyVisibleColor  = GetColor(kv, "visuals.chams.EnemyVisibleColor", defaults.visuals.chams.EnemyVisibleColor);
+	visuals.chams.EnemyInvisibleColor = GetColor(kv, "visuals.chams.EnemyInvisibleColor", defaults.visuals.chams.EnemyInvisibleColor);
+	visuals.chams.FriendlyVisibleColor = GetColor(kv, "visuals.chams.FriendlyVisibleColor", defaults.visuals.chams.FriendlyVisibleColor);
+	visuals.chams.LocalVisibleColor  = GetColor(kv, "visuals.chams.LocalVisibleColor", defaults.visuals.chams.LocalVisibleColor);
 
 	// Visuals Crosshair
 	visuals.crosshair.Enabled         = GetBool(kv, "visuals.crosshair.Enabled", defaults.visuals.crosshair.Enabled);
@@ -318,18 +475,29 @@ bool Config::Load(const std::string& name)
 	visuals.crosshair.RecoilColor     = GetColor(kv, "visuals.crosshair.RecoilColor", defaults.visuals.crosshair.RecoilColor);
 	visuals.crosshair.SniperCrosshair = GetBool(kv, "visuals.crosshair.SniperCrosshair", defaults.visuals.crosshair.SniperCrosshair);
 
+	// Misc
+	misc.RadarHack = GetBool(kv, "misc.RadarHack", defaults.misc.RadarHack);
+	misc.AntiFlash = GetBool(kv, "misc.AntiFlash", defaults.misc.AntiFlash);
+	misc.FlashMaxAlpha = GetFloat(kv, "misc.FlashMaxAlpha", defaults.misc.FlashMaxAlpha);
+
 	// Misc Movement
 	misc.movement.BunnyHop = GetBool(kv, "misc.movement.BunnyHop", defaults.misc.movement.BunnyHop);
 	misc.movement.AirDuck  = GetBool(kv, "misc.movement.AirDuck", defaults.misc.movement.AirDuck);
 	misc.movement.Strafe   = GetBool(kv, "misc.movement.Strafe", defaults.misc.movement.Strafe);
+	misc.movement.AutoStop = GetBool(kv, "misc.movement.AutoStop", defaults.misc.movement.AutoStop);
+	misc.movement.AutoStopMode = GetInt(kv, "misc.movement.AutoStopMode", defaults.misc.movement.AutoStopMode);
 
 	// Misc Exploits
-	misc.exploits.InfDuck = GetBool(kv, "misc.exploits.InfDuck", defaults.misc.exploits.InfDuck);
+	misc.exploits.InfDuck      = GetBool(kv, "misc.exploits.InfDuck", defaults.misc.exploits.InfDuck);
+	misc.exploits.FakeLag      = GetBool(kv, "misc.exploits.FakeLag", defaults.misc.exploits.FakeLag);
+	misc.exploits.FakeLagAmount = GetInt(kv, "misc.exploits.FakeLagAmount", defaults.misc.exploits.FakeLagAmount);
+	misc.exploits.FakeLagVis    = GetBool(kv, "misc.exploits.FakeLagVis", defaults.misc.exploits.FakeLagVis);
 
 	// Settings
-	settings.StreamProof = GetBool(kv, "settings.StreamProof", defaults.settings.StreamProof);
-	settings.ShowDebug   = GetBool(kv, "settings.ShowDebug", defaults.settings.ShowDebug);
-	settings.AnimSpeed   = GetFloat(kv, "settings.AnimSpeed", defaults.settings.AnimSpeed);
+	settings.StreamProof  = GetBool(kv, "settings.StreamProof", defaults.settings.StreamProof);
+	settings.ShowDebug    = GetBool(kv, "settings.ShowDebug", defaults.settings.ShowDebug);
+	settings.AnimSpeed    = GetFloat(kv, "settings.AnimSpeed", defaults.settings.AnimSpeed);
+	settings.ToggleStyle  = GetBool(kv, "settings.ToggleStyle", defaults.settings.ToggleStyle);
 
 	// Settings MouseTracer
 	settings.mouseTracer.Enabled       = GetBool(kv, "settings.mouseTracer.Enabled", defaults.settings.mouseTracer.Enabled);

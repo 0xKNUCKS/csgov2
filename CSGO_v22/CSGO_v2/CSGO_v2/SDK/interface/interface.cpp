@@ -39,6 +39,10 @@ bool interfaces_t::init()
     EngineTrace =   FindInterface<IEngineTrace>(DLL_ENGINE, "EngineTraceClient004");
     Cvar =          FindInterface<ICvar>("vstdlib.dll", "VEngineCvar007");
     Surface =       FindInterface<ISurface>("vguimatsurface.dll", "VGUI_Surface031");
+    GameEventMgr =  FindInterface<IGameEventManager2>(DLL_ENGINE, "GAMEEVENTSMANAGER002");
+    MaterialSystem = FindInterface<IMaterialSystem>("materialsystem.dll", "VMaterialSystem080");
+    ModelRender =   FindInterface<IVModelRender>(DLL_ENGINE, "VEngineModel016");
+    StudioRender =  FindInterface<IStudioRender>("studiorender.dll", "VStudioRender026");
 
     // Validate critical interfaces - these are required for the mod to function
     struct { void* ptr; const char* name; } required[] = {
@@ -62,6 +66,14 @@ bool interfaces_t::init()
         Log::Warn("Interfaces", "InputSystem is null - some features may not work");
     if (!EngineTrace)
         Log::Warn("Interfaces", "EngineTrace is null - trace features unavailable");
+    if (!GameEventMgr)
+        Log::Warn("Interfaces", "GameEventManager is null - hitmarker unavailable");
+    if (!MaterialSystem)
+        Log::Warn("Interfaces", "MaterialSystem is null - chams unavailable");
+    if (!ModelRender)
+        Log::Warn("Interfaces", "ModelRender is null - chams unavailable");
+    if (!StudioRender)
+        Log::Warn("Interfaces", "StudioRender is null - chams unavailable");
 
     if (allOk)
         Log::Info("Interfaces", "All interfaces captured successfully");

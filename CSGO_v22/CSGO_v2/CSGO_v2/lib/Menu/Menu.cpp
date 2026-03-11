@@ -2,6 +2,8 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui_internal.h"
 #include "imgui_notify.h"
+#include "font_awesome_5.h"
+#include <cmath>
 
 // =========================================================
 // Internal helpers — the actual ImGui rendering logic.
@@ -11,15 +13,105 @@
 
 namespace detail
 {
+	// iOS-style animated toggle switch
+	static bool ToggleSwitch(const char* label, bool* v)
+	{
+		ImGuiWindow* window = ImGui::GetCurrentWindow();
+		if (window->SkipItems)
+			return false;
+
+		ImGuiContext& g = *GImGui;
+		const ImGuiStyle& style = g.Style;
+		const ImGuiID id = window->GetID(label);
+		const ImVec2 label_size = ImGui::CalcTextSize(label, NULL, true);
+
+		const float height = ImGui::GetFrameHeight();
+		const float width = height * 1.75f;
+		const float radius = height * 0.5f;
+
+		const ImVec2 pos = window->DC.CursorPos;
+		const ImRect total_bb(pos, ImVec2(pos.x + width + (label_size.x > 0.f ? style.ItemInnerSpacing.x + label_size.x : 0.f), pos.y + height));
+		ImGui::ItemSize(total_bb, style.FramePadding.y);
+		if (!ImGui::ItemAdd(total_bb, id))
+			return false;
+
+		bool hovered, held;
+		bool pressed = ImGui::ButtonBehavior(total_bb, id, &hovered, &held);
+		if (pressed)
+		{
+			*v = !(*v);
+			ImGui::MarkItemEdited(id);
+		}
+
+		// Animate the knob position (0.0 = off, 1.0 = on)
+		ImGuiStorage* storage = window->DC.StateStorage;
+		const ImGuiID animId = id + ImGuiID(0xA91E); // unique sub-id for animation
+		float animVal = storage->GetFloat(animId, *v ? 1.f : 0.f);
+		float target = *v ? 1.f : 0.f;
+		float speed = g.IO.DeltaTime * 12.f;
+		if (speed > 1.f) speed = 1.f;
+		animVal += (target - animVal) * speed;
+		if (std::abs(animVal - target) < 0.005f) animVal = target;
+		storage->SetFloat(animId, animVal);
+
+		// Colors
+		ImVec4 offBg = ImGui::GetStyleColorVec4(ImGuiCol_FrameBg);
+		ImVec4 onBg = ImGui::GetStyleColorVec4(ImGuiCol_CheckMark);
+		// Lerp background color
+		ImVec4 bgColor(
+			offBg.x + (onBg.x - offBg.x) * animVal,
+			offBg.y + (onBg.y - offBg.y) * animVal,
+			offBg.z + (onBg.z - offBg.z) * animVal,
+			1.f
+		);
+		// Brighten on hover
+		if (hovered) {
+			bgColor.x += 0.05f;
+			bgColor.y += 0.05f;
+			bgColor.z += 0.05f;
+		}
+
+		// Draw track (pill shape)
+		ImVec2 trackMin = pos;
+		ImVec2 trackMax(pos.x + width, pos.y + height);
+		window->DrawList->AddRectFilled(trackMin, trackMax, ImGui::ColorConvertFloat4ToU32(bgColor), radius);
+
+		// Draw knob
+		float knobRadius = radius - 2.f;
+		float knobX = pos.x + radius + animVal * (width - height);
+		float knobY = pos.y + radius;
+		ImU32 knobColor = IM_COL32(255, 255, 255, 255);
+		// Subtle shadow
+		window->DrawList->AddCircleFilled(ImVec2(knobX + 0.5f, knobY + 1.f), knobRadius, IM_COL32(0, 0, 0, 40));
+		window->DrawList->AddCircleFilled(ImVec2(knobX, knobY), knobRadius, knobColor);
+
+		// Label
+		if (label_size.x > 0.f) {
+			ImVec2 label_pos(pos.x + width + style.ItemInnerSpacing.x, pos.y + style.FramePadding.y);
+			ImGui::RenderText(label_pos, label);
+		}
+
+		return pressed;
+	}
+
 	static void RenderCheckbox(const char* label, bool* v, const char* tooltip)
 	{
-		ImGui::Checkbox(label, v);
+		if (cfg.settings.ToggleStyle)
+			ToggleSwitch(label, v);
+		else
+			ImGui::Checkbox(label, v);
 		if (tooltip) menu::HelpMarker(tooltip);
+	}
+
+	// Get display name from label (strips ##suffix used for ImGui ID)
+	static std::string DisplayName(const char* label) {
+		const char* h = strstr(label, "##");
+		return h ? std::string(label, h) : std::string(label);
 	}
 
 	static void RenderSlider(const char* label, float* v, float min, float max, const char* fmt, const char* tooltip)
 	{
-		std::string format = std::string(label) + " " + fmt;
+		std::string format = DisplayName(label) + " " + fmt;
 		std::string id = std::format("##{}_slider", label);
 		ImGui::SliderFloat(id.c_str(), v, min, max, format.c_str());
 		if (tooltip) menu::HelpMarker(tooltip);
@@ -27,7 +119,7 @@ namespace detail
 
 	static void RenderSliderInt(const char* label, int* v, int min, int max, const char* fmt, const char* tooltip)
 	{
-		std::string format = std::string(label) + " " + fmt;
+		std::string format = DisplayName(label) + " " + fmt;
 		std::string id = std::format("##{}_slider", label);
 		ImGui::SliderInt(id.c_str(), v, min, max, format.c_str());
 		if (tooltip) menu::HelpMarker(tooltip);
@@ -42,21 +134,46 @@ namespace detail
 	static void RenderColorPicker(const char* label, CfgColor& color, bool alpha)
 	{
 		ImGuiColorEditFlags flags = alpha ? 0 : ImGuiColorEditFlags_NoAlpha;
+		std::string popupId = std::format("##{}_popup", label);
+
 		if (ImGui::ColorButton(std::format("##{}_btn", label).c_str(),
 			ImVec4(color.r, color.g, color.b, color.a))) {
-			ImGui::OpenPopup(std::format("##{}_popup", label).c_str());
+			ImGui::OpenPopup(popupId.c_str());
 		}
-		ImGui::SameLine();
-		ImGui::Text(label);
+		// Only show label text if it doesn't start with ## (hidden label)
+		if (label[0] != '#' || label[1] != '#') {
+			ImGui::SameLine();
+			ImGui::Text(label);
+		}
 
-		if (ImGui::BeginPopup(std::format("##{}_popup", label).c_str())) {
-			ImGui::ColorPicker4(label, (float*)&color, flags);
-			ImGui::EndPopup();
+		// Animated fade for color picker popup
+		ImGuiContext& g = *GImGui;
+		ImGuiStorage* storage = ImGui::GetCurrentWindow()->DC.StateStorage;
+		ImGuiID animKey = ImGui::GetID(popupId.c_str()) + ImGuiID(0xC010);
+		float popupAlpha = storage->GetFloat(animKey, 0.f);
+
+		bool isOpen = ImGui::IsPopupOpen(popupId.c_str());
+		float target = isOpen ? 1.f : 0.f;
+		float speed = g.IO.DeltaTime * 8.f;
+		if (speed > 1.f) speed = 1.f;
+		popupAlpha += (target - popupAlpha) * speed;
+		if (std::abs(popupAlpha - target) < 0.01f) popupAlpha = target;
+		storage->SetFloat(animKey, popupAlpha);
+
+		if (popupAlpha > 0.01f) {
+			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, popupAlpha);
+			ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, 6.f);
+			if (ImGui::BeginPopup(popupId.c_str())) {
+				ImGui::ColorPicker4(label, (float*)&color, flags);
+				ImGui::EndPopup();
+			}
+			ImGui::PopStyleVar(2);
 		}
 	}
 
 	static void RenderHotkey(Hotkey& hotKey)
 	{
+		// Key bind button
 		if (ImGui::Button(hotKey.label.c_str(), ImVec2(70, 0))) {
 			hotKey.searching = true;
 		}
@@ -73,6 +190,14 @@ namespace detail
 				}
 			}
 		}
+
+		// Mode selector on the same line
+		ImGui::SameLine();
+		ImGui::PushItemWidth(80);
+		int mode = static_cast<int>(hotKey.mode);
+		ImGui::Combo(std::format("##mode_{}", (uintptr_t)&hotKey).c_str(), &mode, "Hold\0Toggle\0Always\0");
+		hotKey.mode = static_cast<HotkeyMode>(mode);
+		ImGui::PopItemWidth();
 	}
 
 	// Opens a child window sized for N widget lines + title
@@ -84,7 +209,13 @@ namespace detail
 		float h = titleH + lines * lineH + ImGui::GetStyle().WindowPadding.y;
 
 		ImGui::BeginChild(std::format("{}##{}", name, name).c_str(), ImVec2(w, h), true);
-		ImGui::Text(name);
+		// Strip ##suffix from display text (used for ImGui ID disambiguation)
+		const char* hashPos = strstr(name, "##");
+		if (hashPos) {
+			ImGui::TextUnformatted(name, hashPos);
+		} else {
+			ImGui::Text("%s", name);
+		}
 		ImGui::Separator();
 	}
 }
@@ -207,7 +338,10 @@ GB& GB::Combo(const char* label, int* current, const char* items, const char* to
 
 GB& GB::CheckboxCombo(const char* cbLabel, bool* v, const char* comboId, int* current, const char* items, const char* tooltip)
 {
-	ImGui::Checkbox(cbLabel, v);
+	if (cfg.settings.ToggleStyle)
+		detail::ToggleSwitch(cbLabel, v);
+	else
+		ImGui::Checkbox(cbLabel, v);
 	ImGui::SameLine();
 	ImGui::PushItemWidth(menu::kColumnWidth * 0.3f);
 	ImGui::Combo(comboId, current, items);
@@ -230,6 +364,10 @@ GB& GB::Hotkey(::Hotkey& hotKey)
 
 GB& GB::Text(const char* text)
 {
+	// Indent to align with checkbox/toggle labels
+	// Toggle switch width = height * 1.75f, then ItemInnerSpacing.x gap before label
+	float toggleWidth = ImGui::GetFrameHeight() * 1.75f;
+	ImGui::SetCursorPosX(ImGui::GetCursorPosX() + toggleWidth + ImGui::GetStyle().ItemInnerSpacing.x);
 	ImGui::Text(text);
 	return *this;
 }
@@ -275,6 +413,55 @@ GB& GB::SubSection(const char* name, std::function<void(GroupBuilder&)> content)
 	GroupBuilder inner(Type::Inline);
 	content(inner);
 	menu::EndOutlineGroup();
+	return *this;
+}
+
+GB& GB::GearPopup(const char* id, std::function<void(GroupBuilder&)> content)
+{
+	ImGui::SameLine();
+
+	// Small gear button with no frame, blends into the row
+	std::string popupId = std::format("##gear_popup_{}", id);
+	std::string btnId = std::format(ICON_FA_COG "##gear_{}", id);
+
+	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.28f, 0.56f, 1.f, 0.3f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.28f, 0.56f, 1.f, 0.5f));
+
+	if (ImGui::Button(btnId.c_str(), ImVec2(ImGui::GetFrameHeight(), 0))) {
+		ImGui::OpenPopup(popupId.c_str());
+	}
+
+	ImGui::PopStyleColor(3);
+
+	// Animated popup
+	ImGuiContext& g = *GImGui;
+	ImGuiStorage* storage = ImGui::GetCurrentWindow()->DC.StateStorage;
+	ImGuiID animKey = ImGui::GetID(popupId.c_str()) + ImGuiID(0xFADE);
+	float alpha = storage->GetFloat(animKey, 0.f);
+
+	bool isOpen = ImGui::IsPopupOpen(popupId.c_str());
+	float target = isOpen ? 1.f : 0.f;
+	float speed = g.IO.DeltaTime * 10.f;
+	if (speed > 1.f) speed = 1.f;
+	alpha += (target - alpha) * speed;
+	if (std::abs(alpha - target) < 0.01f) alpha = target;
+	storage->SetFloat(animKey, alpha);
+
+	if (alpha > 0.01f) {
+		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
+		ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, 6.f);
+
+		if (ImGui::BeginPopup(popupId.c_str())) {
+			GroupBuilder inner(Type::Inline);
+			content(inner);
+			ImGui::EndPopup();
+		}
+
+		ImGui::PopStyleVar(3);
+	}
+
 	return *this;
 }
 

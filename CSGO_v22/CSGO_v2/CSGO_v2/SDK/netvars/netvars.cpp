@@ -76,6 +76,31 @@ bool NetVars_t::Init()
     offsets::m_vecViewOffset = findAndValidate("DT_BasePlayer", "m_vecViewOffset[0]");
     offsets::m_aimPunchAngle = findAndValidate("DT_BasePlayer", "m_aimPunchAngle");
 
+    // Anti-Flash
+    offsets::m_flFlashMaxAlpha = findAndValidate("DT_CSPlayer", "m_flFlashMaxAlpha");
+    offsets::m_flFlashDuration = findAndValidate("DT_CSPlayer", "m_flFlashDuration");
+
+    // Backtracking / timing
+    offsets::m_flSimulationTime = findAndValidate("DT_BaseEntity", "m_flSimulationTime");
+    offsets::m_nTickBase = findAndValidate("DT_BasePlayer", "m_nTickBase");
+
+    // Weapon handling
+    offsets::m_hActiveWeapon = findAndValidate("DT_BaseCombatCharacter", "m_hActiveWeapon");
+    offsets::m_flNextPrimaryAttack = findAndValidate("DT_BaseCombatWeapon", "m_flNextPrimaryAttack");
+    offsets::m_iClip1 = findAndValidate("DT_BaseCombatWeapon", "m_iClip1");
+    offsets::m_iShotsFired = findAndValidate("DT_CSPlayer", "m_iShotsFired");
+
+    // ESP extras
+    offsets::m_ArmorValue = findAndValidate("DT_CSPlayer", "m_ArmorValue");
+    offsets::m_bHasHelmet = findAndValidate("DT_CSPlayer", "m_bHasHelmet");
+    offsets::m_bIsDefusing = findAndValidate("DT_CSPlayer", "m_bIsDefusing");
+    offsets::m_iAccount = findAndValidate("DT_CSPlayer", "m_iAccount");
+    offsets::m_bGunGameImmunity = findAndValidate("DT_CSPlayer", "m_bGunGameImmunity");
+
+    // Resolver / anti-aim
+    offsets::m_angEyeAngles = findAndValidate("DT_CSPlayer", "m_angEyeAngles[0]");
+    offsets::m_flLowerBodyYawTarget = findAndValidate("DT_CSPlayer", "m_flLowerBodyYawTarget");
+
     if (!allOk)
         Log::Err("NetVars", "Some netvar offsets failed to resolve - features may crash");
 

@@ -91,6 +91,31 @@ namespace offsets
     inline uintptr_t m_vecVelocity;
     inline uintptr_t m_vecViewOffset;
     inline uintptr_t m_aimPunchAngle;
+
+    // Anti-Flash
+    inline uintptr_t m_flFlashMaxAlpha;
+    inline uintptr_t m_flFlashDuration;
+
+    // Backtracking / timing
+    inline uintptr_t m_flSimulationTime;
+    inline uintptr_t m_nTickBase;
+
+    // Weapon handling
+    inline uintptr_t m_hActiveWeapon;
+    inline uintptr_t m_flNextPrimaryAttack;
+    inline uintptr_t m_iClip1;
+    inline uintptr_t m_iShotsFired;
+
+    // ESP extras
+    inline uintptr_t m_ArmorValue;
+    inline uintptr_t m_bHasHelmet;
+    inline uintptr_t m_bIsDefusing;
+    inline uintptr_t m_iAccount;
+    inline uintptr_t m_bGunGameImmunity;
+
+    // Resolver / anti-aim
+    inline uintptr_t m_angEyeAngles;
+    inline uintptr_t m_flLowerBodyYawTarget;
 }
 
 // fuck this shit idek wtf is this, pasted from NEPS. sad.

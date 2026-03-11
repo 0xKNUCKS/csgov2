@@ -9,9 +9,13 @@
 #include "dx9/Drawing/drawing.h"
 #include "SDK/Globals/Globals.h"
 #include "Modules/Aimbot/aimbot.h"
+#include "Modules/Aimbot/Backtrack.h"
 #include "Modules/Misc/Misc.h"
 #include "Modules/Visuals/ESP.h"
+#include "Modules/Visuals/Glow.h"
 #include "Modules/Visuals/Crosshair.h"
+#include "Modules/Visuals/Hitmarker.h"
+#include "Modules/Visuals/Chams.h"
 #include "SDK/Classes/ViewSetup/ViewSetup.h"
 #include "SDK/Entity/localplayer.h"
 #include "lib/Configs/config.h"
@@ -25,10 +29,22 @@
 #include "lib/Error/AuditLog.h"
 #endif
 
+// Raw DrawModelExecute hook — bypasses hookManager template issues
+using DrawModelExecuteFn = void(__thiscall*)(void*, void*, void*, const ModelRenderInfo_t&, math::Matrix3x4*);
+static DrawModelExecuteFn oDrawModelExecute = nullptr;
+
 void hooks::Destroy() noexcept
 {
 	// FIRST: stop all hook logic immediately so no hook function runs against torn-down state
 	setupComplete = false;
+
+	// Cleanup modules before tearing down hooks
+	hitmarker::Shutdown();
+	chams::Shutdown();
+
+	// Reset third person only if our feature was controlling it
+	if (hooks::input && cfg.visuals.misc.ThirdPerson)
+		hooks::input->isCameraInThirdPerson = false;
 
 	// Remove the vectored exception handler before unloading (dangling pointer = crash)
 	if (hVEH) {
@@ -41,6 +57,14 @@ void hooks::Destroy() noexcept
 	ClientModeHk.restore();
 	BaseClientHk.restore();
 	EngineHk.restore();
+	// ModelRenderHk uses raw MinHook — disabled via MH_DisableHook/MH_RemoveHook
+	if (oDrawModelExecute) {
+		auto vtable = *reinterpret_cast<void***>(globals::g_interfaces.ModelRender);
+		void* pDME = vtable[index::ModelRender::DrawModelExecute];
+		MH_DisableHook(pDME);
+		MH_RemoveHook(pDME);
+		oDrawModelExecute = nullptr;
+	}
 	SurfaceHk.restore();
 
 	// Uninit minhook after all hooks are restored
@@ -97,11 +121,21 @@ long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice)
 
 			if (cfg.aimbot.DrawFov) {
 				float r = cfg.aimbot.FOV / globals::camFOV * DispSize.x / 2;
-				Render::OutLinedCircle(cx, cy, r);
+				auto& c = cfg.aimbot.FovColor;
+				Render::OutLinedCircle(cx, cy, r, ImColor(c.r, c.g, c.b, c.a));
 			}
-			if (cfg.aimbot.DrawAutoShootFov && cfg.aimbot.AutoShoot) {
-				float r = cfg.aimbot.AutoShootFov / globals::camFOV * DispSize.x / 2;
-				Render::OutLinedCircle(cx, cy, r, ImColor(255, 50, 50, 180));
+			if (cfg.aimbot.DrawAutoShootFov && cfg.aimbot.autoShoot.Enabled) {
+				float r = cfg.aimbot.autoShoot.FOV / globals::camFOV * DispSize.x / 2;
+				auto& c = cfg.aimbot.AutoShootFovColor;
+				Render::OutLinedCircle(cx, cy, r, ImColor(c.r, c.g, c.b, c.a));
+			}
+			// Draw target indicator circle on aimed enemy
+			if (cfg.aimbot.DrawTarget && aimbot::Target.ent) {
+				math::Vector screenPos;
+				if (utils::WorldToScreen(aimbot::Target.bonePos, screenPos)) {
+					auto& c = cfg.aimbot.TargetColor;
+					Render::OutLinedCircle(screenPos.x, screenPos.y, 8.f, ImColor(c.r, c.g, c.b, c.a));
+				}
 			}
 		}
 
@@ -116,8 +150,45 @@ long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice)
 			Render::OutLinedText(std::format("Speed: {:.1f}", speed).c_str(), centerX - 50, centerY - 100, ImGui::GetBackgroundDrawList(), ImColor(255, 255, 255, 255));
 		}
 
+		// Fake Lag visual: show server position ghost + choked tick counter
+		if (cfg.misc.exploits.FakeLag && cfg.misc.exploits.FakeLagVis && LocalPlayer.Get()
+			&& globals::g_interfaces.Engine->IsInGame() && misc::chokedTickCount > 0)
+		{
+			auto DispSize = ImGui::GetIO().DisplaySize;
+			auto* dl = ImGui::GetBackgroundDrawList();
+
+			// Choked tick counter below crosshair
+			auto txt = std::format("CHOKE: {}/{}", misc::chokedTickCount, cfg.misc.exploits.FakeLagAmount);
+			ImVec2 txtSize = ImGui::CalcTextSize(txt.c_str());
+			Render::OutLinedText(txt.c_str(), DispSize.x / 2 - txtSize.x / 2, DispSize.y / 2 + 20, dl, ImColor(255, 200, 50, 255));
+
+			// Ghost circle at server position (where server thinks you are)
+			math::Vector screenPos;
+			if (misc::lastSentOrigin.x != 0.f && utils::WorldToScreen(misc::lastSentOrigin, screenPos))
+			{
+				dl->AddCircleFilled(ImVec2(screenPos.x, screenPos.y), 8.f, ImColor(255, 100, 100, 120));
+				dl->AddCircle(ImVec2(screenPos.x, screenPos.y), 8.f, ImColor(255, 100, 100, 200), 0, 2.f);
+
+				// Line from server pos to your current screen position
+				math::Vector curScreen;
+				if (utils::WorldToScreen(LocalPlayer->getAbsOrigin(), curScreen))
+				{
+					dl->AddLine(ImVec2(screenPos.x, screenPos.y), ImVec2(curScreen.x, curScreen.y),
+						ImColor(255, 100, 100, 100), 1.5f);
+				}
+			}
+		}
+
+		// Backtrack tick dots (in separate function for SEH compatibility)
+		if (cfg.aimbot.backtrack.Enabled && cfg.aimbot.backtrack.DrawTicks && LocalPlayer.Get()
+			&& globals::g_interfaces.Engine->IsInGame())
+		{
+			backtrack::RenderTicks();
+		}
+
 		ESP::Render();
 		Crosshair::Render();
+		hitmarker::Render();
 
 		gui::Render();
 
@@ -203,7 +274,9 @@ void __stdcall hkCreateMove(int sequence_number, float input_sample_frametime, b
 	static int lastTick = cmd->tick_count;
 
 	// Third person: use netvar reads instead of virtual calls to avoid vtable crash during map transitions
-	if (cfg.visuals.misc.ThirdPerson && globals::g_interfaces.Engine->IsInGame() && LocalPlayer.Get()) {
+	// ThirdPerson checkbox enables the feature, hotkey controls activation
+	bool tpActive = cfg.visuals.misc.ThirdPerson && cfg.visuals.misc.ThirdPersonKey.isActive();
+	if (tpActive && globals::g_interfaces.Engine->IsInGame() && LocalPlayer.Get()) {
 		// Read deadflag netvar directly (0 = alive) - avoids virtual isAlive() call
 		bool alive = *(int*)((uintptr_t)LocalPlayer.Get() + offsets::deadFlag) == 0;
 		if (alive) {
@@ -225,9 +298,18 @@ void __stdcall hkCreateMove(int sequence_number, float input_sample_frametime, b
 	if (cmd->buttons & cmd->IN_ATTACK)
 		cmd->viewangles = globals::g_interfaces.Engine->GetViewAngles();
 
-	//aimbot::Run(cmd);
+	// Track if user was manually attacking BEFORE aimbot auto-shoot
+	misc::manualAttack = (cmd->buttons & cmd->IN_ATTACK) != 0;
+
+	backtrack::Update();
 	aimbot::Run(cmd);
+	backtrack::Run(cmd); // standalone backtrack (applies tick_count when shooting, even without aimbot)
 	misc::BunnyHop(cmd);
+	misc::AutoStop(cmd);
+	misc::RadarHack();
+	misc::AntiFlash();
+	misc::NightMode();
+	misc::FakeLag(cmd, bSendPacket);
 	globals::g_cmd = cmd;
 
 	lastTick = cmd->tick_count;
@@ -257,6 +339,40 @@ __declspec(naked) void __stdcall hkCreateMoveProxy(int sequenceNumber, float inp
 	}
 }
 
+void __fastcall hkDrawModelExecute(void* thisptr, void* edx, void* ctx, void* state, const ModelRenderInfo_t& info, math::Matrix3x4* customBoneToWorld)
+{
+	if (!hooks::setupComplete || !oDrawModelExecute) {
+		oDrawModelExecute(thisptr, ctx, state, info, customBoneToWorld);
+		return;
+	}
+
+	// Skip chams when engine has its own material override (glow pass, depth write, etc.)
+	if (globals::g_interfaces.StudioRender && globals::g_interfaces.StudioRender->IsForcedMaterialOverride()) {
+		oDrawModelExecute(thisptr, ctx, state, info, customBoneToWorld);
+		return;
+	}
+
+	auto result = chams::OnDrawModel(info);
+
+	switch (result) {
+	case chams::Result::ThroughWalls:
+		oDrawModelExecute(thisptr, ctx, state, info, customBoneToWorld);
+		chams::SetupVisiblePass();
+		oDrawModelExecute(thisptr, ctx, state, info, customBoneToWorld);
+		chams::ClearOverride();
+		return;
+
+	case chams::Result::VisibleOnly:
+		oDrawModelExecute(thisptr, ctx, state, info, customBoneToWorld);
+		chams::ClearOverride();
+		return;
+
+	default:
+		oDrawModelExecute(thisptr, ctx, state, info, customBoneToWorld);
+		return;
+	}
+}
+
 void __stdcall hkFrameStageNotify(ClientFrameStage_t curStage)
 {
 	hooks::BaseClientHk.callOriginal<void, index::BaseClient::FrameStageNotify>(curStage);
@@ -271,6 +387,13 @@ void __stdcall hkFrameStageNotify(ClientFrameStage_t curStage)
 		// to be used for WorldToScreen.
 		globals::game::viewMatrix = globals::g_interfaces.Engine->WorldToScreenMatrix();
 		break;
+	case FRAME_RENDER_START:
+		glow::Run();
+		break;
+	case FRAME_NET_UPDATE_END:
+		// Clear backtrack records when not in game (map change)
+		if (!globals::g_interfaces.Engine->IsInGame())
+			backtrack::Clear();
 		break;
 	}
 }
@@ -461,6 +584,17 @@ bool hooks::Setup()
 	Log::Info("Hooks", "Globals: ClientMode={:#x}, Input={:#x}, GlobalVars={:#x}",
 		(uintptr_t)ClientMode, (uintptr_t)input, (uintptr_t)GlobalVars);
 
+	// Initialize glow ESP (pattern scan for GlowObjectManager)
+	if (!glow::Init())
+		Log::Err("Hooks", "Glow ESP init failed - glow will not work");
+
+	// Initialize hitmarker (game event listener)
+	hitmarker::Init();
+
+	// Initialize chams (material finding)
+	if (!chams::Init())
+		Log::Err("Hooks", "Chams init failed - chams will not work");
+
 	// manually call if youre gonna use DETOUR hooking
 	MH_STATUS mhStatus = MH_Initialize();
 	if (mhStatus != MH_OK) {
@@ -503,6 +637,31 @@ bool hooks::Setup()
 	}
 	else {
 		Log::Err("Hooks", "Engine interface null - skipping Engine hooks");
+	}
+
+	// ModelRender hooks (for Chams) — raw MinHook, bypasses hookManager
+	CrashLog::Write("[Hooks] Hooking DrawModelExecute (raw MinHook)...");
+	if (globals::g_interfaces.ModelRender) {
+		// Get vfunc address directly from vtable
+		auto vtable = *reinterpret_cast<void***>(globals::g_interfaces.ModelRender);
+		void* pDrawModelExecute = vtable[index::ModelRender::DrawModelExecute];
+		Log::Info("Hooks", "DrawModelExecute at {:#x}", (uintptr_t)pDrawModelExecute);
+
+		if (MH_CreateHook(pDrawModelExecute, &hkDrawModelExecute,
+				reinterpret_cast<void**>(&oDrawModelExecute)) == MH_OK) {
+			if (MH_EnableHook(pDrawModelExecute) == MH_OK) {
+				Log::Info("Hooks", "DrawModelExecute hooked successfully");
+			} else {
+				Log::Err("Hooks", "MH_EnableHook failed for DrawModelExecute");
+				allOk = false;
+			}
+		} else {
+			Log::Err("Hooks", "MH_CreateHook failed for DrawModelExecute");
+			allOk = false;
+		}
+	}
+	else {
+		Log::Err("Hooks", "ModelRender interface null - skipping chams hooks");
 	}
 
 	// globals::g_interfaces.Surface

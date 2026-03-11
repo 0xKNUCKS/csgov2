@@ -4,6 +4,7 @@
 #include "lib/Math/GameMath.h"
 #include "SDK/Macros/ButtonCodes.h"
 #include "PlayerInfo.h"
+#include "NetChannel.h"
 
 enum ClientFrameStage_t
 {
@@ -58,6 +59,8 @@ public:
 	VIRTUAL_METHOD(void, ClientCmdUnrestricted, 114, (const char* cmd, bool fromConsoleOrKeybind = false), (this, cmd, fromConsoleOrKeybind))
 
 	VIRTUAL_METHOD(const math::Matrix4x4&, WorldToScreenMatrix, 37, (), (this))
+
+	VIRTUAL_METHOD(INetChannelInfo*, GetNetChannelInfo, 78, (), (this))
 
 	auto GetViewAngles() noexcept
 	{

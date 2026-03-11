@@ -19,6 +19,8 @@
 #include "lib/Error/AuditLog.h"
 #endif
 
+#include "Modules/Analysis/RuntimeDumper.h"
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(
 	HWND hWnd,
 	UINT msg,
@@ -355,7 +357,9 @@ void gui::Render() noexcept
 		{
 			if (ImGui::BeginTabItem("Aim"))
 			{
-				menu::LeftGroup("General", 10)
+				// Left: General(8) + Auto Shoot(3) = 11
+				// Right: Target(3) + Visuals(3) + RCS(6) = 12
+				menu::LeftGroup("General", 8)
 					.Hotkey(cfg.aimbot.Key)
 					.Checkbox("Enabled", &cfg.aimbot.Enabled)
 					.Checkbox("Silent", &cfg.aimbot.Silent)
@@ -363,28 +367,47 @@ void gui::Render() noexcept
 					.Slider("Smooth", &cfg.aimbot.Smooth, 1, 10.0f, cfg.aimbot.Smooth > 1 ? "%.2f" : "None")
 					.Slider("Smooth X", &cfg.aimbot.SmoothX, 0.1f, 3.0f, "%.2f", "Pitch smooth multiplier")
 					.Slider("Smooth Y", &cfg.aimbot.SmoothY, 0.1f, 3.0f, "%.2f", "Yaw smooth multiplier")
-					.Checkbox("Aim At Friendly", &cfg.aimbot.FriendlyFire)
-					.Checkbox("Visibility Check", &cfg.aimbot.VisibilityCheck)
-					.Checkbox("Auto Shoot", &cfg.aimbot.AutoShoot)
-					.End();
-
-				menu::RightGroup("Target", 4)
 					.Combo("Aim Bone", &cfg.aimbot.AimBone, "Head\0Neck\0Chest\0Stomach\0")
-					.Slider("Auto Shoot FOV", &cfg.aimbot.AutoShootFov, 0.5f, 180.0f, "%.1f",
-						"How close aim must be to target to auto-fire")
-					.Checkbox("Draw Auto Shoot FOV", &cfg.aimbot.DrawAutoShootFov)
-					.Checkbox("FOV Circle", &cfg.aimbot.DrawFov)
 					.End();
 
-				menu::LeftGroup("Performance", 1)
+				menu::RightGroup("Target", 3)
+					.Checkbox("Visibility Check", &cfg.aimbot.VisibilityCheck)
+					.Checkbox("Friendly Fire", &cfg.aimbot.FriendlyFire)
 					.SliderInt("Max Players Scan", &cfg.aimbot.MaxPlayersInFov, 2, 20, "%d",
-						"Max Amount of Players Scanned inside of the aim FOV")
+						"Max players scanned inside aim FOV")
 					.End();
 
-				menu::RightGroup("Recoil Control", 6)
+				menu::LeftGroup("Auto Shoot", 3)
+					.Checkbox("Enabled##AutoShoot", &cfg.aimbot.autoShoot.Enabled)
+					.Slider("FOV##ASFOV", &cfg.aimbot.autoShoot.FOV, 0.5f, 180.0f, "%.1f",
+						"How close target must be to auto-fire")
+					.SliderInt("Delay (ms)", &cfg.aimbot.autoShoot.DelayMs, 0, 500, "%d",
+						"Delay between auto shots (0 = weapon fire rate)")
+					.End();
+
+				menu::LeftGroup("Backtrack", 3)
+					.Checkbox("Enabled##Backtrack", &cfg.aimbot.backtrack.Enabled)
+					.SliderInt("Time Limit (ms)", &cfg.aimbot.backtrack.TimeLimit, 50, 200, "%d",
+						"Max backtrack window in milliseconds")
+					.Checkbox("Draw Ticks", &cfg.aimbot.backtrack.DrawTicks)
+					.SameLine().ColorPicker("##btCol", cfg.aimbot.backtrack.TickColor, true)
+					.End();
+
+				menu::RightGroup("Visuals##AimVis", 3)
+					.Checkbox("FOV Circle", &cfg.aimbot.DrawFov)
+					.SameLine().ColorPicker("##fovCol", cfg.aimbot.FovColor, true)
+					.Checkbox("Auto Shoot FOV", &cfg.aimbot.DrawAutoShootFov)
+					.SameLine().ColorPicker("##asCol", cfg.aimbot.AutoShootFovColor, true)
+					.Checkbox("Target Circle", &cfg.aimbot.DrawTarget)
+					.SameLine().ColorPicker("##targCol", cfg.aimbot.TargetColor, true)
+					.End();
+
+				menu::RightGroup("Recoil Control", 7)
 					.Checkbox("Enabled##RCS", &cfg.aimbot.RCS)
 					.Checkbox("Standalone", &cfg.aimbot.StandaloneRCS,
 						"RCS works even without an aimbot target")
+					.Checkbox("Silent##RCS", &cfg.aimbot.SilentRCS,
+						"Server-side only — no view movement")
 					.Slider("Pitch (X)", &cfg.aimbot.RCSAmountX, 0.0f, 2.0f, "%.2f",
 						"Vertical recoil compensation (2.0 = full)")
 					.Slider("Yaw (Y)", &cfg.aimbot.RCSAmountY, 0.0f, 2.0f, "%.2f",
@@ -412,17 +435,68 @@ void gui::Render() noexcept
 					.Checkbox("Show Friendly", &cfg.visuals.Friendly)
 					.End();
 
-				menu::RightGroup("Misc", 10)
+				menu::RightGroup("Glow ESP", 7)
+					.Checkbox("Enabled##Glow", &cfg.visuals.glow.Enabled)
+					.Checkbox("Teammates##Glow", &cfg.visuals.glow.Friendly)
+					.Checkbox("Local Player##Glow", &cfg.visuals.glow.LocalPlayer)
+					.Text("Colors")
+					.GearPopup("glowColors", [](auto& s) {
+						s.Checkbox("Sync with Chams", &cfg.visuals.glow.SyncWithChams,
+							"Use chams colors and show glow on visible players too");
+						s.ColorPicker("Enemy Color", cfg.visuals.glow.EnemyColor)
+						 .ColorPicker("Teammate Color", cfg.visuals.glow.FriendlyColor)
+						 .ColorPicker("Local Player Color", cfg.visuals.glow.LocalColor);
+					})
+					.Slider("Intensity", &cfg.visuals.glow.Intensity, 0.1f, 1.0f, "%.2f",
+						"Glow brightness / opacity")
+					.Combo("Style##Glow", &cfg.visuals.glow.Style, "Default\0Pulse\0Outline\0Outline Pulse\0")
+					.End();
+
+				menu::RightGroup("Misc", 13)
 					.Checkbox("Third Person", &cfg.visuals.misc.ThirdPerson)
+					.Hotkey(cfg.visuals.misc.ThirdPersonKey)
 					.Slider("Distance", &cfg.visuals.misc.TPDistance, 0.1f, 5.0f)
 					.Slider("Aspect Ratio", &cfg.visuals.misc.AspectRatio, 0.0f, 3.0f)
 					.Slider("Cam Fov", &cfg.visuals.misc.camFOV, 40.f, 160.0f)
 					.Checkbox("Steady Cam", &cfg.visuals.misc.SteadyCam, "Terminates the shaking effects in your Camera.")
 					.Checkbox("No Zoom", &cfg.visuals.misc.NoZoom, "Eliminates the zoom effect when using Scoping.")
+					.Checkbox("Night Mode", &cfg.visuals.misc.NightMode, "Adjust map brightness")
+					.GearPopup("nightmode", [](auto& s) {
+						s.Slider("Brightness", &cfg.visuals.misc.NightModeBrightness, 0.05f, 2.0f, "%.2f",
+							"Lower = darker, 1.0 = normal, higher = brighter");
+					})
 					.Space()
 					.SubSection("View Model", [](auto& s) {
 						s.Slider("FOV", &cfg.visuals.viewmodel.ViewModelFOV, 60.f, 140.0f)
 						 .Checkbox("Always Draw", &cfg.visuals.viewmodel.AlwaysDraw);
+					})
+					.End();
+
+				menu::RightGroup("Chams", 6)
+					.Checkbox("Enabled##Chams", &cfg.visuals.chams.Enabled)
+					.SameLine().ColorPicker("##chamsEnemyVis", cfg.visuals.chams.EnemyVisibleColor, true)
+					.SameLine().ColorPicker("##chamsEnemyInvis", cfg.visuals.chams.EnemyInvisibleColor, true)
+					.Checkbox("Through Walls", &cfg.visuals.chams.ThroughWalls)
+					.Combo("Material##Chams", &cfg.visuals.chams.Style,
+						"Flat\0Shaded\0Chrome\0Glow\0Pearlescent\0Gold\0Crystal\0Obsidian\0")
+					.Checkbox("Teammates##Chams", &cfg.visuals.chams.Teammates)
+					.SameLine().ColorPicker("##chamsFriendly", cfg.visuals.chams.FriendlyVisibleColor, true)
+					.Checkbox("Local Player##Chams", &cfg.visuals.chams.LocalPlayer)
+					.SameLine().ColorPicker("##chamsLocal", cfg.visuals.chams.LocalVisibleColor, true)
+					.End();
+
+				menu::LeftGroup("Hitmarker", 5)
+					.Checkbox("Enabled##Hitmarker", &cfg.visuals.hitmarker.Enabled)
+					.SameLine().ColorPicker("##hmCol", cfg.visuals.hitmarker.Color, true)
+					.Checkbox("Damage Numbers", &cfg.visuals.hitmarker.ShowDamage)
+					.Checkbox("Hit Sound", &cfg.visuals.hitmarker.Sound)
+					.ColorPicker("Headshot", cfg.visuals.hitmarker.HeadshotColor, true)
+					.SameLine().ColorPicker("Kill", cfg.visuals.hitmarker.KillColor, true)
+					.GearPopup("hitmarker", [](auto& s) {
+						s.Slider("Size", &cfg.visuals.hitmarker.Size, 4.f, 20.f, "%.0f")
+						 .Slider("Gap", &cfg.visuals.hitmarker.Gap, 1.f, 10.f, "%.0f")
+						 .Slider("Thickness", &cfg.visuals.hitmarker.Thickness, 1.f, 4.f, "%.1f")
+						 .SliderInt("Duration (ms)", &cfg.visuals.hitmarker.Duration, 100, 2000, "%d");
 					})
 					.End();
 
@@ -446,14 +520,34 @@ void gui::Render() noexcept
 
 			if (ImGui::BeginTabItem("Misc"))
 			{
-				menu::LeftGroup("Movement", 3)
+				// Left: Movement(4) + Exploits(2) = 6  |  Right: Player(3) = 3
+				menu::LeftGroup("Movement", 4)
 					.Checkbox("Bunny Hop", &cfg.misc.movement.BunnyHop)
 					.Checkbox("Auto-Strafe", &cfg.misc.movement.Strafe)
 					.Checkbox("Air Duck", &cfg.misc.movement.AirDuck)
+					.Checkbox("Auto-Stop", &cfg.misc.movement.AutoStop)
+					.GearPopup("autostop", [](auto& s) {
+						s.Combo("Trigger", &cfg.misc.movement.AutoStopMode, "All Shots\0Manual Only\0Auto-Shoot Only\0");
+					})
 					.End();
 
-				menu::LeftGroup("Exploits", 1)
+				menu::RightGroup("Exploits", 2)
 					.Checkbox("Infinite Duck", &cfg.misc.exploits.InfDuck)
+					.Checkbox("Fake Lag", &cfg.misc.exploits.FakeLag)
+					.GearPopup("fakelag", [](auto& s) {
+						s.SliderInt("Choke Ticks", &cfg.misc.exploits.FakeLagAmount, 1, 14, "%d")
+						 .Checkbox("Show Indicator", &cfg.misc.exploits.FakeLagVis,
+							"Show choked tick counter and server position ghost");
+					})
+					.End();
+
+				menu::LeftGroup("Player", 2)
+					.Checkbox("Radar Hack", &cfg.misc.RadarHack, "Show all enemies on the in-game radar")
+					.Checkbox("Anti-Flash", &cfg.misc.AntiFlash, "Reduce or remove flashbang effect")
+					.GearPopup("antiflash", [](auto& s) {
+						s.Slider("Max Alpha", &cfg.misc.FlashMaxAlpha, 0.f, 255.f, "%.0f",
+							"0 = fully remove, 255 = no change");
+					})
 					.End();
 
 				menu::EndRow();
@@ -463,6 +557,7 @@ void gui::Render() noexcept
 			if (ImGui::BeginTabItem("Settings"))
 			{
 				menu::Checkbox("Show Debug Window", &cfg.settings.ShowDebug);
+				menu::Checkbox("Toggle Style", &cfg.settings.ToggleStyle, "Switch between toggle switches and classic checkboxes");
 				if (menu::Button("Unload [Pause]"))
 					bUnloaded = true;
 				menu::Slider("Animation Speed", &cfg.settings.AnimSpeed, 0.5f, 4.f, "%.2f",
@@ -510,6 +605,15 @@ void gui::Render() noexcept
 					.ColorPicker("Color", cfg.settings.mouseTracer.Color)
 					.ColorPicker("Second Color", cfg.settings.mouseTracer.SecondColor)
 					.Checkbox("Always On", &cfg.settings.mouseTracer.AlwaysOn, "Always show the tracer, even when the menu is closed.")
+					.End();
+
+				menu::Gap();
+
+				menu::Section("Analysis")
+					.Button("Dump Runtime Data", []{
+						analysis::DumpAll();
+						Notify::Success("Analysis dumped");
+					})
 					.End();
 
 				ImGui::EndTabItem();

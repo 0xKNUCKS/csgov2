@@ -68,6 +68,9 @@ namespace menu
 		// Nested outline section inside a group
 		GroupBuilder& SubSection(const char* name, std::function<void(GroupBuilder&)> content);
 
+		// Settings gear popup — shows a gear icon; clicking opens an animated popup with sub-options
+		GroupBuilder& GearPopup(const char* id, std::function<void(GroupBuilder&)> content);
+
 		// --- Layout ---
 		GroupBuilder& SameLine();
 		GroupBuilder& Space();

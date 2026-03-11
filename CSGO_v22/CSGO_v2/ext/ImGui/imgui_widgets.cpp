@@ -8174,7 +8174,7 @@ bool    ImGui::TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, 
 
             s_lastWinPos = winPos;
 
-            GetForegroundDrawList()->AddLine(
+            window->DrawList->AddLine(
                 ImVec2(s_lineX1, s_lineY), ImVec2(s_lineX2, s_lineY),
                 GetColorU32(ImGuiCol_TabHovered), 3.f);
         }

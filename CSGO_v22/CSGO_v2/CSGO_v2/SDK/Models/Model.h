@@ -86,6 +86,7 @@ struct studiohdr_t
 
 struct IVModelInfo
 {
+	VIRTUAL_METHOD(int, GetModelIndex, 2, (const char* name), (this, name))
 	// virtual studiohdr_t				*GetStudiomodel( const model_t *mod ) = 0;
 	VIRTUAL_METHOD(studiohdr_t*, GetStudioModel, 32, (const model_t* mod), (this, mod))
 };

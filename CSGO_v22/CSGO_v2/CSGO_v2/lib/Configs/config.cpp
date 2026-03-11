@@ -115,6 +115,7 @@ bool Config::Save(const std::string& name) const
 	body << "HealthBar=" << visuals.esp.HealthBar << "\n";
 	body << "Name=" << visuals.esp.Name << "\n";
 	body << "Dormant=" << visuals.esp.Dormant << "\n";
+	body << "WeaponESP=" << visuals.esp.WeaponESP << "\n";
 	body << "BoxType=" << visuals.esp.boxType << "\n";
 	body << "Color=" << visuals.esp.color.r << "," << visuals.esp.color.g << ","
 	  << visuals.esp.color.b << "," << visuals.esp.color.a << "\n";
@@ -170,6 +171,8 @@ bool Config::Save(const std::string& name) const
 	body << "LocalPlayer=" << visuals.chams.LocalPlayer << "\n";
 	body << "ThroughWalls=" << visuals.chams.ThroughWalls << "\n";
 	body << "Style=" << visuals.chams.Style << "\n";
+	body << "VisibleAlpha=" << visuals.chams.VisibleAlpha << "\n";
+	body << "InvisibleAlpha=" << visuals.chams.InvisibleAlpha << "\n";
 	body << "EnemyVisibleColor=" << visuals.chams.EnemyVisibleColor.r << "," << visuals.chams.EnemyVisibleColor.g << ","
 	  << visuals.chams.EnemyVisibleColor.b << "," << visuals.chams.EnemyVisibleColor.a << "\n";
 	body << "EnemyInvisibleColor=" << visuals.chams.EnemyInvisibleColor.r << "," << visuals.chams.EnemyInvisibleColor.g << ","
@@ -178,6 +181,14 @@ bool Config::Save(const std::string& name) const
 	  << visuals.chams.FriendlyVisibleColor.b << "," << visuals.chams.FriendlyVisibleColor.a << "\n";
 	body << "LocalVisibleColor=" << visuals.chams.LocalVisibleColor.r << "," << visuals.chams.LocalVisibleColor.g << ","
 	  << visuals.chams.LocalVisibleColor.b << "," << visuals.chams.LocalVisibleColor.a << "\n";
+
+	body << "\n[visuals.skinChanger]\n";
+	body << "Enabled=" << visuals.skinChanger.Enabled << "\n";
+	body << "KnifeModel=" << visuals.skinChanger.KnifeModel << "\n";
+	body << "SkinPaintKit=" << visuals.skinChanger.SkinPaintKit << "\n";
+	body << "SkinSeed=" << visuals.skinChanger.SkinSeed << "\n";
+	body << "SkinWear=" << visuals.skinChanger.SkinWear << "\n";
+	body << "StatTrak=" << visuals.skinChanger.StatTrak << "\n";
 
 	body << "\n[visuals.crosshair]\n";
 	body << "Enabled=" << visuals.crosshair.Enabled << "\n";
@@ -197,6 +208,8 @@ bool Config::Save(const std::string& name) const
 	body << "RadarHack=" << misc.RadarHack << "\n";
 	body << "AntiFlash=" << misc.AntiFlash << "\n";
 	body << "FlashMaxAlpha=" << misc.FlashMaxAlpha << "\n";
+	body << "SpectatorList=" << misc.SpectatorList << "\n";
+	body << "KeybindList=" << misc.KeybindList << "\n";
 
 	body << "\n[misc.movement]\n";
 	body << "BunnyHop=" << misc.movement.BunnyHop << "\n";
@@ -204,6 +217,7 @@ bool Config::Save(const std::string& name) const
 	body << "Strafe=" << misc.movement.Strafe << "\n";
 	body << "AutoStop=" << misc.movement.AutoStop << "\n";
 	body << "AutoStopMode=" << misc.movement.AutoStopMode << "\n";
+	body << "AutoStopSpeed=" << misc.movement.AutoStopSpeed << "\n";
 
 	body << "\n[misc.exploits]\n";
 	body << "InfDuck=" << misc.exploits.InfDuck << "\n";
@@ -407,6 +421,7 @@ bool Config::Load(const std::string& name)
 	visuals.esp.HealthBar   = GetBool(kv, "visuals.esp.HealthBar", defaults.visuals.esp.HealthBar);
 	visuals.esp.Name        = GetBool(kv, "visuals.esp.Name", defaults.visuals.esp.Name);
 	visuals.esp.Dormant     = GetBool(kv, "visuals.esp.Dormant", defaults.visuals.esp.Dormant);
+	visuals.esp.WeaponESP   = GetBool(kv, "visuals.esp.WeaponESP", defaults.visuals.esp.WeaponESP);
 	visuals.esp.boxType     = GetInt(kv, "visuals.esp.BoxType", defaults.visuals.esp.boxType);
 	visuals.esp.color       = GetColor(kv, "visuals.esp.Color", defaults.visuals.esp.color);
 
@@ -458,10 +473,20 @@ bool Config::Load(const std::string& name)
 	visuals.chams.LocalPlayer        = GetBool(kv, "visuals.chams.LocalPlayer", defaults.visuals.chams.LocalPlayer);
 	visuals.chams.ThroughWalls       = GetBool(kv, "visuals.chams.ThroughWalls", defaults.visuals.chams.ThroughWalls);
 	visuals.chams.Style              = GetInt(kv, "visuals.chams.Style", defaults.visuals.chams.Style);
+	visuals.chams.VisibleAlpha       = GetFloat(kv, "visuals.chams.VisibleAlpha", defaults.visuals.chams.VisibleAlpha);
+	visuals.chams.InvisibleAlpha     = GetFloat(kv, "visuals.chams.InvisibleAlpha", defaults.visuals.chams.InvisibleAlpha);
 	visuals.chams.EnemyVisibleColor  = GetColor(kv, "visuals.chams.EnemyVisibleColor", defaults.visuals.chams.EnemyVisibleColor);
 	visuals.chams.EnemyInvisibleColor = GetColor(kv, "visuals.chams.EnemyInvisibleColor", defaults.visuals.chams.EnemyInvisibleColor);
 	visuals.chams.FriendlyVisibleColor = GetColor(kv, "visuals.chams.FriendlyVisibleColor", defaults.visuals.chams.FriendlyVisibleColor);
 	visuals.chams.LocalVisibleColor  = GetColor(kv, "visuals.chams.LocalVisibleColor", defaults.visuals.chams.LocalVisibleColor);
+
+	// Visuals Skin Changer
+	visuals.skinChanger.Enabled      = GetBool(kv, "visuals.skinChanger.Enabled", defaults.visuals.skinChanger.Enabled);
+	visuals.skinChanger.KnifeModel   = GetInt(kv, "visuals.skinChanger.KnifeModel", defaults.visuals.skinChanger.KnifeModel);
+	visuals.skinChanger.SkinPaintKit = GetInt(kv, "visuals.skinChanger.SkinPaintKit", defaults.visuals.skinChanger.SkinPaintKit);
+	visuals.skinChanger.SkinSeed    = GetInt(kv, "visuals.skinChanger.SkinSeed", defaults.visuals.skinChanger.SkinSeed);
+	visuals.skinChanger.SkinWear    = GetFloat(kv, "visuals.skinChanger.SkinWear", defaults.visuals.skinChanger.SkinWear);
+	visuals.skinChanger.StatTrak    = GetInt(kv, "visuals.skinChanger.StatTrak", defaults.visuals.skinChanger.StatTrak);
 
 	// Visuals Crosshair
 	visuals.crosshair.Enabled         = GetBool(kv, "visuals.crosshair.Enabled", defaults.visuals.crosshair.Enabled);
@@ -479,6 +504,8 @@ bool Config::Load(const std::string& name)
 	misc.RadarHack = GetBool(kv, "misc.RadarHack", defaults.misc.RadarHack);
 	misc.AntiFlash = GetBool(kv, "misc.AntiFlash", defaults.misc.AntiFlash);
 	misc.FlashMaxAlpha = GetFloat(kv, "misc.FlashMaxAlpha", defaults.misc.FlashMaxAlpha);
+	misc.SpectatorList = GetBool(kv, "misc.SpectatorList", defaults.misc.SpectatorList);
+	misc.KeybindList = GetBool(kv, "misc.KeybindList", defaults.misc.KeybindList);
 
 	// Misc Movement
 	misc.movement.BunnyHop = GetBool(kv, "misc.movement.BunnyHop", defaults.misc.movement.BunnyHop);
@@ -486,6 +513,7 @@ bool Config::Load(const std::string& name)
 	misc.movement.Strafe   = GetBool(kv, "misc.movement.Strafe", defaults.misc.movement.Strafe);
 	misc.movement.AutoStop = GetBool(kv, "misc.movement.AutoStop", defaults.misc.movement.AutoStop);
 	misc.movement.AutoStopMode = GetInt(kv, "misc.movement.AutoStopMode", defaults.misc.movement.AutoStopMode);
+	misc.movement.AutoStopSpeed = GetFloat(kv, "misc.movement.AutoStopSpeed", defaults.misc.movement.AutoStopSpeed);
 
 	// Misc Exploits
 	misc.exploits.InfDuck      = GetBool(kv, "misc.exploits.InfDuck", defaults.misc.exploits.InfDuck);

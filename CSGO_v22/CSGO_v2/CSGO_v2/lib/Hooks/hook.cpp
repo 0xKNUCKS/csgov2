@@ -16,6 +16,7 @@
 #include "Modules/Visuals/Crosshair.h"
 #include "Modules/Visuals/Hitmarker.h"
 #include "Modules/Visuals/Chams.h"
+#include "Modules/Visuals/SkinChanger.h"
 #include "SDK/Classes/ViewSetup/ViewSetup.h"
 #include "SDK/Entity/localplayer.h"
 #include "lib/Configs/config.h"
@@ -56,6 +57,9 @@ void hooks::Destroy() noexcept
 	d3dDeviceHk.restore();
 	ClientModeHk.restore();
 	BaseClientHk.restore();
+	// Restore RecvProxy before unhooking everything else
+	skinchanger::RemoveHooks();
+
 	EngineHk.restore();
 	// ModelRenderHk uses raw MinHook — disabled via MH_DisableHook/MH_RemoveHook
 	if (oDrawModelExecute) {
@@ -189,6 +193,8 @@ long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice)
 		ESP::Render();
 		Crosshair::Render();
 		hitmarker::Render();
+		misc::SpectatorList();
+		misc::KeybindList();
 
 		gui::Render();
 
@@ -265,6 +271,9 @@ void __stdcall hkCreateMove(int sequence_number, float input_sample_frametime, b
 
 	if (!bSendPacket)
 		return;
+
+	// Default to sending — prevents flicker from stale stack values when fake lag is off
+	*bSendPacket = true;
 
 	CUserCmd* cmd = hooks::input->getUserCmd(0, sequence_number);
 
@@ -375,6 +384,12 @@ void __fastcall hkDrawModelExecute(void* thisptr, void* edx, void* ctx, void* st
 
 void __stdcall hkFrameStageNotify(ClientFrameStage_t curStage)
 {
+	// Skin changer must run BEFORE the original FSN so the engine processes our modified
+	// netvars during PostDataUpdate/OnDataChanged (which triggers InitializeAttributes
+	// on DATA_UPDATE_CREATED after a fullupdate)
+	if (hooks::setupComplete && curStage == ClientFrameStage_t::FRAME_NET_UPDATE_POSTDATAUPDATE_START)
+		skinchanger::Run();
+
 	hooks::BaseClientHk.callOriginal<void, index::BaseClient::FrameStageNotify>(curStage);
 
 	if (!hooks::setupComplete)
@@ -542,6 +557,21 @@ static LONG WINAPI GlobalCrashHandler(EXCEPTION_POINTERS* ep)
 
 	Log::DumpToFile("csgo_v2_errors.log");
 
+	// Throttled in-game notification (3s cooldown per unique offset)
+	{
+		static DWORD lastNotifyTime = 0;
+		static unsigned lastOffset = 0;
+		unsigned offset = hSelf ? (unsigned)((uintptr_t)addr - (uintptr_t)hSelf) : 0;
+		DWORD now = GetTickCount();
+		if (offset != lastOffset || now - lastNotifyTime > 3000) {
+			lastOffset = offset;
+			lastNotifyTime = now;
+			char buf[96];
+			snprintf(buf, sizeof(buf), "Crash 0x%08X at offset 0x%X", code, offset);
+			Notify::Warn(buf);
+		}
+	}
+
 #ifdef _DEBUG
 	// Build a short summary for the audit log (can't use std::format in SEH-safe code,
 	// but this runs after CrashLog so it's OK to use C++ here)
@@ -685,6 +715,10 @@ bool hooks::Setup()
 		CrashLog::Write("[Hooks] All hooks installed successfully");
 		Log::Info("Hooks", "All hooks installed successfully");
 	}
+
+	// Install RecvProxy hooks for skin changer (sequence + fallback props)
+	if (allOk)
+		skinchanger::InstallHooks();
 
 	// Signal all hook functions that they can start running their logic
 	setupComplete = allOk;

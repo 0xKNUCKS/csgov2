@@ -18,4 +18,6 @@ namespace misc
 	void FakeLag(CUserCmd* cmd, bool* bSendPacket);
 	void AntiFlash();
 	void NightMode();
+	void SpectatorList();
+	void KeybindList();
 };

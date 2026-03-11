@@ -101,6 +101,30 @@ bool NetVars_t::Init()
     offsets::m_angEyeAngles = findAndValidate("DT_CSPlayer", "m_angEyeAngles[0]");
     offsets::m_flLowerBodyYawTarget = findAndValidate("DT_CSPlayer", "m_flLowerBodyYawTarget");
 
+    // Spectator
+    offsets::m_hObserverTarget = findAndValidate("DT_BasePlayer", "m_hObserverTarget");
+    offsets::m_iObserverMode = findAndValidate("DT_BasePlayer", "m_iObserverMode");
+
+    // Skin Changer
+    offsets::m_iItemDefinitionIndex = findAndValidate("DT_BaseAttributableItem", "m_iItemDefinitionIndex");
+    offsets::m_iEntityQuality = findAndValidate("DT_BaseAttributableItem", "m_iEntityQuality");
+    offsets::m_iItemIDHigh = findAndValidate("DT_BaseAttributableItem", "m_iItemIDHigh");
+    offsets::m_iItemIDLow = findAndValidate("DT_BaseAttributableItem", "m_iItemIDLow");
+    offsets::m_iAccountID = findAndValidate("DT_BaseAttributableItem", "m_iAccountID");
+    offsets::m_nFallbackPaintKit = findAndValidate("DT_BaseAttributableItem", "m_nFallbackPaintKit");
+    offsets::m_nFallbackSeed = findAndValidate("DT_BaseAttributableItem", "m_nFallbackSeed");
+    offsets::m_flFallbackWear = findAndValidate("DT_BaseAttributableItem", "m_flFallbackWear");
+    offsets::m_nFallbackStatTrak = findAndValidate("DT_BaseAttributableItem", "m_nFallbackStatTrak");
+    offsets::m_szCustomName = findAndValidate("DT_BaseAttributableItem", "m_szCustomName");
+    offsets::m_OriginalOwnerXuidLow = findAndValidate("DT_BaseAttributableItem", "m_OriginalOwnerXuidLow");
+    offsets::m_OriginalOwnerXuidHigh = findAndValidate("DT_BaseAttributableItem", "m_OriginalOwnerXuidHigh");
+
+    // Weapon iteration / viewmodel
+    offsets::m_hMyWeapons = findAndValidate("DT_BaseCombatCharacter", "m_hMyWeapons");
+    offsets::m_hViewModel = findAndValidate("DT_BasePlayer", "m_hViewModel[0]");
+    offsets::m_nModelIndex = findAndValidate("DT_BaseEntity", "m_nModelIndex");
+    offsets::m_hWeaponWorldModel = findAndValidate("DT_BaseCombatWeapon", "m_hWeaponWorldModel");
+
     if (!allOk)
         Log::Err("NetVars", "Some netvar offsets failed to resolve - features may crash");
 

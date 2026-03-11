@@ -223,13 +223,30 @@ void aimbot::RunInternal(CUserCmd* cmd)
 
 		if (fovToTarget < cfg.aimbot.autoShoot.FOV)
 		{
-			// Delay between shots
+			// Fire rate + ammo check: don't click faster than weapon can fire or on empty mag
+			bool canFire = true;
+			int weaponHandle = *(int*)((uintptr_t)lp + offsets::m_hActiveWeapon);
+			auto* weapon = weaponHandle ?
+				globals::g_interfaces.ClientEntity->GetClientEntity(weaponHandle & 0xFFF) : nullptr;
+
+			if (weapon)
+			{
+				int clip = *(int*)((uintptr_t)weapon + offsets::m_iClip1);
+				if (clip == 0) canFire = false;
+
+				float nextAttack = *(float*)((uintptr_t)weapon + offsets::m_flNextPrimaryAttack);
+				int tickBase = *(int*)((uintptr_t)lp + offsets::m_nTickBase);
+				float serverTime = tickBase * hooks::GlobalVars->interval_per_tick;
+				if (serverTime < nextAttack) canFire = false;
+			}
+
+			// Delay between shots (user-configurable on top of fire rate)
 			static DWORD lastAutoShotTime = 0;
 			DWORD now = GetTickCount();
 			bool delayOk = cfg.aimbot.autoShoot.DelayMs <= 0 ||
 				(now - lastAutoShotTime >= (DWORD)cfg.aimbot.autoShoot.DelayMs);
 
-			if (delayOk)
+			if (canFire && delayOk)
 			{
 				cmd->buttons |= cmd->IN_ATTACK;
 				autoShotCount++;
@@ -252,7 +269,6 @@ void aimbot::RunInternal(CUserCmd* cmd)
 	else {
 		autoShotCount = 0; // Reset when auto-shoot inactive or no target
 	}
-
 	// --- Aimbot Aim (requires aim key) ---
 	if (aimKeyHeld && bestTarget)
 	{
@@ -290,7 +306,8 @@ void aimbot::RunInternal(CUserCmd* cmd)
 	}
 
 	// --- Standalone RCS (compensate recoil while shooting, independent of aimbot) ---
-	if (!aimKeyHeld && cfg.aimbot.StandaloneRCS) {
+	// Runs when aimbot aim block didn't execute (no aim key, or aim key but no target)
+	if (!(aimKeyHeld && bestTarget) && cfg.aimbot.StandaloneRCS) {
 		// Track total compensation applied to the view so far (absolute, not per-frame delta)
 		static math::Vector totalApplied(0.f, 0.f, 0.f);
 

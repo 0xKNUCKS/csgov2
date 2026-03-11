@@ -10,6 +10,7 @@ namespace ESP
 	void DrawHealthBar(BBox bbox, int health);
 	void DrawName(BBox bbox, const std::string& name);
 	void DrawSkeleton(gEntity* entity);
+	void DrawWeapons();
 
 	inline float baseOpacity = 1.f;
 

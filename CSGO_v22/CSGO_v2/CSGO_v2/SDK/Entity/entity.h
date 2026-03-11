@@ -116,6 +116,28 @@ namespace offsets
     // Resolver / anti-aim
     inline uintptr_t m_angEyeAngles;
     inline uintptr_t m_flLowerBodyYawTarget;
+
+    // Spectator
+    inline uintptr_t m_hObserverTarget;
+    inline uintptr_t m_iObserverMode;
+
+    // Skin Changer
+    inline uintptr_t m_iItemDefinitionIndex;
+    inline uintptr_t m_iEntityQuality;
+    inline uintptr_t m_iItemIDHigh;
+    inline uintptr_t m_iItemIDLow;
+    inline uintptr_t m_iAccountID;
+    inline uintptr_t m_nFallbackPaintKit;
+    inline uintptr_t m_nFallbackSeed;
+    inline uintptr_t m_flFallbackWear;
+    inline uintptr_t m_nFallbackStatTrak;
+    inline uintptr_t m_szCustomName;
+    inline uintptr_t m_OriginalOwnerXuidLow;
+    inline uintptr_t m_OriginalOwnerXuidHigh;
+    inline uintptr_t m_hMyWeapons;
+    inline uintptr_t m_hViewModel;
+    inline uintptr_t m_nModelIndex;
+    inline uintptr_t m_hWeaponWorldModel;
 }
 
 // fuck this shit idek wtf is this, pasted from NEPS. sad.
@@ -125,6 +147,7 @@ public:
     // virtual functions from the entity
     VIRTUAL_METHOD(void, release, 1, (), (this + sizeof(uintptr_t) * 2))
     VIRTUAL_METHOD(ClientClass*, getClientClass, 2, (), (this + sizeof(uintptr_t) * 2))
+    VIRTUAL_METHOD(void, onDataChanged, 5, (int updateType), (this + sizeof(uintptr_t) * 2, updateType))
     VIRTUAL_METHOD(void, preDataUpdate, 6, (int updateType), (this + sizeof(uintptr_t) * 2, updateType))
     VIRTUAL_METHOD(void, postDataUpdate, 7, (int updateType), (this + sizeof(uintptr_t) * 2, updateType))
     VIRTUAL_METHOD(bool, isDormant, 9, (), (this + sizeof(uintptr_t) * 2))

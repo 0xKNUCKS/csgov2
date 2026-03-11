@@ -279,7 +279,7 @@ chams::Result chams::OnDrawModel(const ModelRenderInfo_t& info)
 	if (cfg.visuals.chams.ThroughWalls && !isTeammate) {
 		mat->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
 		mat->ColorModulate(invisCol->r, invisCol->g, invisCol->b);
-		mat->AlphaModulate(invisCol->a);
+		mat->AlphaModulate(invisCol->a * cfg.visuals.chams.InvisibleAlpha);
 		globals::g_interfaces.ModelRender->ForcedMaterialOverride(mat);
 
 		pendingVisCol = visCol;
@@ -289,7 +289,7 @@ chams::Result chams::OnDrawModel(const ModelRenderInfo_t& info)
 
 	mat->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, false);
 	mat->ColorModulate(visCol->r, visCol->g, visCol->b);
-	mat->AlphaModulate(visCol->a);
+	mat->AlphaModulate(visCol->a * cfg.visuals.chams.VisibleAlpha);
 	globals::g_interfaces.ModelRender->ForcedMaterialOverride(mat);
 	return Result::VisibleOnly;
 }
@@ -299,7 +299,7 @@ void chams::SetupVisiblePass()
 	if (!pendingMat || !pendingVisCol) return;
 	pendingMat->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, false);
 	pendingMat->ColorModulate(pendingVisCol->r, pendingVisCol->g, pendingVisCol->b);
-	pendingMat->AlphaModulate(pendingVisCol->a);
+	pendingMat->AlphaModulate(pendingVisCol->a * cfg.visuals.chams.VisibleAlpha);
 	globals::g_interfaces.ModelRender->ForcedMaterialOverride(pendingMat);
 }
 

@@ -80,6 +80,7 @@ add_library(CSGO_v2 SHARED
     CSGO_v2/Modules/Visuals/Glow.cpp
     CSGO_v2/Modules/Visuals/Hitmarker.cpp
     CSGO_v2/Modules/Visuals/Chams.cpp
+    CSGO_v2/Modules/Visuals/SkinChanger.cpp
     CSGO_v2/SDK/Classes/KeyValues.cpp
     CSGO_v2/Modules/Analysis/RuntimeDumper.cpp
 )

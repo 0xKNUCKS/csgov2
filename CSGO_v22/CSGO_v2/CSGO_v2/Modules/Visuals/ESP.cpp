@@ -19,6 +19,9 @@ void ESP::Render()
 		return;
 	}
 
+	if (cfg.visuals.esp.WeaponESP)
+		DrawWeapons();
+
 	for (int i = 1; i <= hooks::GlobalVars->maxClients; i++)
 	{
 		auto ent = globals::g_interfaces.ClientEntity->GetClientEntity(i);
@@ -136,6 +139,76 @@ void ESP::DrawName(BBox bbox, const std::string& name)
 	math::Vector namePos = math::Vector(bbox.topLeft.x + bbox.w / 2 - nameSize.x/2, bbox.bottomLeft.y);
 
 	Render::OutLinedText(name.c_str(), namePos.x, namePos.y, ImGui::GetBackgroundDrawList(), ImColor(1.f, 1.f, 1.f, baseOpacity));
+}
+
+// Convert class name like "CWeaponAWP" or "CAK47" to readable "AWP" or "AK-47"
+static std::string CleanWeaponName(const char* className)
+{
+	if (!className) return "";
+	std::string name = className;
+
+	if (name.starts_with("CWeapon"))
+		name = name.substr(7);
+	else if (name.starts_with("CDEagle"))
+		return "Deagle";
+	else if (name.starts_with("CAK47"))
+		return "AK-47";
+	else if (name.starts_with("C"))
+		name = name.substr(1);
+
+	return name;
+}
+
+// SEH-safe: get weapon class name and screen position from entity
+// Returns true if entity is a valid weapon with a screen position
+static bool GetWeaponInfo(gEntity* ent, const char*& outName, math::Vector& outScreen)
+{
+	__try {
+		auto* cc = ent->getClientClass();
+		if (!cc || !cc->m_pNetworkName) return false;
+
+		const char* name = cc->m_pNetworkName;
+
+		bool isWeapon = (strncmp(name, "CWeapon", 7) == 0) ||
+			(strcmp(name, "CAK47") == 0) ||
+			(strcmp(name, "CDEagle") == 0);
+
+		if (!isWeapon) return false;
+
+		const auto& origin = ent->getAbsOrigin();
+		if (!utils::WorldToScreen(origin, outScreen)) return false;
+
+		outName = name;
+		return true;
+	} __except (EXCEPTION_EXECUTE_HANDLER) {
+		return false;
+	}
+}
+
+void ESP::DrawWeapons()
+{
+	int highest = globals::g_interfaces.ClientEntity->GetHighestEntityIndex();
+	int maxClients = hooks::GlobalVars->maxClients;
+
+	for (int i = maxClients + 1; i <= highest; i++)
+	{
+		auto* ent = globals::g_interfaces.ClientEntity->GetClientEntity(i);
+		if (!ent || ent->isDormant()) continue;
+
+		const char* className = nullptr;
+		math::Vector screenPos;
+		if (!GetWeaponInfo(ent, className, screenPos)) continue;
+
+		std::string displayName = CleanWeaponName(className);
+		if (displayName.empty()) continue;
+
+		ImVec2 textSize = ImGui::CalcTextSize(displayName.c_str());
+		float x = screenPos.x - textSize.x / 2.f;
+		float y = screenPos.y;
+
+		Render::OutLinedText(displayName.c_str(), x, y,
+			ImGui::GetBackgroundDrawList(), ImColor(0.85f, 0.85f, 0.7f, 0.9f));
+	}
 }
 
 void ESP::DrawSkeleton(gEntity* entity)

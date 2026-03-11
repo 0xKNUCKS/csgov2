@@ -105,6 +105,7 @@ public:
 			bool HealthBar = false;
 			bool Name = false;
 			bool Dormant = false;
+			bool WeaponESP = false;
 			int boxType = 0; // eBoxType
 			CfgColor color = CfgColor(255,255,255);
 		} esp;
@@ -157,11 +158,22 @@ public:
 			bool LocalPlayer = false;
 			bool ThroughWalls = true;
 			int Style = 0; // 0=Flat, 1=Textured
+			float VisibleAlpha = 1.0f;   // Opacity for visible pass
+			float InvisibleAlpha = 1.0f; // Opacity for through-walls pass
 			CfgColor EnemyVisibleColor = CfgColor(50, 255, 50);
 			CfgColor EnemyInvisibleColor = CfgColor(255, 50, 50);
 			CfgColor FriendlyVisibleColor = CfgColor(50, 150, 255);
 			CfgColor LocalVisibleColor = CfgColor(255, 255, 255);
 		} chams;
+		struct SkinChanger
+		{
+			bool Enabled = false;
+			int KnifeModel = 0;   // index into knife model list (0 = default)
+			int SkinPaintKit = 0; // paint kit ID (0 = default)
+			int SkinSeed = 0;     // pattern seed
+			float SkinWear = 0.0001f; // wear (0.0 = factory new)
+			int StatTrak = -1;    // -1 = disabled
+		} skinChanger;
 		struct Crosshair
 		{
 			bool Enabled = false;
@@ -186,6 +198,7 @@ public:
 			bool Strafe = false;
 			bool AutoStop = false; // Stop movement when shooting for accuracy
 			int AutoStopMode = 0; // 0=All, 1=Manual only, 2=Auto-shoot only
+			float AutoStopSpeed = 4.0f; // Deceleration multiplier (higher = faster stop)
 		} movement;
 		struct Exploits
 		{
@@ -197,6 +210,8 @@ public:
 		bool RadarHack = false;
 		bool AntiFlash = false;
 		float FlashMaxAlpha = 0.f; // 0 = fully remove flash, 255 = normal
+		bool SpectatorList = false;
+		bool KeybindList = false;
 	} misc;
 
 	struct Settings

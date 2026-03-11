@@ -12,6 +12,7 @@
 #include "imgui_internal.h"
 
 #include "SDK/Entity/localplayer.h"
+#include "Modules/Visuals/SkinChanger.h"
 #include "build_timestamp.h"
 #include "lib/Notify/Notify.h"
 
@@ -424,7 +425,7 @@ void gui::Render() noexcept
 
 			if (ImGui::BeginTabItem("Visuals"))
 			{
-				menu::LeftGroup("Player", 8)
+				menu::LeftGroup("Player", 9)
 					.Checkbox("Enabled", &cfg.visuals.Enabled)
 					.CheckboxCombo("Bounding Box", &cfg.visuals.esp.BoundingBox, "##ESPboxType", &cfg.visuals.esp.boxType, "Outlined\0Filled\0Box3d\0Corners\0")
 					.Checkbox("Show Skeleton", &cfg.visuals.esp.Skeleton)
@@ -432,6 +433,7 @@ void gui::Render() noexcept
 					.Checkbox("Snap Lines", &cfg.visuals.esp.Lines)
 					.Checkbox("Display Name", &cfg.visuals.esp.Name)
 					.Checkbox("Show Dormant", &cfg.visuals.esp.Dormant, "Show players that are not updated by the server. (kinda useless)")
+					.Checkbox("Weapon ESP", &cfg.visuals.esp.WeaponESP, "Show dropped weapon names on the ground")
 					.Checkbox("Show Friendly", &cfg.visuals.Friendly)
 					.End();
 
@@ -472,17 +474,79 @@ void gui::Render() noexcept
 					})
 					.End();
 
-				menu::RightGroup("Chams", 6)
+				menu::RightGroup("Chams", 7)
 					.Checkbox("Enabled##Chams", &cfg.visuals.chams.Enabled)
-					.SameLine().ColorPicker("##chamsEnemyVis", cfg.visuals.chams.EnemyVisibleColor, true)
-					.SameLine().ColorPicker("##chamsEnemyInvis", cfg.visuals.chams.EnemyInvisibleColor, true)
 					.Checkbox("Through Walls", &cfg.visuals.chams.ThroughWalls)
 					.Combo("Material##Chams", &cfg.visuals.chams.Style,
 						"Flat\0Shaded\0Chrome\0Glow\0Pearlescent\0Gold\0Crystal\0Obsidian\0")
 					.Checkbox("Teammates##Chams", &cfg.visuals.chams.Teammates)
-					.SameLine().ColorPicker("##chamsFriendly", cfg.visuals.chams.FriendlyVisibleColor, true)
 					.Checkbox("Local Player##Chams", &cfg.visuals.chams.LocalPlayer)
-					.SameLine().ColorPicker("##chamsLocal", cfg.visuals.chams.LocalVisibleColor, true)
+					.Text("Colors")
+					.GearPopup("chamsColors", [](auto& s) {
+						s.ColorPicker("Enemy Visible", cfg.visuals.chams.EnemyVisibleColor, true)
+						 .ColorPicker("Enemy Hidden", cfg.visuals.chams.EnemyInvisibleColor, true)
+						 .ColorPicker("Teammate", cfg.visuals.chams.FriendlyVisibleColor, true)
+						 .ColorPicker("Local Player", cfg.visuals.chams.LocalVisibleColor, true)
+						 .Slider("Visible Opacity", &cfg.visuals.chams.VisibleAlpha, 0.0f, 1.0f)
+						 .Slider("Hidden Opacity", &cfg.visuals.chams.InvisibleAlpha, 0.0f, 1.0f);
+					})
+					.End();
+
+				menu::LeftGroup("Skin Changer", 7)
+					.Checkbox("Enabled##Skins", &cfg.visuals.skinChanger.Enabled)
+					.Custom([]() {
+						// Knife selector
+						static std::string knifeCombo;
+						if (knifeCombo.empty()) {
+							for (auto& k : skinchanger::GetKnifeModels())
+								{ knifeCombo += k.name; knifeCombo += '\0'; }
+							knifeCombo += '\0';
+						}
+						ImGui::SetNextItemWidth(-FLT_MIN);
+						ImGui::Combo("##knife_sc", &cfg.visuals.skinChanger.KnifeModel, knifeCombo.c_str());
+					})
+					.Custom([]() {
+						// Skin selector — popular skins combo + custom ID input
+						static std::string skinCombo;
+						static int selectedSkinIdx = 0;
+						if (skinCombo.empty()) {
+							auto& skins = skinchanger::GetPopularSkins();
+							for (auto& s : skins)
+								{ skinCombo += s.name; skinCombo += '\0'; }
+							skinCombo += "Custom ID\0\0";
+						}
+						// Find current selection in popular skins list
+						auto& skins = skinchanger::GetPopularSkins();
+						selectedSkinIdx = (int)skins.size(); // default to "Custom ID"
+						for (int i = 0; i < (int)skins.size(); i++) {
+							if (skins[i].paintKit == cfg.visuals.skinChanger.SkinPaintKit) {
+								selectedSkinIdx = i;
+								break;
+							}
+						}
+						ImGui::SetNextItemWidth(-FLT_MIN);
+						if (ImGui::Combo("##skin_sc", &selectedSkinIdx, skinCombo.c_str())) {
+							if (selectedSkinIdx < (int)skins.size())
+								cfg.visuals.skinChanger.SkinPaintKit = skins[selectedSkinIdx].paintKit;
+						}
+						// Show custom ID input when "Custom ID" is selected
+						if (selectedSkinIdx >= (int)skins.size()) {
+							ImGui::SetNextItemWidth(-FLT_MIN);
+							ImGui::InputInt("##customPK", &cfg.visuals.skinChanger.SkinPaintKit, 1, 10);
+						}
+					})
+					.Slider("Wear", &cfg.visuals.skinChanger.SkinWear, 0.0f, 1.0f, "%.4f",
+						"0.0 = Factory New, 1.0 = Battle-Scarred")
+					.GearPopup("skinExtras", [](auto& s) {
+						s.SliderInt("Seed", &cfg.visuals.skinChanger.SkinSeed, 0, 1000, "%d",
+							"Pattern seed")
+						 .SliderInt("StatTrak", &cfg.visuals.skinChanger.StatTrak, -1, 99999, "%d",
+							"-1 = disabled");
+					})
+					.Button("Apply", []{
+						skinchanger::ForceUpdate();
+						Notify::Info("Applying skin changes...");
+					})
 					.End();
 
 				menu::LeftGroup("Hitmarker", 5)
@@ -527,7 +591,9 @@ void gui::Render() noexcept
 					.Checkbox("Air Duck", &cfg.misc.movement.AirDuck)
 					.Checkbox("Auto-Stop", &cfg.misc.movement.AutoStop)
 					.GearPopup("autostop", [](auto& s) {
-						s.Combo("Trigger", &cfg.misc.movement.AutoStopMode, "All Shots\0Manual Only\0Auto-Shoot Only\0");
+						s.Combo("Trigger", &cfg.misc.movement.AutoStopMode, "All Shots\0Manual Only\0Auto-Shoot Only\0")
+						 .Slider("Speed", &cfg.misc.movement.AutoStopSpeed, 1.0f, 10.0f, "%.1f",
+							"Deceleration force. Higher = faster stop");
 					})
 					.End();
 
@@ -541,13 +607,15 @@ void gui::Render() noexcept
 					})
 					.End();
 
-				menu::LeftGroup("Player", 2)
+				menu::LeftGroup("Player", 4)
 					.Checkbox("Radar Hack", &cfg.misc.RadarHack, "Show all enemies on the in-game radar")
 					.Checkbox("Anti-Flash", &cfg.misc.AntiFlash, "Reduce or remove flashbang effect")
 					.GearPopup("antiflash", [](auto& s) {
 						s.Slider("Max Alpha", &cfg.misc.FlashMaxAlpha, 0.f, 255.f, "%.0f",
 							"0 = fully remove, 255 = no change");
 					})
+					.Checkbox("Spectator List", &cfg.misc.SpectatorList, "Show who is spectating you")
+					.Checkbox("Keybind List", &cfg.misc.KeybindList, "Show active keybinds on screen")
 					.End();
 
 				menu::EndRow();

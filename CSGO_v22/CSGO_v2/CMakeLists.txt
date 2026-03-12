@@ -92,6 +92,7 @@ target_include_directories(CSGO_v2 PRIVATE
     ext/MD5
     ext/AnimationLib
     ext/ImGuiNotify/example/src
+    ext/Fonts
 )
 
 target_include_directories(CSGO_v2 SYSTEM PRIVATE

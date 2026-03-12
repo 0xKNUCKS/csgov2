@@ -15,6 +15,8 @@
 #include "Modules/Visuals/SkinChanger.h"
 #include "build_timestamp.h"
 #include "lib/Notify/Notify.h"
+#include "font_awesome_5.h"
+#include "lib/Menu/Menu.h"
 
 #ifdef _DEBUG
 #include "lib/Error/AuditLog.h"
@@ -302,6 +304,10 @@ void gui::Render() noexcept
 	if (!gui::bOpen && !isAnimating)
 		return;
 
+	constexpr float kTitleBarHeight = 36.0f;
+	constexpr float kAccentLineHeight = 2.0f;
+	const ImU32 kAccentColor = IM_COL32(71, 143, 255, 255);  // #478FFF
+
 	auto xWindowPadding = ImGui::GetStyle().WindowPadding.x * 3;
 	auto xWindowSize = (menu::kColumnWidth * 2) + xWindowPadding;
 	auto windowSize = ImVec2(xWindowSize, xWindowSize * 1.25f);
@@ -309,32 +315,26 @@ void gui::Render() noexcept
 	static auto windowPos = ImVec2((ImGui::GetIO().DisplaySize - windowSize) / 2);
 	ImGui::SetNextWindowSize(animatedSize);
 
-	ImGui::SetNextWindowPos(windowPos, ImGuiCond_Once); // Only once
+	ImGui::SetNextWindowPos(windowPos, ImGuiCond_Once);
 
 	float savedAlpha = ImGui::GetStyle().Alpha;
 	ImGui::GetStyle().Alpha = windowFade.getValue();
 
-	std::string playerName = LocalPlayer.Get() ? LocalPlayer->getName() : "Player";
-	ImGui::Begin(std::format("cockbalt.solutions - Welcome {}!", playerName).c_str(), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(ImGui::GetStyle().WindowPadding.x, 0.0f));
+	ImGui::Begin("##MainMenu", nullptr,
+		ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
+	ImGui::PopStyleVar();
 	{
-		// if the windowPos is updating
+		// --- Window position tracking (animation support) ---
 		bool isUpdating = false;
 
-		// if the menu is closed, and its not animating
 		if (!gui::bOpen && animPopUp.getValue() < 0.2f) {
-			// reset the position back after changing it for animation
 			ImGui::SetWindowPos(windowPos);
 			windowPos = ImGui::GetWindowPos();
 			isUpdating = true;
 		}
-		else if (animPopUp.getValue() == 1.f) { // if the menu is up, and the animation is also finished
-			windowPos = ImGui::GetWindowPos();
-			isUpdating = true;
-		}
-
-		// if the menu is being dragged, also update the position
-		if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem)
-			&& ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+		else if (animPopUp.getValue() == 1.f) {
 			windowPos = ImGui::GetWindowPos();
 			isUpdating = true;
 		}
@@ -344,6 +344,91 @@ void gui::Render() noexcept
 			ImGui::SetWindowPos(windowPos + (windowSize - animatedSize) / 2);
 		}
 
+		// --- Custom Title Bar ---
+		ImVec2 winPos = ImGui::GetWindowPos();
+		ImVec2 winSize = ImGui::GetWindowSize();
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+
+		// Accent line at very top
+		dl->AddRectFilled(winPos, ImVec2(winPos.x + winSize.x, winPos.y + kAccentLineHeight),
+			kAccentColor, ImGui::GetStyle().WindowRounding, ImDrawFlags_RoundCornersTop);
+
+		// Title bar background (slightly darker than window bg)
+		ImVec2 titleMin = ImVec2(winPos.x, winPos.y + kAccentLineHeight);
+		ImVec2 titleMax = ImVec2(winPos.x + winSize.x, winPos.y + kTitleBarHeight);
+		dl->AddRectFilled(titleMin, titleMax, IM_COL32(18, 24, 28, 255));
+
+		// Separator line below title bar
+		dl->AddLine(ImVec2(winPos.x, titleMax.y), ImVec2(winPos.x + winSize.x, titleMax.y),
+			IM_COL32(20, 26, 31, 255));
+
+		// Left: Shield icon + title
+		{
+			float iconX = winPos.x + 12.0f;
+			float textY = winPos.y + kAccentLineHeight + (kTitleBarHeight - kAccentLineHeight) * 0.5f;
+
+			if (menu::g_fontMedium) ImGui::PushFont(menu::g_fontMedium);
+
+			float fontH = ImGui::GetFontSize();
+			float baseY = textY - fontH * 0.5f;
+
+			// Icon
+			dl->AddText(ImVec2(iconX, baseY), kAccentColor, ICON_FA_SHIELD_ALT);
+			float iconW = ImGui::CalcTextSize(ICON_FA_SHIELD_ALT).x;
+
+			// Title text
+			std::string playerName = LocalPlayer.Get() ? LocalPlayer->getName() : "Player";
+			std::string title = std::format("cockbalt.solutions  -  {}", playerName);
+			dl->AddText(ImVec2(iconX + iconW + 8.0f, baseY),
+				IM_COL32(242, 245, 250, 255), title.c_str());
+
+			if (menu::g_fontMedium) ImGui::PopFont();
+		}
+
+		// Right: Close button
+		{
+			float btnSize = 20.0f;
+			float btnX = winPos.x + winSize.x - btnSize - 10.0f;
+			float btnY = winPos.y + kAccentLineHeight + (kTitleBarHeight - kAccentLineHeight - btnSize) * 0.5f;
+			ImVec2 btnMin(btnX, btnY);
+			ImVec2 btnMax(btnX + btnSize, btnY + btnSize);
+
+			ImVec2 mousePos = ImGui::GetIO().MousePos;
+			bool hovered = mousePos.x >= btnMin.x && mousePos.x <= btnMax.x &&
+			               mousePos.y >= btnMin.y && mousePos.y <= btnMax.y;
+
+			if (hovered)
+				dl->AddRectFilled(btnMin, btnMax, IM_COL32(255, 80, 80, 60), 4.0f);
+
+			float iconW = ImGui::CalcTextSize(ICON_FA_TIMES).x;
+			float iconH = ImGui::GetFontSize();
+			dl->AddText(ImVec2(btnX + (btnSize - iconW) * 0.5f, btnY + (btnSize - iconH) * 0.5f),
+				hovered ? IM_COL32(255, 100, 100, 255) : IM_COL32(150, 160, 170, 255),
+				ICON_FA_TIMES);
+
+			if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+				gui::bOpen = false;
+		}
+
+		// Title bar drag handling
+		{
+			ImVec2 dragMin = winPos;
+			ImVec2 dragMax = ImVec2(winPos.x + winSize.x - 35.0f, winPos.y + kTitleBarHeight);
+			ImVec2 mousePos = ImGui::GetIO().MousePos;
+
+			bool inTitleBar = mousePos.x >= dragMin.x && mousePos.x <= dragMax.x &&
+			                  mousePos.y >= dragMin.y && mousePos.y <= dragMax.y;
+
+			if (inTitleBar && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+			{
+				ImVec2 delta = ImGui::GetIO().MouseDelta;
+				windowPos.x += delta.x;
+				windowPos.y += delta.y;
+				ImGui::SetWindowPos(windowPos);
+			}
+		}
+
+		// Build timestamp below window
 		{
 			static Animation txtFade(0.25f, Linear, Linear);
 			txtFade.Update();
@@ -351,8 +436,15 @@ void gui::Render() noexcept
 
 			auto txt = std::format("(Build: {})", BUILD_TIMESTAMP);
 			ImVec2 txtSize = ImGui::CalcTextSize(txt.c_str());
-			Render::OutLinedText(txt.c_str(), (ImGui::GetWindowPos().x + ImGui::GetWindowSize().x - (txtSize.x)), (ImGui::GetWindowPos().y +ImGui::GetWindowSize().y + 3), ImGui::GetForegroundDrawList(), ImColor(1.f, 1.f, 1.f, txtFade.getValue()));
+			Render::OutLinedText(txt.c_str(),
+				(winPos.x + winSize.x - txtSize.x),
+				(winPos.y + winSize.y + 3),
+				ImGui::GetForegroundDrawList(),
+				ImColor(1.f, 1.f, 1.f, txtFade.getValue()));
 		}
+
+		// Move cursor below title bar for content
+		ImGui::SetCursorPosY(kTitleBarHeight + ImGui::GetStyle().WindowPadding.y);
 
 		if (ImGui::BeginTabBar("##TabsBar"))
 		{

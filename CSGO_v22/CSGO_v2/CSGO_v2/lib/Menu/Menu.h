@@ -14,6 +14,10 @@ namespace menu
 	// --- Constants ---
 	inline constexpr float kColumnWidth = 270.f;
 
+	// --- Fonts ---
+	inline ImFont* g_fontRegular = nullptr;  // Inter Regular 14px (body text)
+	inline ImFont* g_fontMedium = nullptr;   // Inter Medium 14px (headers, labels)
+
 	// --- Theme ---
 	void SetupTheme();
 

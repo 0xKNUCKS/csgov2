@@ -3,6 +3,8 @@
 #include "imgui_internal.h"
 #include "imgui_notify.h"
 #include "font_awesome_5.h"
+#include "inter_regular_data.h"
+#include "inter_medium_data.h"
 #include <cmath>
 
 // =========================================================
@@ -622,8 +624,23 @@ void menu::EndOutlineGroup()
 
 void menu::SetupTheme()
 {
-	ImGui::GetIO().Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Verdana.ttf", 13.0f);
-	ImGui::MergeIconsWithLatestFont(13.0f, false);
+	// --- Font Setup: Inter (embedded) + FontAwesome 5 icons ---
+	ImFontConfig fontCfg;
+	fontCfg.FontDataOwnedByAtlas = false;  // Static data, don't free()
+	fontCfg.OversampleH = 2;               // Better horizontal anti-aliasing
+
+	// Inter Regular — body text, widgets
+	g_fontRegular = ImGui::GetIO().Fonts->AddFontFromMemoryTTF(
+		(void*)inter_regular_data, inter_regular_size, 14.0f, &fontCfg);
+	ImGui::MergeIconsWithLatestFont(14.0f, false);
+
+	// Inter Medium — group headers, labels, title bar
+	ImFontConfig medCfg;
+	medCfg.FontDataOwnedByAtlas = false;
+	medCfg.OversampleH = 2;
+	g_fontMedium = ImGui::GetIO().Fonts->AddFontFromMemoryTTF(
+		(void*)inter_medium_data, inter_medium_size, 14.0f, &medCfg);
+	ImGui::MergeIconsWithLatestFont(14.0f, false);
 	ImGui::GetStyle().FrameRounding = 4.0f;
 	ImGui::GetStyle().GrabRounding = 4.0f;
 	ImGui::GetStyle().ChildRounding = 6.f;

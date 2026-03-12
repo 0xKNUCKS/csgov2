@@ -12,7 +12,10 @@ struct Hotkey;
 namespace menu
 {
 	// --- Constants ---
-	inline constexpr float kColumnWidth = 270.f;
+	inline constexpr float kSidebarWidth = 160.f;
+	inline constexpr float kColumnWidth = 220.f;
+	inline constexpr float kTitleBarHeight = 36.f;
+	inline constexpr float kAccentLineHeight = 2.f;
 
 	// --- Fonts ---
 	inline ImFont* g_fontRegular = nullptr;  // Inter Regular 14px (body text)

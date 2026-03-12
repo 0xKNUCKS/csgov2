@@ -304,13 +304,12 @@ void gui::Render() noexcept
 	if (!gui::bOpen && !isAnimating)
 		return;
 
-	constexpr float kTitleBarHeight = 36.0f;
-	constexpr float kAccentLineHeight = 2.0f;
 	const ImU32 kAccentColor = IM_COL32(71, 143, 255, 255);  // #478FFF
 
-	auto xWindowPadding = ImGui::GetStyle().WindowPadding.x * 3;
-	auto xWindowSize = (menu::kColumnWidth * 2) + xWindowPadding;
-	auto windowSize = ImVec2(xWindowSize, xWindowSize * 1.25f);
+	// Window sizing: sidebar + spacing + two content columns + padding
+	float contentW = menu::kColumnWidth * 2 + ImGui::GetStyle().ItemSpacing.x;
+	float totalW = menu::kSidebarWidth + 1.0f + contentW + ImGui::GetStyle().WindowPadding.x * 2;
+	auto windowSize = ImVec2(totalW, 580.0f);
 	auto animatedSize = windowSize * animPopUp.getValue();
 	static auto windowPos = ImVec2((ImGui::GetIO().DisplaySize - windowSize) / 2);
 	ImGui::SetNextWindowSize(animatedSize);
@@ -350,12 +349,12 @@ void gui::Render() noexcept
 		ImDrawList* dl = ImGui::GetWindowDrawList();
 
 		// Accent line at very top
-		dl->AddRectFilled(winPos, ImVec2(winPos.x + winSize.x, winPos.y + kAccentLineHeight),
+		dl->AddRectFilled(winPos, ImVec2(winPos.x + winSize.x, winPos.y + menu::kAccentLineHeight),
 			kAccentColor, ImGui::GetStyle().WindowRounding, ImDrawFlags_RoundCornersTop);
 
 		// Title bar background (slightly darker than window bg)
-		ImVec2 titleMin = ImVec2(winPos.x, winPos.y + kAccentLineHeight);
-		ImVec2 titleMax = ImVec2(winPos.x + winSize.x, winPos.y + kTitleBarHeight);
+		ImVec2 titleMin = ImVec2(winPos.x, winPos.y + menu::kAccentLineHeight);
+		ImVec2 titleMax = ImVec2(winPos.x + winSize.x, winPos.y + menu::kTitleBarHeight);
 		dl->AddRectFilled(titleMin, titleMax, IM_COL32(15, 19, 23, 255));
 
 		// Separator line below title bar
@@ -365,7 +364,7 @@ void gui::Render() noexcept
 		// Left: Shield icon + title
 		{
 			float iconX = winPos.x + 12.0f;
-			float textY = winPos.y + kAccentLineHeight + (kTitleBarHeight - kAccentLineHeight) * 0.5f;
+			float textY = winPos.y + menu::kAccentLineHeight + (menu::kTitleBarHeight - menu::kAccentLineHeight) * 0.5f;
 
 			if (menu::g_fontMedium) ImGui::PushFont(menu::g_fontMedium);
 
@@ -389,7 +388,7 @@ void gui::Render() noexcept
 		{
 			float btnSize = 20.0f;
 			float btnX = winPos.x + winSize.x - btnSize - 10.0f;
-			float btnY = winPos.y + kAccentLineHeight + (kTitleBarHeight - kAccentLineHeight - btnSize) * 0.5f;
+			float btnY = winPos.y + menu::kAccentLineHeight + (menu::kTitleBarHeight - menu::kAccentLineHeight - btnSize) * 0.5f;
 			ImVec2 btnMin(btnX, btnY);
 			ImVec2 btnMax(btnX + btnSize, btnY + btnSize);
 
@@ -413,7 +412,7 @@ void gui::Render() noexcept
 		// Title bar drag handling
 		{
 			ImVec2 dragMin = winPos;
-			ImVec2 dragMax = ImVec2(winPos.x + winSize.x - 35.0f, winPos.y + kTitleBarHeight);
+			ImVec2 dragMax = ImVec2(winPos.x + winSize.x - 35.0f, winPos.y + menu::kTitleBarHeight);
 			ImVec2 mousePos = ImGui::GetIO().MousePos;
 
 			bool inTitleBar = mousePos.x >= dragMin.x && mousePos.x <= dragMax.x &&
@@ -443,397 +442,447 @@ void gui::Render() noexcept
 				ImColor(1.f, 1.f, 1.f, txtFade.getValue()));
 		}
 
-		// Content area — child window below title bar so content never overlaps it
-		ImGui::SetCursorPosY(kTitleBarHeight);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(ImGui::GetStyle().WindowPadding.x, ImGui::GetStyle().WindowPadding.y));
-		ImGui::BeginChild("##ContentArea", ImVec2(0, 0), false, ImGuiWindowFlags_NoScrollbar);
+		// ============================================================
+		// SIDEBAR + CONTENT LAYOUT
+		// ============================================================
+		static int activeTab = 0;
 
-		if (ImGui::BeginTabBar("##TabsBar"))
+		// Sidebar tab definitions
+		struct TabDef { const char* icon; const char* label; };
+		static constexpr int kTabCount = 4;
+		#ifdef _DEBUG
+		static constexpr int kTabCountDebug = 5;
+		#else
+		static constexpr int kTabCountDebug = 4;
+		#endif
+		const TabDef tabs[] = {
+			{ ICON_FA_CROSSHAIRS, "Aimbot" },
+			{ ICON_FA_EYE,        "Visuals" },
+			{ ICON_FA_RUNNING,    "Misc" },
+			{ ICON_FA_COG,        "Settings" },
+		#ifdef _DEBUG
+			{ ICON_FA_CLIPBOARD_LIST, "Audit Log" },
+		#endif
+		};
+
+		ImGui::SetCursorPosY(menu::kTitleBarHeight);
+
+		// --- Sidebar child window ---
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32(15, 19, 23, 255)); // Darker sidebar bg
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 8));
+		ImGui::BeginChild("##Sidebar", ImVec2(menu::kSidebarWidth, 0), false,
+			ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 		{
-			if (ImGui::BeginTabItem("Aim"))
+			ImDrawList* sbDl = ImGui::GetWindowDrawList();
+			ImVec2 sbPos = ImGui::GetWindowPos();
+
+			// Vertical separator line on right edge
+			sbDl->AddLine(
+				ImVec2(sbPos.x + menu::kSidebarWidth - 1, sbPos.y),
+				ImVec2(sbPos.x + menu::kSidebarWidth - 1, sbPos.y + ImGui::GetWindowHeight()),
+				IM_COL32(30, 36, 42, 255));
+
+			for (int i = 0; i < kTabCountDebug; i++)
 			{
-				// Left: General(8) + Auto Shoot(3) = 11
-				// Right: Target(3) + Visuals(3) + RCS(6) = 12
-				menu::LeftGroup("General", 8)
-					.Hotkey(cfg.aimbot.Key)
-					.Checkbox("Enabled", &cfg.aimbot.Enabled)
-					.Checkbox("Silent", &cfg.aimbot.Silent)
-					.Slider("FOV", &cfg.aimbot.FOV, 0, 180, "%.1f")
-					.Slider("Smooth", &cfg.aimbot.Smooth, 1, 10.0f, cfg.aimbot.Smooth > 1 ? "%.2f" : "None")
-					.Slider("Smooth X", &cfg.aimbot.SmoothX, 0.1f, 3.0f, "%.2f", "Pitch smooth multiplier")
-					.Slider("Smooth Y", &cfg.aimbot.SmoothY, 0.1f, 3.0f, "%.2f", "Yaw smooth multiplier")
-					.Combo("Aim Bone", &cfg.aimbot.AimBone, "Head\0Neck\0Chest\0Stomach\0")
-					.End();
+				ImGui::PushID(i);
 
-				menu::RightGroup("Target", 3)
-					.Checkbox("Visibility Check", &cfg.aimbot.VisibilityCheck)
-					.Checkbox("Friendly Fire", &cfg.aimbot.FriendlyFire)
-					.SliderInt("Max Players Scan", &cfg.aimbot.MaxPlayersInFov, 2, 20, "%d",
-						"Max players scanned inside aim FOV")
-					.End();
+				bool isActive = (activeTab == i);
+				float btnH = 38.0f;
+				ImVec2 btnPos = ImGui::GetCursorScreenPos();
 
-				menu::LeftGroup("Auto Shoot", 3)
-					.Checkbox("Enabled##AutoShoot", &cfg.aimbot.autoShoot.Enabled)
-					.Slider("FOV##ASFOV", &cfg.aimbot.autoShoot.FOV, 0.5f, 180.0f, "%.1f",
-						"How close target must be to auto-fire")
-					.SliderInt("Delay (ms)", &cfg.aimbot.autoShoot.DelayMs, 0, 500, "%d",
-						"Delay between auto shots (0 = weapon fire rate)")
-					.End();
+				// Active indicator — accent bar on left edge
+				if (isActive) {
+					sbDl->AddRectFilled(
+						ImVec2(btnPos.x, btnPos.y),
+						ImVec2(btnPos.x + 3.0f, btnPos.y + btnH),
+						kAccentColor, 1.5f);
+				}
 
-				menu::LeftGroup("Backtrack", 3)
-					.Checkbox("Enabled##Backtrack", &cfg.aimbot.backtrack.Enabled)
-					.SliderInt("Time Limit (ms)", &cfg.aimbot.backtrack.TimeLimit, 50, 200, "%d",
-						"Max backtrack window in milliseconds")
-					.Checkbox("Draw Ticks", &cfg.aimbot.backtrack.DrawTicks)
-					.SameLine().ColorPicker("##btCol", cfg.aimbot.backtrack.TickColor, true)
-					.End();
+				// Button background on hover/active
+				ImU32 btnBg = isActive ? IM_COL32(71, 143, 255, 25) : IM_COL32(0, 0, 0, 0);
 
-				menu::RightGroup("Visuals##AimVis", 3)
-					.Checkbox("FOV Circle", &cfg.aimbot.DrawFov)
-					.SameLine().ColorPicker("##fovCol", cfg.aimbot.FovColor, true)
-					.Checkbox("Auto Shoot FOV", &cfg.aimbot.DrawAutoShootFov)
-					.SameLine().ColorPicker("##asCol", cfg.aimbot.AutoShootFovColor, true)
-					.Checkbox("Target Circle", &cfg.aimbot.DrawTarget)
-					.SameLine().ColorPicker("##targCol", cfg.aimbot.TargetColor, true)
-					.End();
+				ImGui::PushStyleColor(ImGuiCol_Button, btnBg);
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(71, 143, 255, 40));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(71, 143, 255, 60));
+				ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
+				ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
 
-				menu::RightGroup("Recoil Control", 7)
-					.Checkbox("Enabled##RCS", &cfg.aimbot.RCS)
-					.Checkbox("Standalone", &cfg.aimbot.StandaloneRCS,
-						"RCS works even without an aimbot target")
-					.Checkbox("Silent##RCS", &cfg.aimbot.SilentRCS,
-						"Server-side only — no view movement")
-					.Slider("Pitch (X)", &cfg.aimbot.RCSAmountX, 0.0f, 2.0f, "%.2f",
-						"Vertical recoil compensation (2.0 = full)")
-					.Slider("Yaw (Y)", &cfg.aimbot.RCSAmountY, 0.0f, 2.0f, "%.2f",
-						"Horizontal recoil compensation (2.0 = full)")
-					.SliderInt("Start Bullet", &cfg.aimbot.RCSStartBullet, 1, 10, "%d",
-						"Start compensating after N shots")
-					.Slider("Smoothing", &cfg.aimbot.RCSSmooth, 1.0f, 10.0f, "%.1f",
-						"How smoothly to apply RCS (1 = instant)")
-					.End();
+				// Icon + text button — full sidebar width
+				std::string btnLabel = std::format("  {}   {}", tabs[i].icon, tabs[i].label);
+				if (ImGui::Button(btnLabel.c_str(), ImVec2(menu::kSidebarWidth - 1, btnH)))
+					activeTab = i;
 
-				menu::EndRow();
-				ImGui::EndTabItem();
+				ImGui::PopStyleVar(2);
+				ImGui::PopStyleColor(3);
+				ImGui::PopID();
 			}
+		}
+		ImGui::EndChild();
+		ImGui::PopStyleVar();
+		ImGui::PopStyleColor();
 
-			if (ImGui::BeginTabItem("Visuals"))
-			{
-				menu::LeftGroup("Player", 9)
-					.Checkbox("Enabled", &cfg.visuals.Enabled)
-					.CheckboxCombo("Bounding Box", &cfg.visuals.esp.BoundingBox, "##ESPboxType", &cfg.visuals.esp.boxType, "Outlined\0Filled\0Box3d\0Corners\0")
-					.Checkbox("Show Skeleton", &cfg.visuals.esp.Skeleton)
-					.Checkbox("Health Bar", &cfg.visuals.esp.HealthBar)
-					.Checkbox("Snap Lines", &cfg.visuals.esp.Lines)
-					.Checkbox("Display Name", &cfg.visuals.esp.Name)
-					.Checkbox("Show Dormant", &cfg.visuals.esp.Dormant, "Show players that are not updated by the server. (kinda useless)")
-					.Checkbox("Weapon ESP", &cfg.visuals.esp.WeaponESP, "Show dropped weapon names on the ground")
-					.Checkbox("Show Friendly", &cfg.visuals.Friendly)
-					.End();
+		// --- Content area (right of sidebar) ---
+		ImGui::SameLine(0, 0);  // No gap — separator line handles visual separation
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
+		ImGui::BeginChild("##Content", ImVec2(0, 0), false, ImGuiWindowFlags_NoScrollbar);
 
-				menu::RightGroup("Glow ESP", 7)
-					.Checkbox("Enabled##Glow", &cfg.visuals.glow.Enabled)
-					.Checkbox("Teammates##Glow", &cfg.visuals.glow.Friendly)
-					.Checkbox("Local Player##Glow", &cfg.visuals.glow.LocalPlayer)
-					.Text("Colors")
-					.GearPopup("glowColors", [](auto& s) {
-						s.Checkbox("Sync with Chams", &cfg.visuals.glow.SyncWithChams,
-							"Use chams colors and show glow on visible players too");
-						s.ColorPicker("Enemy Color", cfg.visuals.glow.EnemyColor)
-						 .ColorPicker("Teammate Color", cfg.visuals.glow.FriendlyColor)
-						 .ColorPicker("Local Player Color", cfg.visuals.glow.LocalColor);
-					})
-					.Slider("Intensity", &cfg.visuals.glow.Intensity, 0.1f, 1.0f, "%.2f",
-						"Glow brightness / opacity")
-					.Combo("Style##Glow", &cfg.visuals.glow.Style, "Default\0Pulse\0Outline\0Outline Pulse\0")
-					.End();
+		// Each tab's content — only render the active one
+		if (activeTab == 0) // Aimbot
+		{
+			menu::LeftGroup("General", 8)
+				.Hotkey(cfg.aimbot.Key)
+				.Checkbox("Enabled", &cfg.aimbot.Enabled)
+				.Checkbox("Silent", &cfg.aimbot.Silent)
+				.Slider("FOV", &cfg.aimbot.FOV, 0, 180, "%.1f")
+				.Slider("Smooth", &cfg.aimbot.Smooth, 1, 10.0f, cfg.aimbot.Smooth > 1 ? "%.2f" : "None")
+				.Slider("Smooth X", &cfg.aimbot.SmoothX, 0.1f, 3.0f, "%.2f", "Pitch smooth multiplier")
+				.Slider("Smooth Y", &cfg.aimbot.SmoothY, 0.1f, 3.0f, "%.2f", "Yaw smooth multiplier")
+				.Combo("Aim Bone", &cfg.aimbot.AimBone, "Head\0Neck\0Chest\0Stomach\0")
+				.End();
 
-				menu::RightGroup("Misc", 13)
-					.Checkbox("Third Person", &cfg.visuals.misc.ThirdPerson)
-					.Hotkey(cfg.visuals.misc.ThirdPersonKey)
-					.Slider("Distance", &cfg.visuals.misc.TPDistance, 0.1f, 5.0f)
-					.Slider("Aspect Ratio", &cfg.visuals.misc.AspectRatio, 0.0f, 3.0f)
-					.Slider("Cam Fov", &cfg.visuals.misc.camFOV, 40.f, 160.0f)
-					.Checkbox("Steady Cam", &cfg.visuals.misc.SteadyCam, "Terminates the shaking effects in your Camera.")
-					.Checkbox("No Zoom", &cfg.visuals.misc.NoZoom, "Eliminates the zoom effect when using Scoping.")
-					.Checkbox("Night Mode", &cfg.visuals.misc.NightMode, "Adjust map brightness")
-					.GearPopup("nightmode", [](auto& s) {
-						s.Slider("Brightness", &cfg.visuals.misc.NightModeBrightness, 0.05f, 2.0f, "%.2f",
-							"Lower = darker, 1.0 = normal, higher = brighter");
-					})
-					.Space()
-					.SubSection("View Model", [](auto& s) {
-						s.Slider("FOV", &cfg.visuals.viewmodel.ViewModelFOV, 60.f, 140.0f)
-						 .Checkbox("Always Draw", &cfg.visuals.viewmodel.AlwaysDraw);
-					})
-					.End();
+			menu::RightGroup("Target", 3)
+				.Checkbox("Visibility Check", &cfg.aimbot.VisibilityCheck)
+				.Checkbox("Friendly Fire", &cfg.aimbot.FriendlyFire)
+				.SliderInt("Max Players Scan", &cfg.aimbot.MaxPlayersInFov, 2, 20, "%d",
+					"Max players scanned inside aim FOV")
+				.End();
 
-				menu::RightGroup("Chams", 7)
-					.Checkbox("Enabled##Chams", &cfg.visuals.chams.Enabled)
-					.Checkbox("Through Walls", &cfg.visuals.chams.ThroughWalls)
-					.Combo("Material##Chams", &cfg.visuals.chams.Style,
-						"Flat\0Shaded\0Chrome\0Glow\0Pearlescent\0Gold\0Crystal\0Obsidian\0")
-					.Checkbox("Teammates##Chams", &cfg.visuals.chams.Teammates)
-					.Checkbox("Local Player##Chams", &cfg.visuals.chams.LocalPlayer)
-					.Text("Colors")
-					.GearPopup("chamsColors", [](auto& s) {
-						s.ColorPicker("Enemy Visible", cfg.visuals.chams.EnemyVisibleColor, true)
-						 .ColorPicker("Enemy Hidden", cfg.visuals.chams.EnemyInvisibleColor, true)
-						 .ColorPicker("Teammate", cfg.visuals.chams.FriendlyVisibleColor, true)
-						 .ColorPicker("Local Player", cfg.visuals.chams.LocalVisibleColor, true)
-						 .Slider("Visible Opacity", &cfg.visuals.chams.VisibleAlpha, 0.0f, 1.0f)
-						 .Slider("Hidden Opacity", &cfg.visuals.chams.InvisibleAlpha, 0.0f, 1.0f);
-					})
-					.End();
+			menu::LeftGroup("Auto Shoot", 3)
+				.Checkbox("Enabled##AutoShoot", &cfg.aimbot.autoShoot.Enabled)
+				.Slider("FOV##ASFOV", &cfg.aimbot.autoShoot.FOV, 0.5f, 180.0f, "%.1f",
+					"How close target must be to auto-fire")
+				.SliderInt("Delay (ms)", &cfg.aimbot.autoShoot.DelayMs, 0, 500, "%d",
+					"Delay between auto shots (0 = weapon fire rate)")
+				.End();
 
-				menu::LeftGroup("Skin Changer", 7)
-					.Checkbox("Enabled##Skins", &cfg.visuals.skinChanger.Enabled)
-					.Custom([]() {
-						// Knife selector
-						static std::string knifeCombo;
-						if (knifeCombo.empty()) {
-							for (auto& k : skinchanger::GetKnifeModels())
-								{ knifeCombo += k.name; knifeCombo += '\0'; }
-							knifeCombo += '\0';
-						}
-						ImGui::SetNextItemWidth(-FLT_MIN);
-						ImGui::Combo("##knife_sc", &cfg.visuals.skinChanger.KnifeModel, knifeCombo.c_str());
-					})
-					.Custom([]() {
-						// Skin selector — popular skins combo + custom ID input
-						static std::string skinCombo;
-						static int selectedSkinIdx = 0;
-						if (skinCombo.empty()) {
-							auto& skins = skinchanger::GetPopularSkins();
-							for (auto& s : skins)
-								{ skinCombo += s.name; skinCombo += '\0'; }
-							skinCombo += "Custom ID\0\0";
-						}
-						// Find current selection in popular skins list
+			menu::LeftGroup("Backtrack", 3)
+				.Checkbox("Enabled##Backtrack", &cfg.aimbot.backtrack.Enabled)
+				.SliderInt("Time Limit (ms)", &cfg.aimbot.backtrack.TimeLimit, 50, 200, "%d",
+					"Max backtrack window in milliseconds")
+				.Checkbox("Draw Ticks", &cfg.aimbot.backtrack.DrawTicks)
+				.SameLine().ColorPicker("##btCol", cfg.aimbot.backtrack.TickColor, true)
+				.End();
+
+			menu::RightGroup("Visuals##AimVis", 3)
+				.Checkbox("FOV Circle", &cfg.aimbot.DrawFov)
+				.SameLine().ColorPicker("##fovCol", cfg.aimbot.FovColor, true)
+				.Checkbox("Auto Shoot FOV", &cfg.aimbot.DrawAutoShootFov)
+				.SameLine().ColorPicker("##asCol", cfg.aimbot.AutoShootFovColor, true)
+				.Checkbox("Target Circle", &cfg.aimbot.DrawTarget)
+				.SameLine().ColorPicker("##targCol", cfg.aimbot.TargetColor, true)
+				.End();
+
+			menu::RightGroup("Recoil Control", 7)
+				.Checkbox("Enabled##RCS", &cfg.aimbot.RCS)
+				.Checkbox("Standalone", &cfg.aimbot.StandaloneRCS,
+					"RCS works even without an aimbot target")
+				.Checkbox("Silent##RCS", &cfg.aimbot.SilentRCS,
+					"Server-side only — no view movement")
+				.Slider("Pitch (X)", &cfg.aimbot.RCSAmountX, 0.0f, 2.0f, "%.2f",
+					"Vertical recoil compensation (2.0 = full)")
+				.Slider("Yaw (Y)", &cfg.aimbot.RCSAmountY, 0.0f, 2.0f, "%.2f",
+					"Horizontal recoil compensation (2.0 = full)")
+				.SliderInt("Start Bullet", &cfg.aimbot.RCSStartBullet, 1, 10, "%d",
+					"Start compensating after N shots")
+				.Slider("Smoothing", &cfg.aimbot.RCSSmooth, 1.0f, 10.0f, "%.1f",
+					"How smoothly to apply RCS (1 = instant)")
+				.End();
+
+			menu::EndRow();
+		}
+		else if (activeTab == 1) // Visuals
+		{
+			menu::LeftGroup("Player", 9)
+				.Checkbox("Enabled", &cfg.visuals.Enabled)
+				.CheckboxCombo("Bounding Box", &cfg.visuals.esp.BoundingBox, "##ESPboxType", &cfg.visuals.esp.boxType, "Outlined\0Filled\0Box3d\0Corners\0")
+				.Checkbox("Show Skeleton", &cfg.visuals.esp.Skeleton)
+				.Checkbox("Health Bar", &cfg.visuals.esp.HealthBar)
+				.Checkbox("Snap Lines", &cfg.visuals.esp.Lines)
+				.Checkbox("Display Name", &cfg.visuals.esp.Name)
+				.Checkbox("Show Dormant", &cfg.visuals.esp.Dormant, "Show players that are not updated by the server. (kinda useless)")
+				.Checkbox("Weapon ESP", &cfg.visuals.esp.WeaponESP, "Show dropped weapon names on the ground")
+				.Checkbox("Show Friendly", &cfg.visuals.Friendly)
+				.End();
+
+			menu::RightGroup("Glow ESP", 7)
+				.Checkbox("Enabled##Glow", &cfg.visuals.glow.Enabled)
+				.Checkbox("Teammates##Glow", &cfg.visuals.glow.Friendly)
+				.Checkbox("Local Player##Glow", &cfg.visuals.glow.LocalPlayer)
+				.Text("Colors")
+				.GearPopup("glowColors", [](auto& s) {
+					s.Checkbox("Sync with Chams", &cfg.visuals.glow.SyncWithChams,
+						"Use chams colors and show glow on visible players too");
+					s.ColorPicker("Enemy Color", cfg.visuals.glow.EnemyColor)
+					 .ColorPicker("Teammate Color", cfg.visuals.glow.FriendlyColor)
+					 .ColorPicker("Local Player Color", cfg.visuals.glow.LocalColor);
+				})
+				.Slider("Intensity", &cfg.visuals.glow.Intensity, 0.1f, 1.0f, "%.2f",
+					"Glow brightness / opacity")
+				.Combo("Style##Glow", &cfg.visuals.glow.Style, "Default\0Pulse\0Outline\0Outline Pulse\0")
+				.End();
+
+			menu::RightGroup("Misc", 13)
+				.Checkbox("Third Person", &cfg.visuals.misc.ThirdPerson)
+				.Hotkey(cfg.visuals.misc.ThirdPersonKey)
+				.Slider("Distance", &cfg.visuals.misc.TPDistance, 0.1f, 5.0f)
+				.Slider("Aspect Ratio", &cfg.visuals.misc.AspectRatio, 0.0f, 3.0f)
+				.Slider("Cam Fov", &cfg.visuals.misc.camFOV, 40.f, 160.0f)
+				.Checkbox("Steady Cam", &cfg.visuals.misc.SteadyCam, "Terminates the shaking effects in your Camera.")
+				.Checkbox("No Zoom", &cfg.visuals.misc.NoZoom, "Eliminates the zoom effect when using Scoping.")
+				.Checkbox("Night Mode", &cfg.visuals.misc.NightMode, "Adjust map brightness")
+				.GearPopup("nightmode", [](auto& s) {
+					s.Slider("Brightness", &cfg.visuals.misc.NightModeBrightness, 0.05f, 2.0f, "%.2f",
+						"Lower = darker, 1.0 = normal, higher = brighter");
+				})
+				.Space()
+				.SubSection("View Model", [](auto& s) {
+					s.Slider("FOV", &cfg.visuals.viewmodel.ViewModelFOV, 60.f, 140.0f)
+					 .Checkbox("Always Draw", &cfg.visuals.viewmodel.AlwaysDraw);
+				})
+				.End();
+
+			menu::RightGroup("Chams", 7)
+				.Checkbox("Enabled##Chams", &cfg.visuals.chams.Enabled)
+				.Checkbox("Through Walls", &cfg.visuals.chams.ThroughWalls)
+				.Combo("Material##Chams", &cfg.visuals.chams.Style,
+					"Flat\0Shaded\0Chrome\0Glow\0Pearlescent\0Gold\0Crystal\0Obsidian\0")
+				.Checkbox("Teammates##Chams", &cfg.visuals.chams.Teammates)
+				.Checkbox("Local Player##Chams", &cfg.visuals.chams.LocalPlayer)
+				.Text("Colors")
+				.GearPopup("chamsColors", [](auto& s) {
+					s.ColorPicker("Enemy Visible", cfg.visuals.chams.EnemyVisibleColor, true)
+					 .ColorPicker("Enemy Hidden", cfg.visuals.chams.EnemyInvisibleColor, true)
+					 .ColorPicker("Teammate", cfg.visuals.chams.FriendlyVisibleColor, true)
+					 .ColorPicker("Local Player", cfg.visuals.chams.LocalVisibleColor, true)
+					 .Slider("Visible Opacity", &cfg.visuals.chams.VisibleAlpha, 0.0f, 1.0f)
+					 .Slider("Hidden Opacity", &cfg.visuals.chams.InvisibleAlpha, 0.0f, 1.0f);
+				})
+				.End();
+
+			menu::LeftGroup("Skin Changer", 7)
+				.Checkbox("Enabled##Skins", &cfg.visuals.skinChanger.Enabled)
+				.Custom([]() {
+					static std::string knifeCombo;
+					if (knifeCombo.empty()) {
+						for (auto& k : skinchanger::GetKnifeModels())
+							{ knifeCombo += k.name; knifeCombo += '\0'; }
+						knifeCombo += '\0';
+					}
+					ImGui::SetNextItemWidth(-FLT_MIN);
+					ImGui::Combo("##knife_sc", &cfg.visuals.skinChanger.KnifeModel, knifeCombo.c_str());
+				})
+				.Custom([]() {
+					static std::string skinCombo;
+					static int selectedSkinIdx = 0;
+					if (skinCombo.empty()) {
 						auto& skins = skinchanger::GetPopularSkins();
-						selectedSkinIdx = (int)skins.size(); // default to "Custom ID"
-						for (int i = 0; i < (int)skins.size(); i++) {
-							if (skins[i].paintKit == cfg.visuals.skinChanger.SkinPaintKit) {
-								selectedSkinIdx = i;
-								break;
-							}
-						}
-						ImGui::SetNextItemWidth(-FLT_MIN);
-						if (ImGui::Combo("##skin_sc", &selectedSkinIdx, skinCombo.c_str())) {
-							if (selectedSkinIdx < (int)skins.size())
-								cfg.visuals.skinChanger.SkinPaintKit = skins[selectedSkinIdx].paintKit;
-						}
-						// Show custom ID input when "Custom ID" is selected
-						if (selectedSkinIdx >= (int)skins.size()) {
-							ImGui::SetNextItemWidth(-FLT_MIN);
-							ImGui::InputInt("##customPK", &cfg.visuals.skinChanger.SkinPaintKit, 1, 10);
-						}
-					})
-					.Slider("Wear", &cfg.visuals.skinChanger.SkinWear, 0.0f, 1.0f, "%.4f",
-						"0.0 = Factory New, 1.0 = Battle-Scarred")
-					.GearPopup("skinExtras", [](auto& s) {
-						s.SliderInt("Seed", &cfg.visuals.skinChanger.SkinSeed, 0, 1000, "%d",
-							"Pattern seed")
-						 .SliderInt("StatTrak", &cfg.visuals.skinChanger.StatTrak, -1, 99999, "%d",
-							"-1 = disabled");
-					})
-					.Button("Apply", []{
-						skinchanger::ForceUpdate();
-						Notify::Info("Applying skin changes...");
-					})
-					.End();
-
-				menu::LeftGroup("Hitmarker", 5)
-					.Checkbox("Enabled##Hitmarker", &cfg.visuals.hitmarker.Enabled)
-					.SameLine().ColorPicker("##hmCol", cfg.visuals.hitmarker.Color, true)
-					.Checkbox("Damage Numbers", &cfg.visuals.hitmarker.ShowDamage)
-					.Checkbox("Hit Sound", &cfg.visuals.hitmarker.Sound)
-					.ColorPicker("Headshot", cfg.visuals.hitmarker.HeadshotColor, true)
-					.SameLine().ColorPicker("Kill", cfg.visuals.hitmarker.KillColor, true)
-					.GearPopup("hitmarker", [](auto& s) {
-						s.Slider("Size", &cfg.visuals.hitmarker.Size, 4.f, 20.f, "%.0f")
-						 .Slider("Gap", &cfg.visuals.hitmarker.Gap, 1.f, 10.f, "%.0f")
-						 .Slider("Thickness", &cfg.visuals.hitmarker.Thickness, 1.f, 4.f, "%.1f")
-						 .SliderInt("Duration (ms)", &cfg.visuals.hitmarker.Duration, 100, 2000, "%d");
-					})
-					.End();
-
-				menu::LeftGroup("Crosshair", 11)
-					.Checkbox("Enabled", &cfg.visuals.crosshair.Enabled)
-					.Combo("Style", &cfg.visuals.crosshair.Style, "Cross\0Circle\0Dot\0Cross + Dot\0")
-					.Slider("Size", &cfg.visuals.crosshair.Size, 1.f, 20.f, "%.0f")
-					.Slider("Gap", &cfg.visuals.crosshair.Gap, 0.f, 10.f, "%.0f")
-					.Slider("Thickness", &cfg.visuals.crosshair.Thickness, 0.5f, 5.f, "%.1f")
-					.Checkbox("Outline", &cfg.visuals.crosshair.Outline)
-					.ColorPicker("Color", cfg.visuals.crosshair.Color, true)
-					.Space()
-					.Checkbox("Recoil Crosshair", &cfg.visuals.crosshair.RecoilCrosshair, "Shows where bullets actually land")
-					.ColorPicker("Recoil Color", cfg.visuals.crosshair.RecoilColor, true)
-					.Checkbox("Sniper Crosshair", &cfg.visuals.crosshair.SniperCrosshair, "Draw crosshair when scoped")
-					.End();
-
-				menu::EndRow();
-				ImGui::EndTabItem();
-			}
-
-			if (ImGui::BeginTabItem("Misc"))
-			{
-				// Left: Movement(4) + Exploits(2) = 6  |  Right: Player(3) = 3
-				menu::LeftGroup("Movement", 4)
-					.Checkbox("Bunny Hop", &cfg.misc.movement.BunnyHop)
-					.Checkbox("Auto-Strafe", &cfg.misc.movement.Strafe)
-					.Checkbox("Air Duck", &cfg.misc.movement.AirDuck)
-					.Checkbox("Auto-Stop", &cfg.misc.movement.AutoStop)
-					.GearPopup("autostop", [](auto& s) {
-						s.Combo("Trigger", &cfg.misc.movement.AutoStopMode, "All Shots\0Manual Only\0Auto-Shoot Only\0")
-						 .Slider("Speed", &cfg.misc.movement.AutoStopSpeed, 1.0f, 10.0f, "%.1f",
-							"Deceleration force. Higher = faster stop");
-					})
-					.End();
-
-				menu::RightGroup("Exploits", 2)
-					.Checkbox("Infinite Duck", &cfg.misc.exploits.InfDuck)
-					.Checkbox("Fake Lag", &cfg.misc.exploits.FakeLag)
-					.GearPopup("fakelag", [](auto& s) {
-						s.SliderInt("Choke Ticks", &cfg.misc.exploits.FakeLagAmount, 1, 14, "%d")
-						 .Checkbox("Show Indicator", &cfg.misc.exploits.FakeLagVis,
-							"Show choked tick counter and server position ghost");
-					})
-					.End();
-
-				menu::LeftGroup("Player", 4)
-					.Checkbox("Radar Hack", &cfg.misc.RadarHack, "Show all enemies on the in-game radar")
-					.Checkbox("Anti-Flash", &cfg.misc.AntiFlash, "Reduce or remove flashbang effect")
-					.GearPopup("antiflash", [](auto& s) {
-						s.Slider("Max Alpha", &cfg.misc.FlashMaxAlpha, 0.f, 255.f, "%.0f",
-							"0 = fully remove, 255 = no change");
-					})
-					.Checkbox("Spectator List", &cfg.misc.SpectatorList, "Show who is spectating you")
-					.Checkbox("Keybind List", &cfg.misc.KeybindList, "Show active keybinds on screen")
-					.End();
-
-				menu::EndRow();
-				ImGui::EndTabItem();
-			}
-
-			if (ImGui::BeginTabItem("Settings"))
-			{
-				menu::Checkbox("Show Debug Window", &cfg.settings.ShowDebug);
-				menu::Checkbox("Toggle Style", &cfg.settings.ToggleStyle, "Switch between toggle switches and classic checkboxes");
-				if (menu::Button("Unload [Pause]"))
-					bUnloaded = true;
-				menu::Slider("Animation Speed", &cfg.settings.AnimSpeed, 0.5f, 4.f, "%.2f",
-					"Modify the menu's animation speed.\n including the fade-in and out speed, etc");
-
-				ImGui::Spacing();
-
-				static char cfgName[64] = "default";
-				menu::Section("Config")
-					.InputText("##CfgName", cfgName, sizeof(cfgName))
-					.Button("Save", [&]{
-						if (cfg.Save(cfgName))
-							Notify::Success("Config saved");
-						else
-							Notify::Error("Failed to save config");
-					})
-					.SameLine()
-					.Button("Load", [&]{
-						if (cfg.Load(cfgName))
-							Notify::Success("Config loaded");
-						else
-							Notify::Error("Failed to load config");
-					})
-					.SameLine()
-					.Button("Reset", [&]{ cfg.Reset(); Notify::Info("Config reset to defaults"); })
-					.ListBox("Configs", "##CfgList", Config::ListConfigs(), cfgName,
-						[&](const std::string& name) {
-							strncpy_s(cfgName, name.c_str(), sizeof(cfgName) - 1);
-							if (cfg.Load(name))
-								Notify::Success("Config loaded");
-						})
-					.End();
-
-				menu::Gap();
-
-				static int curOption = 1;
-				const float ThicknessOptions[3] = { 1.f, 4.f, 8.f };
-				cfg.settings.mouseTracer.TrailThickness = ThicknessOptions[curOption];
-
-				menu::Section("Mouse Tracer")
-					.Checkbox("Enabled##MouseTracer", &cfg.settings.mouseTracer.Enabled, "Creates a trail behind your mouse tracing it!")
-					.SliderInt("Trail Length", &cfg.settings.mouseTracer.TrailLength, 15, 100)
-					.Text("Trail Thickness")
-					.Combo("Thickness", &curOption, "Slim\0Thick\0Bold\0")
-					.ColorPicker("Color", cfg.settings.mouseTracer.Color)
-					.ColorPicker("Second Color", cfg.settings.mouseTracer.SecondColor)
-					.Checkbox("Always On", &cfg.settings.mouseTracer.AlwaysOn, "Always show the tracer, even when the menu is closed.")
-					.End();
-
-				menu::Gap();
-
-				menu::Section("Analysis")
-					.Button("Dump Runtime Data", []{
-						analysis::DumpAll();
-						Notify::Success("Analysis dumped");
-					})
-					.End();
-
-				ImGui::EndTabItem();
-			}
-
-
-#ifdef _DEBUG
-			if (ImGui::BeginTabItem("Audit Log"))
-			{
-				// Header row: entry count, copy, clear buttons
-				ImGui::Text("Entries: %d", AuditLog::Size());
-				ImGui::SameLine();
-				if (ImGui::Button("Copy All")) {
-					std::string all = AuditLog::FormatAll();
-					if (!all.empty())
-						ImGui::SetClipboardText(all.c_str());
-					Notify::Success("Audit log copied to clipboard");
-				}
-				ImGui::SameLine();
-				if (ImGui::Button("Clear")) {
-					AuditLog::Clear();
-				}
-				ImGui::Separator();
-
-				// Scrollable log area
-				ImGui::BeginChild("##AuditScroll", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
-				{
-					std::lock_guard lock(AuditLog::g_mutex);
-					// Render newest first
-					for (int i = (int)AuditLog::g_entries.size() - 1; i >= 0; i--) {
-						const auto& e = AuditLog::g_entries[i];
-
-						// Color by severity
-						ImVec4 col = ImVec4(1, 1, 1, 1);
-						if (e.severity == "WARN")       col = ImVec4(1.0f, 0.9f, 0.3f, 1.0f);
-						else if (e.severity == "ERR")   col = ImVec4(1.0f, 0.3f, 0.3f, 1.0f);
-						else if (e.severity == "FATAL") col = ImVec4(1.0f, 0.1f, 0.1f, 1.0f);
-						else if (e.severity == "INFO")  col = ImVec4(0.7f, 0.7f, 0.7f, 1.0f);
-
-						if (e.count > 1) {
-							ImGui::TextColored(col, "[%s] [%s] %s (x%d)",
-								e.timestamp.c_str(), e.severity.c_str(), e.message.c_str(), e.count);
-						} else {
-							ImGui::TextColored(col, "[%s] [%s] %s",
-								e.timestamp.c_str(), e.severity.c_str(), e.message.c_str());
+						for (auto& s : skins)
+							{ skinCombo += s.name; skinCombo += '\0'; }
+						skinCombo += "Custom ID\0\0";
+					}
+					auto& skins = skinchanger::GetPopularSkins();
+					selectedSkinIdx = (int)skins.size();
+					for (int i = 0; i < (int)skins.size(); i++) {
+						if (skins[i].paintKit == cfg.visuals.skinChanger.SkinPaintKit) {
+							selectedSkinIdx = i;
+							break;
 						}
 					}
-				}
-				ImGui::EndChild();
+					ImGui::SetNextItemWidth(-FLT_MIN);
+					if (ImGui::Combo("##skin_sc", &selectedSkinIdx, skinCombo.c_str())) {
+						if (selectedSkinIdx < (int)skins.size())
+							cfg.visuals.skinChanger.SkinPaintKit = skins[selectedSkinIdx].paintKit;
+					}
+					if (selectedSkinIdx >= (int)skins.size()) {
+						ImGui::SetNextItemWidth(-FLT_MIN);
+						ImGui::InputInt("##customPK", &cfg.visuals.skinChanger.SkinPaintKit, 1, 10);
+					}
+				})
+				.Slider("Wear", &cfg.visuals.skinChanger.SkinWear, 0.0f, 1.0f, "%.4f",
+					"0.0 = Factory New, 1.0 = Battle-Scarred")
+				.GearPopup("skinExtras", [](auto& s) {
+					s.SliderInt("Seed", &cfg.visuals.skinChanger.SkinSeed, 0, 1000, "%d",
+						"Pattern seed")
+					 .SliderInt("StatTrak", &cfg.visuals.skinChanger.StatTrak, -1, 99999, "%d",
+						"-1 = disabled");
+				})
+				.Button("Apply", []{
+					skinchanger::ForceUpdate();
+					Notify::Info("Applying skin changes...");
+				})
+				.End();
 
-				ImGui::EndTabItem();
+			menu::LeftGroup("Hitmarker", 5)
+				.Checkbox("Enabled##Hitmarker", &cfg.visuals.hitmarker.Enabled)
+				.SameLine().ColorPicker("##hmCol", cfg.visuals.hitmarker.Color, true)
+				.Checkbox("Damage Numbers", &cfg.visuals.hitmarker.ShowDamage)
+				.Checkbox("Hit Sound", &cfg.visuals.hitmarker.Sound)
+				.ColorPicker("Headshot", cfg.visuals.hitmarker.HeadshotColor, true)
+				.SameLine().ColorPicker("Kill", cfg.visuals.hitmarker.KillColor, true)
+				.GearPopup("hitmarker", [](auto& s) {
+					s.Slider("Size", &cfg.visuals.hitmarker.Size, 4.f, 20.f, "%.0f")
+					 .Slider("Gap", &cfg.visuals.hitmarker.Gap, 1.f, 10.f, "%.0f")
+					 .Slider("Thickness", &cfg.visuals.hitmarker.Thickness, 1.f, 4.f, "%.1f")
+					 .SliderInt("Duration (ms)", &cfg.visuals.hitmarker.Duration, 100, 2000, "%d");
+				})
+				.End();
+
+			menu::LeftGroup("Crosshair", 11)
+				.Checkbox("Enabled", &cfg.visuals.crosshair.Enabled)
+				.Combo("Style", &cfg.visuals.crosshair.Style, "Cross\0Circle\0Dot\0Cross + Dot\0")
+				.Slider("Size", &cfg.visuals.crosshair.Size, 1.f, 20.f, "%.0f")
+				.Slider("Gap", &cfg.visuals.crosshair.Gap, 0.f, 10.f, "%.0f")
+				.Slider("Thickness", &cfg.visuals.crosshair.Thickness, 0.5f, 5.f, "%.1f")
+				.Checkbox("Outline", &cfg.visuals.crosshair.Outline)
+				.ColorPicker("Color", cfg.visuals.crosshair.Color, true)
+				.Space()
+				.Checkbox("Recoil Crosshair", &cfg.visuals.crosshair.RecoilCrosshair, "Shows where bullets actually land")
+				.ColorPicker("Recoil Color", cfg.visuals.crosshair.RecoilColor, true)
+				.Checkbox("Sniper Crosshair", &cfg.visuals.crosshair.SniperCrosshair, "Draw crosshair when scoped")
+				.End();
+
+			menu::EndRow();
+		}
+		else if (activeTab == 2) // Misc
+		{
+			menu::LeftGroup("Movement", 4)
+				.Checkbox("Bunny Hop", &cfg.misc.movement.BunnyHop)
+				.Checkbox("Auto-Strafe", &cfg.misc.movement.Strafe)
+				.Checkbox("Air Duck", &cfg.misc.movement.AirDuck)
+				.Checkbox("Auto-Stop", &cfg.misc.movement.AutoStop)
+				.GearPopup("autostop", [](auto& s) {
+					s.Combo("Trigger", &cfg.misc.movement.AutoStopMode, "All Shots\0Manual Only\0Auto-Shoot Only\0")
+					 .Slider("Speed", &cfg.misc.movement.AutoStopSpeed, 1.0f, 10.0f, "%.1f",
+						"Deceleration force. Higher = faster stop");
+				})
+				.End();
+
+			menu::RightGroup("Exploits", 2)
+				.Checkbox("Infinite Duck", &cfg.misc.exploits.InfDuck)
+				.Checkbox("Fake Lag", &cfg.misc.exploits.FakeLag)
+				.GearPopup("fakelag", [](auto& s) {
+					s.SliderInt("Choke Ticks", &cfg.misc.exploits.FakeLagAmount, 1, 14, "%d")
+					 .Checkbox("Show Indicator", &cfg.misc.exploits.FakeLagVis,
+						"Show choked tick counter and server position ghost");
+				})
+				.End();
+
+			menu::LeftGroup("Player", 4)
+				.Checkbox("Radar Hack", &cfg.misc.RadarHack, "Show all enemies on the in-game radar")
+				.Checkbox("Anti-Flash", &cfg.misc.AntiFlash, "Reduce or remove flashbang effect")
+				.GearPopup("antiflash", [](auto& s) {
+					s.Slider("Max Alpha", &cfg.misc.FlashMaxAlpha, 0.f, 255.f, "%.0f",
+						"0 = fully remove, 255 = no change");
+				})
+				.Checkbox("Spectator List", &cfg.misc.SpectatorList, "Show who is spectating you")
+				.Checkbox("Keybind List", &cfg.misc.KeybindList, "Show active keybinds on screen")
+				.End();
+
+			menu::EndRow();
+		}
+		else if (activeTab == 3) // Settings
+		{
+			menu::Checkbox("Show Debug Window", &cfg.settings.ShowDebug);
+			menu::Checkbox("Toggle Style", &cfg.settings.ToggleStyle, "Switch between toggle switches and classic checkboxes");
+			if (menu::Button("Unload [Pause]"))
+				bUnloaded = true;
+			menu::Slider("Animation Speed", &cfg.settings.AnimSpeed, 0.5f, 4.f, "%.2f",
+				"Modify the menu's animation speed.\n including the fade-in and out speed, etc");
+
+			ImGui::Spacing();
+
+			static char cfgName[64] = "default";
+			menu::Section("Config")
+				.InputText("##CfgName", cfgName, sizeof(cfgName))
+				.Button("Save", [&]{
+					if (cfg.Save(cfgName))
+						Notify::Success("Config saved");
+					else
+						Notify::Error("Failed to save config");
+				})
+				.SameLine()
+				.Button("Load", [&]{
+					if (cfg.Load(cfgName))
+						Notify::Success("Config loaded");
+					else
+						Notify::Error("Failed to load config");
+				})
+				.SameLine()
+				.Button("Reset", [&]{ cfg.Reset(); Notify::Info("Config reset to defaults"); })
+				.ListBox("Configs", "##CfgList", Config::ListConfigs(), cfgName,
+					[&](const std::string& name) {
+						strncpy_s(cfgName, name.c_str(), sizeof(cfgName) - 1);
+						if (cfg.Load(name))
+							Notify::Success("Config loaded");
+					})
+				.End();
+
+			menu::Gap();
+
+			static int curOption = 1;
+			const float ThicknessOptions[3] = { 1.f, 4.f, 8.f };
+			cfg.settings.mouseTracer.TrailThickness = ThicknessOptions[curOption];
+
+			menu::Section("Mouse Tracer")
+				.Checkbox("Enabled##MouseTracer", &cfg.settings.mouseTracer.Enabled, "Creates a trail behind your mouse tracing it!")
+				.SliderInt("Trail Length", &cfg.settings.mouseTracer.TrailLength, 15, 100)
+				.Text("Trail Thickness")
+				.Combo("Thickness", &curOption, "Slim\0Thick\0Bold\0")
+				.ColorPicker("Color", cfg.settings.mouseTracer.Color)
+				.ColorPicker("Second Color", cfg.settings.mouseTracer.SecondColor)
+				.Checkbox("Always On", &cfg.settings.mouseTracer.AlwaysOn, "Always show the tracer, even when the menu is closed.")
+				.End();
+
+			menu::Gap();
+
+			menu::Section("Analysis")
+				.Button("Dump Runtime Data", []{
+					analysis::DumpAll();
+					Notify::Success("Analysis dumped");
+				})
+				.End();
+		}
+#ifdef _DEBUG
+		else if (activeTab == 4) // Audit Log
+		{
+			ImGui::Text("Entries: %d", AuditLog::Size());
+			ImGui::SameLine();
+			if (ImGui::Button("Copy All")) {
+				std::string all = AuditLog::FormatAll();
+				if (!all.empty())
+					ImGui::SetClipboardText(all.c_str());
+				Notify::Success("Audit log copied to clipboard");
 			}
+			ImGui::SameLine();
+			if (ImGui::Button("Clear")) {
+				AuditLog::Clear();
+			}
+			ImGui::Separator();
+
+			ImGui::BeginChild("##AuditScroll", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+			{
+				std::lock_guard lock(AuditLog::g_mutex);
+				for (int i = (int)AuditLog::g_entries.size() - 1; i >= 0; i--) {
+					const auto& e = AuditLog::g_entries[i];
+					ImVec4 col = ImVec4(1, 1, 1, 1);
+					if (e.severity == "WARN")       col = ImVec4(1.0f, 0.9f, 0.3f, 1.0f);
+					else if (e.severity == "ERR")   col = ImVec4(1.0f, 0.3f, 0.3f, 1.0f);
+					else if (e.severity == "FATAL") col = ImVec4(1.0f, 0.1f, 0.1f, 1.0f);
+					else if (e.severity == "INFO")  col = ImVec4(0.7f, 0.7f, 0.7f, 1.0f);
+
+					if (e.count > 1)
+						ImGui::TextColored(col, "[%s] [%s] %s (x%d)",
+							e.timestamp.c_str(), e.severity.c_str(), e.message.c_str(), e.count);
+					else
+						ImGui::TextColored(col, "[%s] [%s] %s",
+							e.timestamp.c_str(), e.severity.c_str(), e.message.c_str());
+				}
+			}
+			ImGui::EndChild();
+		}
 #endif // _DEBUG
 
-			ImGui::EndTabBar();
-		}
-
-		ImGui::EndChild();
+		ImGui::EndChild();  // ##Content
 		ImGui::PopStyleVar();
 	}
 	ImGui::End();

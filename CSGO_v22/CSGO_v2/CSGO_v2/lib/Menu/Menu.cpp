@@ -202,6 +202,28 @@ namespace detail
 		ImGui::PopItemWidth();
 	}
 
+	// Accent color used for card top lines (matches title bar accent)
+	static constexpr ImU32 kCardAccent = IM_COL32(71, 143, 255, 255);  // #478FFF
+
+	// Draw multi-layer soft shadow behind a rectangle (call on parent draw list)
+	static void DrawCardShadow(ImDrawList* dl, const ImVec2& min, const ImVec2& max, float rounding)
+	{
+		// 4-layer expanding shadow with decreasing opacity
+		struct ShadowLayer { float expand; ImU32 color; };
+		static constexpr ShadowLayer layers[] = {
+			{ 3.f,  IM_COL32(0, 0, 0, 40) },
+			{ 6.f,  IM_COL32(0, 0, 0, 25) },
+			{ 10.f, IM_COL32(0, 0, 0, 15) },
+			{ 15.f, IM_COL32(0, 0, 0, 8)  },
+		};
+		for (auto& l : layers) {
+			dl->AddRectFilled(
+				ImVec2(min.x - l.expand, min.y - l.expand),
+				ImVec2(max.x + l.expand, max.y + l.expand),
+				l.color, rounding + l.expand * 0.3f);
+		}
+	}
+
 	// Opens a child window sized for N widget lines + title
 	static void BeginGroupChild(const char* name, int lines, float width)
 	{
@@ -210,14 +232,35 @@ namespace detail
 		float titleH = lineH + 2.f;
 		float h = titleH + lines * lineH + ImGui::GetStyle().WindowPadding.y;
 
+		// --- Shadow: draw on parent draw list before creating child ---
+		ImVec2 screenPos = ImGui::GetCursorScreenPos();
+		ImVec2 cardMin = screenPos;
+		ImVec2 cardMax = ImVec2(screenPos.x + w, screenPos.y + h);
+		float rounding = ImGui::GetStyle().ChildRounding;
+		DrawCardShadow(ImGui::GetWindowDrawList(), cardMin, cardMax, rounding);
+
 		ImGui::BeginChild(std::format("{}##{}", name, name).c_str(), ImVec2(w, h), true);
-		// Strip ##suffix from display text (used for ImGui ID disambiguation)
+
+		// --- Accent line at top of card (2px) ---
+		ImVec2 childPos = ImGui::GetWindowPos();
+		ImDrawList* childDl = ImGui::GetWindowDrawList();
+		childDl->AddRectFilled(
+			childPos,
+			ImVec2(childPos.x + w, childPos.y + 2.0f),
+			kCardAccent, rounding, ImDrawFlags_RoundCornersTop);
+
+		// --- Header text in medium font ---
+		if (menu::g_fontMedium) ImGui::PushFont(menu::g_fontMedium);
+
 		const char* hashPos = strstr(name, "##");
 		if (hashPos) {
 			ImGui::TextUnformatted(name, hashPos);
 		} else {
 			ImGui::Text("%s", name);
 		}
+
+		if (menu::g_fontMedium) ImGui::PopFont();
+
 		ImGui::Separator();
 	}
 }
@@ -649,8 +692,8 @@ void menu::SetupTheme()
 	ImVec4* colors = ImGui::GetStyle().Colors;
 	colors[ImGuiCol_Text] = ImVec4(0.95f, 0.96f, 0.98f, 1.00f);
 	colors[ImGuiCol_TextDisabled] = ImVec4(0.36f, 0.42f, 0.47f, 1.00f);
-	colors[ImGuiCol_WindowBg] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
-	colors[ImGuiCol_ChildBg] = ImVec4(0.15f, 0.18f, 0.22f, 1.00f);
+	colors[ImGuiCol_WindowBg] = ImVec4(0.08f, 0.10f, 0.12f, 1.00f);   // Darker bg so cards stand out
+	colors[ImGuiCol_ChildBg] = ImVec4(0.13f, 0.16f, 0.20f, 1.00f);   // Slightly lighter cards
 	colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
 	colors[ImGuiCol_Border] = ImVec4(0.08f, 0.10f, 0.12f, 1.00f);
 	colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);

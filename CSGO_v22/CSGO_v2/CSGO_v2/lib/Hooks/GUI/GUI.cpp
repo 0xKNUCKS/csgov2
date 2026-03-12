@@ -356,7 +356,7 @@ void gui::Render() noexcept
 		// Title bar background (slightly darker than window bg)
 		ImVec2 titleMin = ImVec2(winPos.x, winPos.y + kAccentLineHeight);
 		ImVec2 titleMax = ImVec2(winPos.x + winSize.x, winPos.y + kTitleBarHeight);
-		dl->AddRectFilled(titleMin, titleMax, IM_COL32(18, 24, 28, 255));
+		dl->AddRectFilled(titleMin, titleMax, IM_COL32(15, 19, 23, 255));
 
 		// Separator line below title bar
 		dl->AddLine(ImVec2(winPos.x, titleMax.y), ImVec2(winPos.x + winSize.x, titleMax.y),
@@ -443,8 +443,10 @@ void gui::Render() noexcept
 				ImColor(1.f, 1.f, 1.f, txtFade.getValue()));
 		}
 
-		// Move cursor below title bar for content
-		ImGui::SetCursorPosY(kTitleBarHeight + ImGui::GetStyle().WindowPadding.y);
+		// Content area — child window below title bar so content never overlaps it
+		ImGui::SetCursorPosY(kTitleBarHeight);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(ImGui::GetStyle().WindowPadding.x, ImGui::GetStyle().WindowPadding.y));
+		ImGui::BeginChild("##ContentArea", ImVec2(0, 0), false, ImGuiWindowFlags_NoScrollbar);
 
 		if (ImGui::BeginTabBar("##TabsBar"))
 		{
@@ -830,6 +832,9 @@ void gui::Render() noexcept
 
 			ImGui::EndTabBar();
 		}
+
+		ImGui::EndChild();
+		ImGui::PopStyleVar();
 	}
 	ImGui::End();
 

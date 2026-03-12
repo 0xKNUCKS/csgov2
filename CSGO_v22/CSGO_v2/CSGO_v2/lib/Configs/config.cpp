@@ -119,6 +119,16 @@ bool Config::Save(const std::string& name) const
 	body << "BoxType=" << visuals.esp.boxType << "\n";
 	body << "Color=" << visuals.esp.color.r << "," << visuals.esp.color.g << ","
 	  << visuals.esp.color.b << "," << visuals.esp.color.a << "\n";
+	body << "BoxColor=" << visuals.esp.BoxColor.r << "," << visuals.esp.BoxColor.g << ","
+	  << visuals.esp.BoxColor.b << "," << visuals.esp.BoxColor.a << "\n";
+	body << "SkeletonColor=" << visuals.esp.SkeletonColor.r << "," << visuals.esp.SkeletonColor.g << ","
+	  << visuals.esp.SkeletonColor.b << "," << visuals.esp.SkeletonColor.a << "\n";
+	body << "NameColor=" << visuals.esp.NameColor.r << "," << visuals.esp.NameColor.g << ","
+	  << visuals.esp.NameColor.b << "," << visuals.esp.NameColor.a << "\n";
+	body << "SnapLineColor=" << visuals.esp.SnapLineColor.r << "," << visuals.esp.SnapLineColor.g << ","
+	  << visuals.esp.SnapLineColor.b << "," << visuals.esp.SnapLineColor.a << "\n";
+	body << "WeaponColor=" << visuals.esp.WeaponColor.r << "," << visuals.esp.WeaponColor.g << ","
+	  << visuals.esp.WeaponColor.b << "," << visuals.esp.WeaponColor.a << "\n";
 
 	body << "\n[visuals.misc]\n";
 	body << "AspectRatio=" << visuals.misc.AspectRatio << "\n";
@@ -424,6 +434,11 @@ bool Config::Load(const std::string& name)
 	visuals.esp.WeaponESP   = GetBool(kv, "visuals.esp.WeaponESP", defaults.visuals.esp.WeaponESP);
 	visuals.esp.boxType     = GetInt(kv, "visuals.esp.BoxType", defaults.visuals.esp.boxType);
 	visuals.esp.color       = GetColor(kv, "visuals.esp.Color", defaults.visuals.esp.color);
+	visuals.esp.BoxColor      = GetColor(kv, "visuals.esp.BoxColor", defaults.visuals.esp.BoxColor);
+	visuals.esp.SkeletonColor = GetColor(kv, "visuals.esp.SkeletonColor", defaults.visuals.esp.SkeletonColor);
+	visuals.esp.NameColor     = GetColor(kv, "visuals.esp.NameColor", defaults.visuals.esp.NameColor);
+	visuals.esp.SnapLineColor = GetColor(kv, "visuals.esp.SnapLineColor", defaults.visuals.esp.SnapLineColor);
+	visuals.esp.WeaponColor   = GetColor(kv, "visuals.esp.WeaponColor", defaults.visuals.esp.WeaponColor);
 
 	// Visuals Misc
 	visuals.misc.AspectRatio = GetFloat(kv, "visuals.misc.AspectRatio", defaults.visuals.misc.AspectRatio);

@@ -59,7 +59,9 @@ CSGO_v22/CSGO_v2/
 - **Custom**: `.Custom(lambda)` escape hatch for raw ImGui calls
 - **ListBox**: `.ListBox(label, id, items, selected, onSelect)` built-in
 - All ImGui calls isolated in `detail::` namespace (Menu.cpp) for easy restyling
-- Column width centralized as `menu::kColumnWidth` (270px)
+- Column width centralized as `menu::kColumnWidth` (220px, reduced from 270 for sidebar layout)
+- Tab transition state: `g_tabAlpha`, `g_groupIndex`, `g_tabSwitchTime` for animated tab switching
+- Sidebar layout: 160px sidebar + content area with two 220px columns
 
 ### Config System
 - INI-style key=value format with section headers
@@ -71,13 +73,21 @@ CSGO_v22/CSGO_v2/
 - Log files at: `C:\Users\adama\Documents\CSGO_v2_Logs`
 - `csgo_v2.log` — general log, `csgo_v2_errors.log` — error dumps
 
-### ImGui Version
+### ImGui Version & Critical Rules
 - **ImGui 1.88 WIP** (version 18724)
 - NO auto-resize child windows (that's 1.89+)
 - `BeginChild` with height 0 fills available space, cannot shrink to content
 - Line-count based height calculation for groups
-- **Side-by-side layout**: LeftGroup/RightGroup use independent Y cursor tracking per column via `SetCursorPos`. Each column stacks groups without gaps. `SetCursorPos` going backwards is safe — `CursorMaxPos` only grows (imgui.cpp:8380). Call `menu::EndRow()` before `EndTabItem()` to finalize.
+- **Side-by-side layout**: LeftGroup/RightGroup use independent Y cursor tracking per column via `SetCursorPos`. Each column stacks groups without gaps. `SetCursorPos` going backwards is safe — `CursorMaxPos` only grows (imgui.cpp:8380). Call `menu::EndRow()` before leaving a tab to finalize.
 - ImGui source/docs at `ext/ImGui/` — `imgui_demo.cpp` is the best reference for layout patterns
+- **⚠️ IMPORTANT**: See memory files `technical-imgui-patterns.md` and `menu-architecture.md` for comprehensive ImGui patterns, alpha stacking, custom widget recipes, and animation system details. These MUST be read before doing UI work (user feedback given twice).
+
+### ImGui Alpha System (CRITICAL — causes bugs if misunderstood)
+- `GetStyle().Alpha` is GLOBAL — we set it to `windowFade.getValue()` in Render()
+- `PushStyleVar(Alpha, val)` REPLACES alpha, doesn't multiply. Compute manually: `GetStyle().Alpha * myFactor`
+- **DrawList functions IGNORE style alpha** — use `GetColorU32(ImVec4)` which DOES multiply by style.Alpha
+- Our alpha stack: windowFade (global) → tabAlpha (content push) → groupAlpha (per-group push)
+- PushStyleVar/PopStyleVar MUST be perfectly balanced or ImGui will crash/corrupt state
 
 ## Conventions
 - `cfg` is the global `Config` instance (defined in config.h as `inline Config cfg`)
@@ -128,3 +138,7 @@ CSGO_v22/CSGO_v2/
 - ImGui outline groups don't create content regions — widgets use window width
 - Always pass explicit width to outline groups or use `menu::Section()` which defaults to kColumnWidth
 - `ListBox` width `0` uses `CalcItemWidth()`, `-FLT_MIN` fills available (too wide in outline groups)
+- **Fixed vs scrollable elements**: Title bar / sidebar MUST be outside scrollable child windows. Rendering them via `GetWindowDrawList()` inside a scrollable area clips them on scroll. This bug occurred TWICE.
+- **DisplayName() with ## prefix**: `"##FOV"` has empty display name since it starts with `##`. Use `"FOV##slider_FOV"` format so DisplayName extracts "FOV".
+- **`std::sin()` returns double**: Cast result to float to avoid C4244: `std::sinf((float)g.Time * 6.0f)`
+- **After any UI work**: Update memory files (`technical-imgui-patterns.md`, `menu-architecture.md`) with new patterns discovered

@@ -306,10 +306,13 @@ void gui::Render() noexcept
 
 	const ImU32 kAccentColor = IM_COL32(71, 143, 255, 255);  // #478FFF
 
-	// Window sizing: sidebar + spacing + two content columns + padding
-	float contentW = menu::kColumnWidth * 2 + ImGui::GetStyle().ItemSpacing.x;
-	float totalW = menu::kSidebarWidth + 1.0f + contentW + ImGui::GetStyle().WindowPadding.x * 2;
-	auto windowSize = ImVec2(totalW, 580.0f);
+	// Window sizing: sidebar + 3 content columns + padding (landscape layout)
+	float spacing = ImGui::GetStyle().ItemSpacing.x;
+	float contentW = menu::kColumnWidth * 3 + spacing * 2;
+	float contentPadX = 10.0f;
+	float scrollbarW = ImGui::GetStyle().ScrollbarSize;
+	float totalW = menu::kSidebarWidth + 1.0f + contentW + contentPadX * 2 + scrollbarW;
+	auto windowSize = ImVec2(totalW, 520.0f);
 	auto animatedSize = windowSize * animPopUp.getValue();
 	static auto windowPos = ImVec2((ImGui::GetIO().DisplaySize - windowSize) / 2);
 	ImGui::SetNextWindowSize(animatedSize);
@@ -319,7 +322,7 @@ void gui::Render() noexcept
 	float savedAlpha = ImGui::GetStyle().Alpha;
 	ImGui::GetStyle().Alpha = windowFade.getValue();
 
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(ImGui::GetStyle().WindowPadding.x, 0.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 	ImGui::Begin("##MainMenu", nullptr,
 		ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
 		ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
@@ -449,15 +452,15 @@ void gui::Render() noexcept
 
 		// Sidebar tab definitions
 		struct TabDef { const char* icon; const char* label; };
-		static constexpr int kTabCount = 4;
 		#ifdef _DEBUG
-		static constexpr int kTabCountDebug = 5;
+		static constexpr int kTabCountDebug = 6;
 		#else
-		static constexpr int kTabCountDebug = 4;
+		static constexpr int kTabCountDebug = 5;
 		#endif
 		const TabDef tabs[] = {
 			{ ICON_FA_CROSSHAIRS, "Aimbot" },
-			{ ICON_FA_EYE,        "Visuals" },
+			{ ICON_FA_USER,       "Players" },
+			{ ICON_FA_GLOBE,      "World" },
 			{ ICON_FA_RUNNING,    "Misc" },
 			{ ICON_FA_COG,        "Settings" },
 		#ifdef _DEBUG
@@ -475,60 +478,166 @@ void gui::Render() noexcept
 		{
 			ImDrawList* sbDl = ImGui::GetWindowDrawList();
 			ImVec2 sbPos = ImGui::GetWindowPos();
+			float sbH = ImGui::GetWindowHeight();
 
-			// Vertical separator line on right edge
-			sbDl->AddLine(
-				ImVec2(sbPos.x + menu::kSidebarWidth - 1, sbPos.y),
-				ImVec2(sbPos.x + menu::kSidebarWidth - 1, sbPos.y + ImGui::GetWindowHeight()),
-				IM_COL32(30, 36, 42, 255));
+			// Record actual button positions, then draw indicator AFTER the loop
+			static float indicatorY = 0.f;
+			static bool indicatorInit = false;
+			float btnH = 38.0f;
+			float btnPositions[8] = {}; // screen Y of each button (max 8 tabs)
 
 			for (int i = 0; i < kTabCountDebug; i++)
 			{
 				ImGui::PushID(i);
 
 				bool isActive = (activeTab == i);
-				float btnH = 38.0f;
 				ImVec2 btnPos = ImGui::GetCursorScreenPos();
 
-				// Active indicator — accent bar on left edge
-				if (isActive) {
-					sbDl->AddRectFilled(
-						ImVec2(btnPos.x, btnPos.y),
-						ImVec2(btnPos.x + 3.0f, btnPos.y + btnH),
-						kAccentColor, 1.5f);
-				}
+				// Record the actual screen Y position of this button
+				btnPositions[i] = ImGui::GetCursorScreenPos().y;
 
-				// Button background on hover/active
-				ImU32 btnBg = isActive ? IM_COL32(71, 143, 255, 25) : IM_COL32(0, 0, 0, 0);
-
-				ImGui::PushStyleColor(ImGuiCol_Button, btnBg);
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(71, 143, 255, 40));
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(71, 143, 255, 60));
+				// Button background — transparent (gradient glow handles active look)
+				ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(0, 0, 0, 0));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(71, 143, 255, 30));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(71, 143, 255, 50));
 				ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
 				ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
 
-				// Icon + text button — full sidebar width
+				// Text color: brighter when active, muted when not
+				ImU32 textCol = isActive ? IM_COL32(200, 220, 255, 255) : IM_COL32(122, 132, 144, 255);
+				ImGui::PushStyleColor(ImGuiCol_Text, textCol);
+
 				std::string btnLabel = std::format("  {}   {}", tabs[i].icon, tabs[i].label);
 				if (ImGui::Button(btnLabel.c_str(), ImVec2(menu::kSidebarWidth - 1, btnH)))
+				{
+					if (activeTab != i) {
+						menu::g_tabSwitchTime = (float)ImGui::GetTime();
+						menu::g_tabAlpha = 0.0f;
+					}
 					activeTab = i;
+				}
 
+				ImGui::PopStyleColor();  // Text
 				ImGui::PopStyleVar(2);
 				ImGui::PopStyleColor(3);
 				ImGui::PopID();
 			}
+
+			// Sliding accent bar — uses relative offset from sidebar top to avoid drift on window drag
+			{
+				float targetOffset = btnPositions[activeTab] - sbPos.y;
+				if (!indicatorInit) {
+					indicatorY = targetOffset;
+					indicatorInit = true;
+				}
+				float slideSpeed = ImGui::GetIO().DeltaTime * 12.0f;
+				if (slideSpeed > 1.f) slideSpeed = 1.f;
+				indicatorY += (targetOffset - indicatorY) * slideSpeed;
+				if (std::abs(indicatorY - targetOffset) < 0.5f) indicatorY = targetOffset;
+
+				float drawY = sbPos.y + indicatorY;
+
+				// Accent bar
+				sbDl->AddRectFilled(
+					ImVec2(sbPos.x, drawY),
+					ImVec2(sbPos.x + 3.0f, drawY + btnH),
+					kAccentColor, 1.5f);
+
+				// Gradient glow behind active position
+				sbDl->AddRectFilledMultiColor(
+					ImVec2(sbPos.x, drawY),
+					ImVec2(sbPos.x + menu::kSidebarWidth * 0.6f, drawY + btnH),
+					IM_COL32(71, 143, 255, 35),
+					IM_COL32(71, 143, 255, 0),
+					IM_COL32(71, 143, 255, 0),
+					IM_COL32(71, 143, 255, 35));
+			}
+
+			// Vertical separator line on right edge
+			sbDl->AddLine(
+				ImVec2(sbPos.x + menu::kSidebarWidth - 1, sbPos.y),
+				ImVec2(sbPos.x + menu::kSidebarWidth - 1, sbPos.y + sbH),
+				IM_COL32(30, 36, 42, 255));
 		}
 		ImGui::EndChild();
 		ImGui::PopStyleVar();
 		ImGui::PopStyleColor();
 
+		// Sidebar shadow (right edge, drawn on parent DrawList after sidebar child)
+		{
+			ImDrawList* parentDl = ImGui::GetWindowDrawList();
+			float sbRight = winPos.x + menu::kSidebarWidth;
+			float sbTop = winPos.y + menu::kTitleBarHeight;
+			float sbBot = winPos.y + winSize.y;
+			// Multi-layer shadow extending rightward
+			struct { float w; int a; } layers[] = { {4, 40}, {8, 25}, {14, 12} };
+			for (auto& l : layers) {
+				parentDl->AddRectFilledMultiColor(
+					ImVec2(sbRight, sbTop), ImVec2(sbRight + l.w, sbBot),
+					IM_COL32(0, 0, 0, l.a), IM_COL32(0, 0, 0, 0),
+					IM_COL32(0, 0, 0, 0), IM_COL32(0, 0, 0, l.a));
+			}
+		}
+
 		// --- Content area (right of sidebar) ---
 		ImGui::SameLine(0, 0);  // No gap — separator line handles visual separation
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
-		ImGui::BeginChild("##Content", ImVec2(0, 0), false, ImGuiWindowFlags_NoScrollbar);
+
+		// Content wrapper (top bar + scrollable content)
+		ImGui::BeginChild("##ContentWrapper", ImVec2(0, 0), false, ImGuiWindowFlags_NoScrollbar);
+		{
+			// --- Top Bar (reserved for future custom content per tab) ---
+			ImDrawList* contentDl = ImGui::GetWindowDrawList();
+			ImVec2 topBarPos = ImGui::GetCursorScreenPos();
+			float topBarW = ImGui::GetContentRegionAvail().x;
+
+			contentDl->AddRectFilled(topBarPos,
+				ImVec2(topBarPos.x + topBarW, topBarPos.y + menu::kTopBarHeight),
+				IM_COL32(15, 19, 23, 255));
+			contentDl->AddLine(
+				ImVec2(topBarPos.x, topBarPos.y + menu::kTopBarHeight - 1),
+				ImVec2(topBarPos.x + topBarW, topBarPos.y + menu::kTopBarHeight - 1),
+				IM_COL32(30, 36, 42, 255));
+
+			// Top bar text placeholder (tab name)
+			if (menu::g_fontMedium) ImGui::PushFont(menu::g_fontMedium);
+			float textY = topBarPos.y + (menu::kTopBarHeight - ImGui::GetFontSize()) * 0.5f;
+			contentDl->AddText(ImVec2(topBarPos.x + 10.f, textY),
+				IM_COL32(200, 210, 220, 180), tabs[activeTab].label);
+			if (menu::g_fontMedium) ImGui::PopFont();
+
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + menu::kTopBarHeight);
+		}
+
+		// Scrollable content below top bar
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(contentPadX, 8));
+		ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(0, 0, 0, 0));
+		ImGui::BeginChild("##Content", ImVec2(0, 0), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+		ImGui::PopStyleColor();
+
+		// --- Tab transition animation ---
+		{
+			if (menu::g_tabSwitchTime >= 0.f) {
+				float elapsed = (float)(ImGui::GetTime() - menu::g_tabSwitchTime);
+				const float fadeDuration = 0.15f;
+				if (elapsed < fadeDuration) {
+					float t = elapsed / fadeDuration;
+					menu::g_tabAlpha = 1.0f - (1.0f - t) * (1.0f - t) * (1.0f - t);
+				} else {
+					menu::g_tabAlpha = 1.0f;
+					if (elapsed > 0.6f)
+						menu::g_tabSwitchTime = -1.0f;
+				}
+			} else {
+				menu::g_tabAlpha = 1.0f;
+			}
+		}
+		menu::ResetGroupStagger();
+		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * menu::g_tabAlpha);
 
 		// Each tab's content — only render the active one
 		if (activeTab == 0) // Aimbot
 		{
+			// --- Left column ---
 			menu::LeftGroup("General", 8)
 				.Hotkey(cfg.aimbot.Key)
 				.Checkbox("Enabled", &cfg.aimbot.Enabled)
@@ -540,36 +649,39 @@ void gui::Render() noexcept
 				.Combo("Aim Bone", &cfg.aimbot.AimBone, "Head\0Neck\0Chest\0Stomach\0")
 				.End();
 
-			menu::RightGroup("Target", 3)
+			// --- Middle column ---
+			menu::MidGroup("Targeting", 6)
 				.Checkbox("Visibility Check", &cfg.aimbot.VisibilityCheck)
 				.Checkbox("Friendly Fire", &cfg.aimbot.FriendlyFire)
 				.SliderInt("Max Players Scan", &cfg.aimbot.MaxPlayersInFov, 2, 20, "%d",
 					"Max players scanned inside aim FOV")
+				.Checkbox("Auto Shoot", &cfg.aimbot.autoShoot.Enabled)
+				.GearPopup("autoshoot", [](auto& s) {
+					s.Slider("FOV", &cfg.aimbot.autoShoot.FOV, 0.5f, 180.0f, "%.1f",
+						"How close target must be to auto-fire")
+					 .SliderInt("Delay (ms)", &cfg.aimbot.autoShoot.DelayMs, 0, 500, "%d",
+						"Delay between auto shots (0 = weapon fire rate)");
+				})
+				.Checkbox("Backtrack", &cfg.aimbot.backtrack.Enabled)
+				.GearPopup("backtrack", [](auto& s) {
+					s.SliderInt("Time Limit (ms)", &cfg.aimbot.backtrack.TimeLimit, 50, 200, "%d",
+						"Max backtrack window in milliseconds")
+					 .Checkbox("Draw Ticks", &cfg.aimbot.backtrack.DrawTicks)
+					 .ColorPicker("Tick Color", cfg.aimbot.backtrack.TickColor);
+				})
 				.End();
 
-			menu::LeftGroup("Auto Shoot", 3)
-				.Checkbox("Enabled##AutoShoot", &cfg.aimbot.autoShoot.Enabled)
-				.Slider("FOV##ASFOV", &cfg.aimbot.autoShoot.FOV, 0.5f, 180.0f, "%.1f",
-					"How close target must be to auto-fire")
-				.SliderInt("Delay (ms)", &cfg.aimbot.autoShoot.DelayMs, 0, 500, "%d",
-					"Delay between auto shots (0 = weapon fire rate)")
-				.End();
-
-			menu::LeftGroup("Backtrack", 3)
-				.Checkbox("Enabled##Backtrack", &cfg.aimbot.backtrack.Enabled)
-				.SliderInt("Time Limit (ms)", &cfg.aimbot.backtrack.TimeLimit, 50, 200, "%d",
-					"Max backtrack window in milliseconds")
-				.Checkbox("Draw Ticks", &cfg.aimbot.backtrack.DrawTicks)
-				.SameLine().ColorPicker("##btCol", cfg.aimbot.backtrack.TickColor, true)
-				.End();
-
-			menu::RightGroup("Visuals##AimVis", 3)
+			// --- Right column ---
+			menu::RightGroup("Visuals##AimVis", 4)
 				.Checkbox("FOV Circle", &cfg.aimbot.DrawFov)
-				.SameLine().ColorPicker("##fovCol", cfg.aimbot.FovColor, true)
 				.Checkbox("Auto Shoot FOV", &cfg.aimbot.DrawAutoShootFov)
-				.SameLine().ColorPicker("##asCol", cfg.aimbot.AutoShootFovColor, true)
 				.Checkbox("Target Circle", &cfg.aimbot.DrawTarget)
-				.SameLine().ColorPicker("##targCol", cfg.aimbot.TargetColor, true)
+				.Text("Colors")
+				.GearPopup("aimVisColors", [](auto& s) {
+					s.ColorPicker("FOV Circle", cfg.aimbot.FovColor, true)
+					 .ColorPicker("Auto Shoot FOV", cfg.aimbot.AutoShootFovColor, true)
+					 .ColorPicker("Target Circle", cfg.aimbot.TargetColor, true);
+				})
 				.End();
 
 			menu::RightGroup("Recoil Control", 7)
@@ -590,21 +702,30 @@ void gui::Render() noexcept
 
 			menu::EndRow();
 		}
-		else if (activeTab == 1) // Visuals
+		else if (activeTab == 1) // Players (ESP, Glow, Chams)
 		{
-			menu::LeftGroup("Player", 9)
+			menu::LeftGroup("ESP", 11)
 				.Checkbox("Enabled", &cfg.visuals.Enabled)
-				.CheckboxCombo("Bounding Box", &cfg.visuals.esp.BoundingBox, "##ESPboxType", &cfg.visuals.esp.boxType, "Outlined\0Filled\0Box3d\0Corners\0")
+				.Checkbox("Bounding Box", &cfg.visuals.esp.BoundingBox)
+				.Combo("Box Style", &cfg.visuals.esp.boxType, "Outlined\0Filled\0Box3d\0Corners\0")
 				.Checkbox("Show Skeleton", &cfg.visuals.esp.Skeleton)
 				.Checkbox("Health Bar", &cfg.visuals.esp.HealthBar)
 				.Checkbox("Snap Lines", &cfg.visuals.esp.Lines)
 				.Checkbox("Display Name", &cfg.visuals.esp.Name)
-				.Checkbox("Show Dormant", &cfg.visuals.esp.Dormant, "Show players that are not updated by the server. (kinda useless)")
+				.Checkbox("Show Dormant", &cfg.visuals.esp.Dormant, "Show players that are not updated by the server")
 				.Checkbox("Weapon ESP", &cfg.visuals.esp.WeaponESP, "Show dropped weapon names on the ground")
 				.Checkbox("Show Friendly", &cfg.visuals.Friendly)
+				.Text("Colors")
+				.GearPopup("espColors", [](auto& s) {
+					s.ColorPicker("Box", cfg.visuals.esp.BoxColor, true)
+					 .ColorPicker("Skeleton", cfg.visuals.esp.SkeletonColor, true)
+					 .ColorPicker("Name", cfg.visuals.esp.NameColor, true)
+					 .ColorPicker("Snap Lines", cfg.visuals.esp.SnapLineColor, true)
+					 .ColorPicker("Weapon", cfg.visuals.esp.WeaponColor, true);
+				})
 				.End();
 
-			menu::RightGroup("Glow ESP", 7)
+			menu::MidGroup("Glow", 6)
 				.Checkbox("Enabled##Glow", &cfg.visuals.glow.Enabled)
 				.Checkbox("Teammates##Glow", &cfg.visuals.glow.Friendly)
 				.Checkbox("Local Player##Glow", &cfg.visuals.glow.LocalPlayer)
@@ -621,27 +742,7 @@ void gui::Render() noexcept
 				.Combo("Style##Glow", &cfg.visuals.glow.Style, "Default\0Pulse\0Outline\0Outline Pulse\0")
 				.End();
 
-			menu::RightGroup("Misc", 13)
-				.Checkbox("Third Person", &cfg.visuals.misc.ThirdPerson)
-				.Hotkey(cfg.visuals.misc.ThirdPersonKey)
-				.Slider("Distance", &cfg.visuals.misc.TPDistance, 0.1f, 5.0f)
-				.Slider("Aspect Ratio", &cfg.visuals.misc.AspectRatio, 0.0f, 3.0f)
-				.Slider("Cam Fov", &cfg.visuals.misc.camFOV, 40.f, 160.0f)
-				.Checkbox("Steady Cam", &cfg.visuals.misc.SteadyCam, "Terminates the shaking effects in your Camera.")
-				.Checkbox("No Zoom", &cfg.visuals.misc.NoZoom, "Eliminates the zoom effect when using Scoping.")
-				.Checkbox("Night Mode", &cfg.visuals.misc.NightMode, "Adjust map brightness")
-				.GearPopup("nightmode", [](auto& s) {
-					s.Slider("Brightness", &cfg.visuals.misc.NightModeBrightness, 0.05f, 2.0f, "%.2f",
-						"Lower = darker, 1.0 = normal, higher = brighter");
-				})
-				.Space()
-				.SubSection("View Model", [](auto& s) {
-					s.Slider("FOV", &cfg.visuals.viewmodel.ViewModelFOV, 60.f, 140.0f)
-					 .Checkbox("Always Draw", &cfg.visuals.viewmodel.AlwaysDraw);
-				})
-				.End();
-
-			menu::RightGroup("Chams", 7)
+			menu::RightGroup("Chams", 6)
 				.Checkbox("Enabled##Chams", &cfg.visuals.chams.Enabled)
 				.Checkbox("Through Walls", &cfg.visuals.chams.ThroughWalls)
 				.Combo("Material##Chams", &cfg.visuals.chams.Style,
@@ -659,7 +760,61 @@ void gui::Render() noexcept
 				})
 				.End();
 
-			menu::LeftGroup("Skin Changer", 7)
+			menu::EndRow();
+		}
+		else if (activeTab == 2) // World (camera, crosshair, hitmarker, skins)
+		{
+			menu::LeftGroup("Camera", 8)
+				.Checkbox("Third Person", &cfg.visuals.misc.ThirdPerson)
+				.Hotkey(cfg.visuals.misc.ThirdPersonKey)
+				.Slider("Distance", &cfg.visuals.misc.TPDistance, 0.1f, 5.0f)
+				.Slider("Aspect Ratio", &cfg.visuals.misc.AspectRatio, 0.0f, 3.0f)
+				.Slider("Cam Fov", &cfg.visuals.misc.camFOV, 40.f, 160.0f)
+				.Checkbox("Steady Cam", &cfg.visuals.misc.SteadyCam, "Terminates the shaking effects in your Camera.")
+				.Checkbox("No Zoom", &cfg.visuals.misc.NoZoom, "Eliminates the zoom effect when using Scoping.")
+				.Checkbox("Night Mode", &cfg.visuals.misc.NightMode, "Adjust map brightness")
+				.GearPopup("nightmode", [](auto& s) {
+					s.Slider("Brightness", &cfg.visuals.misc.NightModeBrightness, 0.05f, 2.0f, "%.2f",
+						"Lower = darker, 1.0 = normal, higher = brighter");
+				})
+				.End();
+
+			menu::MidGroup("Crosshair", 9)
+				.Checkbox("Enabled", &cfg.visuals.crosshair.Enabled)
+				.Combo("Style", &cfg.visuals.crosshair.Style, "Cross\0Circle\0Dot\0Cross + Dot\0")
+				.Slider("Size", &cfg.visuals.crosshair.Size, 1.f, 20.f, "%.0f")
+				.Slider("Gap", &cfg.visuals.crosshair.Gap, 0.f, 10.f, "%.0f")
+				.Slider("Thickness", &cfg.visuals.crosshair.Thickness, 0.5f, 5.f, "%.1f")
+				.Checkbox("Outline", &cfg.visuals.crosshair.Outline)
+				.Checkbox("Recoil Crosshair", &cfg.visuals.crosshair.RecoilCrosshair, "Shows where bullets actually land")
+				.Checkbox("Sniper Crosshair", &cfg.visuals.crosshair.SniperCrosshair, "Draw crosshair when scoped")
+				.Text("Colors")
+				.GearPopup("crosshairColors", [](auto& s) {
+					s.ColorPicker("Crosshair", cfg.visuals.crosshair.Color, true)
+					 .ColorPicker("Recoil", cfg.visuals.crosshair.RecoilColor, true);
+				})
+				.End();
+
+			menu::RightGroup("Hitmarker", 5)
+				.Checkbox("Enabled##Hitmarker", &cfg.visuals.hitmarker.Enabled)
+				.Checkbox("Damage Numbers", &cfg.visuals.hitmarker.ShowDamage)
+				.Checkbox("Hit Sound", &cfg.visuals.hitmarker.Sound)
+				.Text("Settings")
+				.GearPopup("hmSettings", [](auto& s) {
+					s.Slider("Size", &cfg.visuals.hitmarker.Size, 4.f, 20.f, "%.0f")
+					 .Slider("Gap", &cfg.visuals.hitmarker.Gap, 1.f, 10.f, "%.0f")
+					 .Slider("Thickness", &cfg.visuals.hitmarker.Thickness, 1.f, 4.f, "%.1f")
+					 .SliderInt("Duration (ms)", &cfg.visuals.hitmarker.Duration, 100, 2000, "%d");
+				})
+				.Text("Colors")
+				.GearPopup("hmColors", [](auto& s) {
+					s.ColorPicker("Default", cfg.visuals.hitmarker.Color, true)
+					 .ColorPicker("Headshot", cfg.visuals.hitmarker.HeadshotColor, true)
+					 .ColorPicker("Kill", cfg.visuals.hitmarker.KillColor, true);
+				})
+				.End();
+
+			menu::RightGroup("Skin Changer", 6)
 				.Checkbox("Enabled##Skins", &cfg.visuals.skinChanger.Enabled)
 				.Custom([]() {
 					static std::string knifeCombo;
@@ -668,7 +823,6 @@ void gui::Render() noexcept
 							{ knifeCombo += k.name; knifeCombo += '\0'; }
 						knifeCombo += '\0';
 					}
-					ImGui::SetNextItemWidth(-FLT_MIN);
 					ImGui::Combo("##knife_sc", &cfg.visuals.skinChanger.KnifeModel, knifeCombo.c_str());
 				})
 				.Custom([]() {
@@ -688,13 +842,11 @@ void gui::Render() noexcept
 							break;
 						}
 					}
-					ImGui::SetNextItemWidth(-FLT_MIN);
 					if (ImGui::Combo("##skin_sc", &selectedSkinIdx, skinCombo.c_str())) {
 						if (selectedSkinIdx < (int)skins.size())
 							cfg.visuals.skinChanger.SkinPaintKit = skins[selectedSkinIdx].paintKit;
 					}
 					if (selectedSkinIdx >= (int)skins.size()) {
-						ImGui::SetNextItemWidth(-FLT_MIN);
 						ImGui::InputInt("##customPK", &cfg.visuals.skinChanger.SkinPaintKit, 1, 10);
 					}
 				})
@@ -712,38 +864,9 @@ void gui::Render() noexcept
 				})
 				.End();
 
-			menu::LeftGroup("Hitmarker", 5)
-				.Checkbox("Enabled##Hitmarker", &cfg.visuals.hitmarker.Enabled)
-				.SameLine().ColorPicker("##hmCol", cfg.visuals.hitmarker.Color, true)
-				.Checkbox("Damage Numbers", &cfg.visuals.hitmarker.ShowDamage)
-				.Checkbox("Hit Sound", &cfg.visuals.hitmarker.Sound)
-				.ColorPicker("Headshot", cfg.visuals.hitmarker.HeadshotColor, true)
-				.SameLine().ColorPicker("Kill", cfg.visuals.hitmarker.KillColor, true)
-				.GearPopup("hitmarker", [](auto& s) {
-					s.Slider("Size", &cfg.visuals.hitmarker.Size, 4.f, 20.f, "%.0f")
-					 .Slider("Gap", &cfg.visuals.hitmarker.Gap, 1.f, 10.f, "%.0f")
-					 .Slider("Thickness", &cfg.visuals.hitmarker.Thickness, 1.f, 4.f, "%.1f")
-					 .SliderInt("Duration (ms)", &cfg.visuals.hitmarker.Duration, 100, 2000, "%d");
-				})
-				.End();
-
-			menu::LeftGroup("Crosshair", 11)
-				.Checkbox("Enabled", &cfg.visuals.crosshair.Enabled)
-				.Combo("Style", &cfg.visuals.crosshair.Style, "Cross\0Circle\0Dot\0Cross + Dot\0")
-				.Slider("Size", &cfg.visuals.crosshair.Size, 1.f, 20.f, "%.0f")
-				.Slider("Gap", &cfg.visuals.crosshair.Gap, 0.f, 10.f, "%.0f")
-				.Slider("Thickness", &cfg.visuals.crosshair.Thickness, 0.5f, 5.f, "%.1f")
-				.Checkbox("Outline", &cfg.visuals.crosshair.Outline)
-				.ColorPicker("Color", cfg.visuals.crosshair.Color, true)
-				.Space()
-				.Checkbox("Recoil Crosshair", &cfg.visuals.crosshair.RecoilCrosshair, "Shows where bullets actually land")
-				.ColorPicker("Recoil Color", cfg.visuals.crosshair.RecoilColor, true)
-				.Checkbox("Sniper Crosshair", &cfg.visuals.crosshair.SniperCrosshair, "Draw crosshair when scoped")
-				.End();
-
 			menu::EndRow();
 		}
-		else if (activeTab == 2) // Misc
+		else if (activeTab == 3) // Misc
 		{
 			menu::LeftGroup("Movement", 4)
 				.Checkbox("Bunny Hop", &cfg.misc.movement.BunnyHop)
@@ -757,7 +880,7 @@ void gui::Render() noexcept
 				})
 				.End();
 
-			menu::RightGroup("Exploits", 2)
+			menu::MidGroup("Exploits", 2)
 				.Checkbox("Infinite Duck", &cfg.misc.exploits.InfDuck)
 				.Checkbox("Fake Lag", &cfg.misc.exploits.FakeLag)
 				.GearPopup("fakelag", [](auto& s) {
@@ -767,7 +890,7 @@ void gui::Render() noexcept
 				})
 				.End();
 
-			menu::LeftGroup("Player", 4)
+			menu::RightGroup("Player", 4)
 				.Checkbox("Radar Hack", &cfg.misc.RadarHack, "Show all enemies on the in-game radar")
 				.Checkbox("Anti-Flash", &cfg.misc.AntiFlash, "Reduce or remove flashbang effect")
 				.GearPopup("antiflash", [](auto& s) {
@@ -780,7 +903,7 @@ void gui::Render() noexcept
 
 			menu::EndRow();
 		}
-		else if (activeTab == 3) // Settings
+		else if (activeTab == 4) // Settings
 		{
 			menu::Checkbox("Show Debug Window", &cfg.settings.ShowDebug);
 			menu::Checkbox("Toggle Style", &cfg.settings.ToggleStyle, "Switch between toggle switches and classic checkboxes");
@@ -843,7 +966,7 @@ void gui::Render() noexcept
 				.End();
 		}
 #ifdef _DEBUG
-		else if (activeTab == 4) // Audit Log
+		else if (activeTab == 5) // Audit Log
 		{
 			ImGui::Text("Entries: %d", AuditLog::Size());
 			ImGui::SameLine();
@@ -882,8 +1005,10 @@ void gui::Render() noexcept
 		}
 #endif // _DEBUG
 
+		ImGui::PopStyleVar();  // Tab transition alpha
 		ImGui::EndChild();  // ##Content
-		ImGui::PopStyleVar();
+		ImGui::PopStyleVar();  // Content padding
+		ImGui::EndChild();  // ##ContentWrapper
 	}
 	ImGui::End();
 

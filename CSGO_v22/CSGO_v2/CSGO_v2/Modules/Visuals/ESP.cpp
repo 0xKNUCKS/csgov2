@@ -74,50 +74,41 @@ void ESP::Render()
 
 void ESP::DrawLine(BBox bbox)
 {
-	Render::Line(ImGui::GetIO().DisplaySize.x / 2, ImGui::GetIO().DisplaySize.y, truncf_to_int(bbox.topLeft.x) + (bbox.w / 2), truncf_to_int(bbox.bottomLeft.y), 1.0f, ImColor(1.f, 1.f, 1.f, baseOpacity));
+	auto& c = cfg.visuals.esp.SnapLineColor;
+	Render::Line(ImGui::GetIO().DisplaySize.x / 2, ImGui::GetIO().DisplaySize.y, truncf_to_int(bbox.topLeft.x) + (bbox.w / 2), truncf_to_int(bbox.bottomLeft.y), 1.0f, ImColor(c.r, c.g, c.b, c.a * baseOpacity));
 }
 
 void ESP::DrawBoundingRect(BBox bbox, bool filled)
 {
+	auto& c = cfg.visuals.esp.BoxColor;
 	if (filled)
-		Render::FilledRect(bbox.topLeft.x, bbox.topLeft.y, bbox.w, bbox.h, ImColor(1.f, 1.f, 1.f, 0.35f * baseOpacity));
+		Render::FilledRect(bbox.topLeft.x, bbox.topLeft.y, bbox.w, bbox.h, ImColor(c.r, c.g, c.b, 0.35f * c.a * baseOpacity));
 
-	// Render the actual BOX!!!! ouh am geee woowwww
-	Render::OutLinedRect(bbox.topLeft.x, bbox.topLeft.y, bbox.w, bbox.h, 1.f, ImColor(1.f, 1.f, 1.f, baseOpacity));
-
+	Render::OutLinedRect(bbox.topLeft.x, bbox.topLeft.y, bbox.w, bbox.h, 1.f, ImColor(c.r, c.g, c.b, c.a * baseOpacity));
 }
 
 void ESP::DrawBoundingBox(BBox bbox)
 {
-	// Draw the front face
-	Render::Line(bbox.flb.x, bbox.flb.y, bbox.flt.x, bbox.flt.y,
-		1.f, ImColor(1.f, 1.f, 1.f, baseOpacity)); // flb -> flt
-	Render::Line(bbox.flt.x, bbox.flt.y, bbox.frt.x, bbox.frt.y,
-		1.f, ImColor(1.f, 1.f, 1.f, baseOpacity)); // flt -> frt
-	Render::Line(bbox.frt.x, bbox.frt.y, bbox.frb.x, bbox.frb.y,
-		1.f, ImColor(1.f, 1.f, 1.f, baseOpacity)); // frt -> frb
-	Render::Line(bbox.frb.x, bbox.frb.y, bbox.flb.x, bbox.flb.y,
-		1.f, ImColor(1.f, 1.f, 1.f, baseOpacity)); // frb -> flb
+	auto& c = cfg.visuals.esp.BoxColor;
+	ImColor col(c.r, c.g, c.b, c.a * baseOpacity);
 
-	// Draw the back face
-	Render::Line(bbox.blb.x, bbox.blb.y, bbox.blt.x, bbox.blt.y,
-		1.f, ImColor(1.f, 1.f, 1.f, baseOpacity)); // blb -> blt
-	Render::Line(bbox.blt.x, bbox.blt.y, bbox.brt.x, bbox.brt.y,
-		1.f, ImColor(1.f, 1.f, 1.f, baseOpacity)); // blt -> brt
-	Render::Line(bbox.brt.x, bbox.brt.y, bbox.brb.x, bbox.brb.y,
-		1.f, ImColor(1.f, 1.f, 1.f, baseOpacity)); // brt -> brb
-	Render::Line(bbox.brb.x, bbox.brb.y, bbox.blb.x, bbox.blb.y,
-		1.f, ImColor(1.f, 1.f, 1.f, baseOpacity)); // brb -> blb
+	// Front face
+	Render::Line(bbox.flb.x, bbox.flb.y, bbox.flt.x, bbox.flt.y, 1.f, col);
+	Render::Line(bbox.flt.x, bbox.flt.y, bbox.frt.x, bbox.frt.y, 1.f, col);
+	Render::Line(bbox.frt.x, bbox.frt.y, bbox.frb.x, bbox.frb.y, 1.f, col);
+	Render::Line(bbox.frb.x, bbox.frb.y, bbox.flb.x, bbox.flb.y, 1.f, col);
 
-	// Connect front and back faces
-	Render::Line(bbox.flb.x, bbox.flb.y, bbox.blb.x, bbox.blb.y,
-		1.f, ImColor(1.f, 1.f, 1.f, baseOpacity)); // flb -> blb
-	Render::Line(bbox.flt.x, bbox.flt.y, bbox.blt.x, bbox.blt.y,
-		1.f, ImColor(1.f, 1.f, 1.f, baseOpacity)); // flt -> blt
-	Render::Line(bbox.frb.x, bbox.frb.y, bbox.brb.x, bbox.brb.y,
-		1.f, ImColor(1.f, 1.f, 1.f, baseOpacity)); // frb -> brb
-	Render::Line(bbox.frt.x, bbox.frt.y, bbox.brt.x, bbox.brt.y,
-		1.f, ImColor(1.f, 1.f, 1.f, baseOpacity)); // frt -> brt
+	// Back face
+	Render::Line(bbox.blb.x, bbox.blb.y, bbox.blt.x, bbox.blt.y, 1.f, col);
+	Render::Line(bbox.blt.x, bbox.blt.y, bbox.brt.x, bbox.brt.y, 1.f, col);
+	Render::Line(bbox.brt.x, bbox.brt.y, bbox.brb.x, bbox.brb.y, 1.f, col);
+	Render::Line(bbox.brb.x, bbox.brb.y, bbox.blb.x, bbox.blb.y, 1.f, col);
+
+	// Connect front and back
+	Render::Line(bbox.flb.x, bbox.flb.y, bbox.blb.x, bbox.blb.y, 1.f, col);
+	Render::Line(bbox.flt.x, bbox.flt.y, bbox.blt.x, bbox.blt.y, 1.f, col);
+	Render::Line(bbox.frb.x, bbox.frb.y, bbox.brb.x, bbox.brb.y, 1.f, col);
+	Render::Line(bbox.frt.x, bbox.frt.y, bbox.brt.x, bbox.brt.y, 1.f, col);
 }
 
 void ESP::DrawHealthBar(BBox bbox, int health)
@@ -135,10 +126,11 @@ void ESP::DrawName(BBox bbox, const std::string& name)
 {
 	if (name.empty()) return;
 
+	auto& c = cfg.visuals.esp.NameColor;
 	ImVec2 nameSize = ImGui::CalcTextSize(name.c_str());
 	math::Vector namePos = math::Vector(bbox.topLeft.x + bbox.w / 2 - nameSize.x/2, bbox.bottomLeft.y);
 
-	Render::OutLinedText(name.c_str(), namePos.x, namePos.y, ImGui::GetBackgroundDrawList(), ImColor(1.f, 1.f, 1.f, baseOpacity));
+	Render::OutLinedText(name.c_str(), namePos.x, namePos.y, ImGui::GetBackgroundDrawList(), ImColor(c.r, c.g, c.b, c.a * baseOpacity));
 }
 
 // Convert class name like "CWeaponAWP" or "CAK47" to readable "AWP" or "AK-47"
@@ -206,8 +198,9 @@ void ESP::DrawWeapons()
 		float x = screenPos.x - textSize.x / 2.f;
 		float y = screenPos.y;
 
+		auto& wc = cfg.visuals.esp.WeaponColor;
 		Render::OutLinedText(displayName.c_str(), x, y,
-			ImGui::GetBackgroundDrawList(), ImColor(0.85f, 0.85f, 0.7f, 0.9f));
+			ImGui::GetBackgroundDrawList(), ImColor(wc.r, wc.g, wc.b, wc.a));
 	}
 }
 
@@ -246,7 +239,8 @@ void ESP::DrawSkeleton(gEntity* entity)
 			!utils::WorldToScreen(parentBone, parentScreenPos))
 			continue;
 
+		auto& sc = cfg.visuals.esp.SkeletonColor;
 		Render::Line(childScreenPos.x, childScreenPos.y,
-					parentScreenPos.x, parentScreenPos.y, 1.f, ImColor(1.f, 1.f, 1.f, baseOpacity));
+					parentScreenPos.x, parentScreenPos.y, 1.f, ImColor(sc.r, sc.g, sc.b, sc.a * baseOpacity));
 	}
 }

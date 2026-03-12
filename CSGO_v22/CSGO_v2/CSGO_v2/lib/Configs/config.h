@@ -108,6 +108,11 @@ public:
 			bool WeaponESP = false;
 			int boxType = 0; // eBoxType
 			CfgColor color = CfgColor(255,255,255);
+			CfgColor BoxColor = CfgColor(255, 255, 255);
+			CfgColor SkeletonColor = CfgColor(255, 255, 255);
+			CfgColor NameColor = CfgColor(255, 255, 255);
+			CfgColor SnapLineColor = CfgColor(255, 255, 255);
+			CfgColor WeaponColor = CfgColor(200, 200, 200);
 		} esp;
 		struct Misc
 		{

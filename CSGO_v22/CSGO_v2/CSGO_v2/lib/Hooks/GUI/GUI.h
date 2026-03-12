@@ -63,6 +63,9 @@ namespace gui
 	// render our menu
 	void Render() noexcept;
 	void DebugWindow() noexcept;
+#ifdef _DEBUG
+	void DrawLayoutDebug() noexcept;
+#endif
 
 	// New Frame and End Frame
 	void NewFrame() noexcept;

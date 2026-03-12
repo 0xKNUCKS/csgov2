@@ -13,7 +13,8 @@ namespace menu
 {
 	// --- Constants ---
 	inline constexpr float kSidebarWidth = 160.f;
-	inline constexpr float kColumnWidth = 220.f;
+	inline constexpr float kTopBarHeight = 32.f;   // Reserved top bar for future custom content
+	inline constexpr float kColumnWidth = 210.f;    // 3-column landscape layout
 	inline constexpr float kTitleBarHeight = 36.f;
 	inline constexpr float kAccentLineHeight = 2.f;
 
@@ -21,17 +22,24 @@ namespace menu
 	inline ImFont* g_fontRegular = nullptr;  // Inter Regular 14px (body text)
 	inline ImFont* g_fontMedium = nullptr;   // Inter Medium 14px (headers, labels)
 
+	// --- Tab transition state ---
+	inline float g_tabAlpha = 1.0f;          // Content alpha during tab switch fade
+	inline int g_groupIndex = 0;             // Group counter for stagger effect
+	inline float g_tabSwitchTime = -1.0f;    // ImGui time of last tab switch
+	void ResetGroupStagger();
+
 	// --- Theme ---
 	void SetupTheme();
 
 	// Forward declare
 	class GroupBuilder;
 
-	// --- Layout ---
+	// --- Layout (3-column) ---
 	GroupBuilder LeftGroup(const char* name, int lines);
+	GroupBuilder MidGroup(const char* name, int lines);
 	GroupBuilder RightGroup(const char* name, int lines);
 	GroupBuilder Section(const char* name, float width = kColumnWidth);
-	void EndRow(); // Close any open row group (call before EndTabItem if last group has no RightGroup)
+	void EndRow(); // Finalize columns (call before next tab or EndTabItem)
 	void Gap();
 
 	// --- Standalone widgets (for use outside groups) ---
@@ -90,10 +98,11 @@ namespace menu
 
 	private:
 		friend GroupBuilder menu::LeftGroup(const char*, int);
+		friend GroupBuilder menu::MidGroup(const char*, int);
 		friend GroupBuilder menu::RightGroup(const char*, int);
 		friend GroupBuilder menu::Section(const char*, float);
 
-		enum class Type { LeftGroup, RightGroup, Section, Inline };
+		enum class Type { LeftGroup, MidGroup, RightGroup, Section, Inline };
 		Type type_;
 		explicit GroupBuilder(Type t) : type_(t) {}
 	};

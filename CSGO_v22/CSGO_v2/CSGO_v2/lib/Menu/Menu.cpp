@@ -15,8 +15,8 @@
 
 namespace detail
 {
-	// iOS-style animated toggle switch
-	static bool ToggleSwitch(const char* label, bool* v)
+	// iOS-style animated toggle switch — label left, toggle right-aligned
+	static bool ToggleSwitch(const char* label, bool* v, const char* tooltip = nullptr)
 	{
 		ImGuiWindow* window = ImGui::GetCurrentWindow();
 		if (window->SkipItems)
@@ -28,11 +28,12 @@ namespace detail
 		const ImVec2 label_size = ImGui::CalcTextSize(label, NULL, true);
 
 		const float height = ImGui::GetFrameHeight();
-		const float width = height * 1.75f;
+		const float toggleW = height * 1.75f;
 		const float radius = height * 0.5f;
+		const float rowW = ImGui::CalcItemWidth();
 
 		const ImVec2 pos = window->DC.CursorPos;
-		const ImRect total_bb(pos, ImVec2(pos.x + width + (label_size.x > 0.f ? style.ItemInnerSpacing.x + label_size.x : 0.f), pos.y + height));
+		const ImRect total_bb(pos, ImVec2(pos.x + rowW, pos.y + height));
 		ImGui::ItemSize(total_bb, style.FramePadding.y);
 		if (!ImGui::ItemAdd(total_bb, id))
 			return false;
@@ -47,7 +48,7 @@ namespace detail
 
 		// Animate the knob position (0.0 = off, 1.0 = on)
 		ImGuiStorage* storage = window->DC.StateStorage;
-		const ImGuiID animId = id + ImGuiID(0xA91E); // unique sub-id for animation
+		const ImGuiID animId = id + ImGuiID(0xA91E);
 		float animVal = storage->GetFloat(animId, *v ? 1.f : 0.f);
 		float target = *v ? 1.f : 0.f;
 		float speed = g.IO.DeltaTime * 12.f;
@@ -59,44 +60,57 @@ namespace detail
 		// Colors
 		ImVec4 offBg = ImGui::GetStyleColorVec4(ImGuiCol_FrameBg);
 		ImVec4 onBg = ImGui::GetStyleColorVec4(ImGuiCol_CheckMark);
-		// Lerp background color
 		ImVec4 bgColor(
 			offBg.x + (onBg.x - offBg.x) * animVal,
 			offBg.y + (onBg.y - offBg.y) * animVal,
 			offBg.z + (onBg.z - offBg.z) * animVal,
 			1.f
 		);
-		// Brighten on hover
 		if (hovered) {
 			bgColor.x += 0.05f;
 			bgColor.y += 0.05f;
 			bgColor.z += 0.05f;
 		}
 
+		// Toggle position: right-aligned
+		float toggleX = pos.x + rowW - toggleW;
+
 		// Draw track (pill shape)
-		ImVec2 trackMin = pos;
-		ImVec2 trackMax(pos.x + width, pos.y + height);
+		ImVec2 trackMin(toggleX, pos.y);
+		ImVec2 trackMax(toggleX + toggleW, pos.y + height);
 		window->DrawList->AddRectFilled(trackMin, trackMax, ImGui::ColorConvertFloat4ToU32(bgColor), radius);
 
-		// Inner shadow on track (subtle depth effect)
+		// Inner shadow on track
 		window->DrawList->AddRectFilled(trackMin,
 			ImVec2(trackMax.x, trackMin.y + 3.f),
 			IM_COL32(0, 0, 0, 25), radius, ImDrawFlags_RoundCornersTop);
 
 		// Draw knob
 		float knobRadius = radius - 2.f;
-		float knobX = pos.x + radius + animVal * (width - height);
+		float knobX = toggleX + radius + animVal * (toggleW - height);
 		float knobY = pos.y + radius;
-		ImU32 knobColor = IM_COL32(255, 255, 255, 255);
-		// Multi-layer shadow for depth
 		window->DrawList->AddCircleFilled(ImVec2(knobX + 0.5f, knobY + 2.f), knobRadius + 1.f, IM_COL32(0, 0, 0, 30));
 		window->DrawList->AddCircleFilled(ImVec2(knobX + 0.5f, knobY + 1.f), knobRadius, IM_COL32(0, 0, 0, 45));
-		window->DrawList->AddCircleFilled(ImVec2(knobX, knobY), knobRadius, knobColor);
+		window->DrawList->AddCircleFilled(ImVec2(knobX, knobY), knobRadius, IM_COL32(255, 255, 255, 255));
 
-		// Label
+		// Label on the left
 		if (label_size.x > 0.f) {
-			ImVec2 label_pos(pos.x + width + style.ItemInnerSpacing.x, pos.y + style.FramePadding.y);
-			ImGui::RenderText(label_pos, label);
+			float labelY = pos.y + style.FramePadding.y;
+			ImGui::RenderText(ImVec2(pos.x, labelY), label);
+
+			// Inline (?) help marker after label text
+			if (tooltip) {
+				float helpX = pos.x + label_size.x + 4.f;
+				window->DrawList->AddText(ImVec2(helpX, labelY), IM_COL32(120, 130, 140, 180), "(?)");
+				ImVec2 helpSize = ImGui::CalcTextSize("(?)");
+				if (ImGui::IsMouseHoveringRect(ImVec2(helpX, labelY), ImVec2(helpX + helpSize.x, labelY + helpSize.y))) {
+					ImGui::BeginTooltip();
+					ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+					ImGui::TextUnformatted(tooltip);
+					ImGui::PopTextWrapPos();
+					ImGui::EndTooltip();
+				}
+			}
 		}
 
 		return pressed;
@@ -104,11 +118,12 @@ namespace detail
 
 	static void RenderCheckbox(const char* label, bool* v, const char* tooltip)
 	{
-		if (cfg.settings.ToggleStyle)
-			ToggleSwitch(label, v);
-		else
+		if (cfg.settings.ToggleStyle) {
+			ToggleSwitch(label, v, tooltip);
+		} else {
 			ImGui::Checkbox(label, v);
-		if (tooltip) menu::HelpMarker(tooltip);
+			if (tooltip) menu::HelpMarker(tooltip);
+		}
 	}
 
 	// Get display name from label (strips ##suffix used for ImGui ID)
@@ -137,7 +152,7 @@ namespace detail
 		// Layout: text row on top, track row below
 		const float textH = ImGui::GetTextLineHeight();
 		constexpr float trackAreaH = 16.0f;   // Space for track + grab knob
-		constexpr float gap = 2.0f;
+		constexpr float gap = 4.0f;            // Space between label row and track
 		const float totalH = textH + gap + trackAreaH;
 
 		const ImVec2 pos = window->DC.CursorPos;
@@ -185,6 +200,23 @@ namespace detail
 		ImGui::DataTypeFormatString(valueBuf, IM_ARRAYSIZE(valueBuf), data_type, p_data, displayFmt);
 
 		dl->AddText(ImVec2(pos.x, pos.y), ImGui::GetColorU32(ImGuiCol_Text), displayLabel.c_str());
+
+		// Draw (?) help marker inline right after the label text
+		if (tooltip) {
+			ImVec2 labelSize = ImGui::CalcTextSize(displayLabel.c_str());
+			float helpX = pos.x + labelSize.x + 4.f;
+			dl->AddText(ImVec2(helpX, pos.y), IM_COL32(120, 130, 140, 180), "(?)");
+			ImVec2 helpSize = ImGui::CalcTextSize("(?)");
+			ImRect helpBB(ImVec2(helpX, pos.y), ImVec2(helpX + helpSize.x, pos.y + helpSize.y));
+			if (ImGui::IsMouseHoveringRect(helpBB.Min, helpBB.Max)) {
+				ImGui::BeginTooltip();
+				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+				ImGui::TextUnformatted(tooltip);
+				ImGui::PopTextWrapPos();
+				ImGui::EndTooltip();
+			}
+		}
+
 		ImVec2 valSize = ImGui::CalcTextSize(valueBuf);
 		dl->AddText(ImVec2(pos.x + w - valSize.x, pos.y),
 			IM_COL32(140, 155, 170, 255), valueBuf);
@@ -235,7 +267,7 @@ namespace detail
 			dl->AddCircleFilled(ImVec2(animX, trackCenterY), 2.5f, IM_COL32(255, 255, 255, 220));
 		}
 
-		if (tooltip) menu::HelpMarker(tooltip);
+		// tooltip already handled inline in label row above
 		return value_changed;
 	}
 
@@ -302,10 +334,13 @@ namespace detail
 
 	static void RenderHotkey(Hotkey& hotKey)
 	{
+		// Snapshot searching state BEFORE button click to keep Push/Pop balanced
+		bool wasSearching = hotKey.searching;
+
 		// Pulsing accent border when listening for key
-		if (hotKey.searching) {
+		if (wasSearching) {
 			ImGuiContext& g = *GImGui;
-			float pulse = 0.5f + 0.5f * std::sinf((float)g.Time * 6.0f); // pulsing 0-1
+			float pulse = 0.5f + 0.5f * std::sinf((float)g.Time * 6.0f);
 			ImVec4 accentVec(0.28f, 0.56f, 1.0f, 0.3f + 0.5f * pulse);
 			ImGui::PushStyleColor(ImGuiCol_Border, accentVec);
 			ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.5f);
@@ -316,7 +351,7 @@ namespace detail
 			hotKey.searching = true;
 		}
 
-		if (hotKey.searching) {
+		if (wasSearching) {
 			ImGui::PopStyleVar();
 			ImGui::PopStyleColor();
 
@@ -344,49 +379,101 @@ namespace detail
 	// Accent color used for card top lines (matches title bar accent)
 	static constexpr ImU32 kCardAccent = IM_COL32(71, 143, 255, 255);  // #478FFF
 
-	// Draw multi-layer soft shadow behind a rectangle (call on parent draw list)
-	static void DrawCardShadow(ImDrawList* dl, const ImVec2& min, const ImVec2& max, float rounding)
-	{
-		// 4-layer expanding shadow with decreasing opacity
-		struct ShadowLayer { float expand; ImU32 color; };
-		static constexpr ShadowLayer layers[] = {
-			{ 3.f,  IM_COL32(0, 0, 0, 40) },
-			{ 6.f,  IM_COL32(0, 0, 0, 25) },
-			{ 10.f, IM_COL32(0, 0, 0, 15) },
-			{ 15.f, IM_COL32(0, 0, 0, 8)  },
-		};
-		for (auto& l : layers) {
-			dl->AddRectFilled(
-				ImVec2(min.x - l.expand, min.y - l.expand),
-				ImVec2(max.x + l.expand, max.y + l.expand),
-				l.color, rounding + l.expand * 0.3f);
-		}
-	}
+	// =========================================================
+	// Custom group card — fully DrawList-based, no BeginChild
+	// =========================================================
+	// Card colors (match theme)
+	static constexpr ImU32 kCardBg = IM_COL32(33, 41, 51, 255);     // ChildBg
+	static constexpr float kCardPadX = 14.f;
+	static constexpr float kCardPadY = 10.f;
+	static constexpr float kHeaderGap = 4.f;
+	static constexpr float kAccentH = 2.f;
 
-	// Opens a child window sized for N widget lines + title
 	static void BeginGroupChild(const char* name, int lines, float width)
 	{
 		float w = (width <= 0.f) ? ImGui::GetContentRegionAvail().x : width;
 		float lineH = ImGui::GetFrameHeightWithSpacing();
-		float titleH = lineH + 2.f;
-		float h = titleH + lines * lineH + ImGui::GetStyle().WindowPadding.y;
+		float spacing = ImGui::GetStyle().ItemSpacing.y;
+		float titleH = ImGui::GetTextLineHeightWithSpacing() + spacing + kHeaderGap + spacing;
+		float h = titleH + lines * lineH + 2 * kCardPadY;
 
-		// --- Shadow: draw on parent draw list before creating child ---
-		ImVec2 screenPos = ImGui::GetCursorScreenPos();
-		ImVec2 cardMin = screenPos;
-		ImVec2 cardMax = ImVec2(screenPos.x + w, screenPos.y + h);
-		float rounding = ImGui::GetStyle().ChildRounding;
-		DrawCardShadow(ImGui::GetWindowDrawList(), cardMin, cardMax, rounding);
+		// --- Stagger animation for tab transitions ---
+		float groupAlpha = 1.0f;
+		if (menu::g_tabSwitchTime >= 0.f) {
+			ImGuiContext& gc = *GImGui;
+			float timeSince = (float)gc.Time - menu::g_tabSwitchTime;
+			float staggerDelay = menu::g_groupIndex * 0.05f;
+			float groupTime = timeSince - staggerDelay;
+			const float fadeIn = 0.2f;
+			if (groupTime <= 0.f) {
+				groupAlpha = 0.0f;
+			} else if (groupTime < fadeIn) {
+				float t = groupTime / fadeIn;
+				groupAlpha = 1.0f - (1.0f - t) * (1.0f - t) * (1.0f - t);
+			}
+		}
+		menu::g_groupIndex++;
 
-		ImGui::BeginChild(std::format("{}##{}", name, name).c_str(), ImVec2(w, h), true);
+		float currentAlpha = ImGui::GetStyle().Alpha;
+		float alpha = currentAlpha * groupAlpha;
+		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha);
 
-		// --- Accent line at top of card (2px) ---
-		ImVec2 childPos = ImGui::GetWindowPos();
-		ImDrawList* childDl = ImGui::GetWindowDrawList();
-		childDl->AddRectFilled(
-			childPos,
-			ImVec2(childPos.x + w, childPos.y + 2.0f),
-			kCardAccent, rounding, ImDrawFlags_RoundCornersTop);
+		// Card position from cursor
+		ImVec2 cardPos = ImGui::GetCursorScreenPos();
+		ImVec2 cardSize(w, h);
+		ImVec2 cardMax(cardPos.x + w, cardPos.y + h);
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+
+		// Shadow (drawn on parent, behind everything)
+		{
+			struct { float expand; int a; } layers[] = { {2,30}, {4,18}, {7,8} };
+			for (auto& l : layers) {
+				int a = (int)(l.a * alpha);
+				if (a <= 0) continue;
+				dl->AddRectFilled(
+					ImVec2(cardPos.x - l.expand, cardPos.y - l.expand),
+					ImVec2(cardMax.x + l.expand, cardMax.y + l.expand),
+					IM_COL32(0, 0, 0, a), 4.0f);
+			}
+		}
+
+		// Card background
+		int bgA = (int)(255.f * alpha);
+		dl->AddRectFilled(cardPos, cardMax, IM_COL32(33, 41, 51, bgA));
+
+		// Accent line — exact card width, no clipping games
+		int accentA = (int)(255.f * alpha);
+		dl->AddRectFilled(cardPos, ImVec2(cardMax.x, cardPos.y + kAccentH),
+			IM_COL32(71, 143, 255, accentA));
+
+		// Accent glow
+		int glowA = (int)(60.f * alpha);
+		if (glowA > 0) {
+			dl->AddRectFilledMultiColor(
+				ImVec2(cardPos.x, cardPos.y + kAccentH),
+				ImVec2(cardMax.x, cardPos.y + kAccentH + 10.f),
+				IM_COL32(71, 143, 255, glowA),
+				IM_COL32(71, 143, 255, glowA),
+				IM_COL32(71, 143, 255, 0),
+				IM_COL32(71, 143, 255, 0));
+		}
+
+		// Position cursor inside the card for widgets
+		ImVec2 contentStart(cardPos.x + kCardPadX, cardPos.y + kCardPadY);
+		ImGui::SetCursorScreenPos(contentStart);
+
+		// Push clip rect so widgets don't draw outside the card
+		dl->PushClipRect(cardPos, cardMax, true);
+
+		// Push item width for widgets inside the card
+		ImGui::PushItemWidth(w - 2 * kCardPadX);
+
+		// Begin an ImGui group to keep all content together
+		ImGui::BeginGroup();
+
+		// Stash card bounds so EndGroupChild can restore cursor and clamp content
+		ImGui::GetStateStorage()->SetFloat(ImGui::GetID("##cardBottomY"), cardMax.y);
+		ImGui::GetStateStorage()->SetFloat(ImGui::GetID("##cardRightX"), cardMax.x);
 
 		// --- Header text in medium font ---
 		if (menu::g_fontMedium) ImGui::PushFont(menu::g_fontMedium);
@@ -400,7 +487,34 @@ namespace detail
 
 		if (menu::g_fontMedium) ImGui::PopFont();
 
-		ImGui::Separator();
+		// Manual separator line (constrained to card width, not parent window)
+		{
+			ImVec2 sepStart = ImGui::GetCursorScreenPos();
+			float sepW = w - 2 * kCardPadX;
+			ImGui::GetWindowDrawList()->AddLine(
+				sepStart, ImVec2(sepStart.x + sepW, sepStart.y),
+				ImGui::GetColorU32(ImGuiCol_Separator));
+			ImGui::Dummy(ImVec2(sepW, 1.0f)); // advance cursor past separator
+		}
+		ImGui::Dummy(ImVec2(0, kHeaderGap));
+	}
+
+	static void EndGroupChild()
+	{
+		ImGui::EndGroup();
+		ImGui::PopItemWidth();
+		ImGui::GetWindowDrawList()->PopClipRect();
+
+		// Clamp the window's CursorMaxPos so SameLine widgets don't cause horizontal scroll
+		float cardRightX = ImGui::GetStateStorage()->GetFloat(ImGui::GetID("##cardRightX"), 0.f);
+		ImGuiWindow* win = ImGui::GetCurrentWindow();
+		if (cardRightX > 0.f && win->DC.CursorMaxPos.x > cardRightX)
+			win->DC.CursorMaxPos.x = cardRightX;
+
+		// Restore cursor to below the card rect
+		float cardBottomY = ImGui::GetStateStorage()->GetFloat(ImGui::GetID("##cardBottomY"), 0.f);
+		ImVec2 winPos = ImGui::GetWindowPos();
+		ImGui::SetCursorPosY(cardBottomY - winPos.y);
 	}
 }
 
@@ -437,13 +551,16 @@ void menu::Gap()
 	ImGui::Spacing();
 }
 
+void menu::ResetGroupStagger() { g_groupIndex = 0; }
+
 // =========================================================
 // Layout functions — return GroupBuilder for chaining
 // =========================================================
 
-// Independent two-column layout state.
+// Independent three-column layout state.
 // Each column tracks its own Y cursor so groups stack without gaps.
 static float s_leftColY  = -1.f;
+static float s_midColY   = -1.f;
 static float s_rightColY = -1.f;
 static float s_colStartX = 0.f;
 static bool  s_colActive = false;
@@ -452,6 +569,7 @@ static void InitColumnsIfNeeded()
 {
 	if (!s_colActive) {
 		s_leftColY  = ImGui::GetCursorPosY();
+		s_midColY   = s_leftColY;
 		s_rightColY = s_leftColY;
 		s_colStartX = ImGui::GetCursorPosX();
 		s_colActive = true;
@@ -466,10 +584,19 @@ menu::GroupBuilder menu::LeftGroup(const char* name, int lines)
 	return GroupBuilder(GroupBuilder::Type::LeftGroup);
 }
 
+menu::GroupBuilder menu::MidGroup(const char* name, int lines)
+{
+	InitColumnsIfNeeded();
+	float midX = s_colStartX + kColumnWidth + ImGui::GetStyle().ItemSpacing.x;
+	ImGui::SetCursorPos(ImVec2(midX, s_midColY));
+	detail::BeginGroupChild(name, lines, kColumnWidth);
+	return GroupBuilder(GroupBuilder::Type::MidGroup);
+}
+
 menu::GroupBuilder menu::RightGroup(const char* name, int lines)
 {
 	InitColumnsIfNeeded();
-	float rightX = s_colStartX + kColumnWidth + ImGui::GetStyle().ItemSpacing.x;
+	float rightX = s_colStartX + (kColumnWidth + ImGui::GetStyle().ItemSpacing.x) * 2;
 	ImGui::SetCursorPos(ImVec2(rightX, s_rightColY));
 	detail::BeginGroupChild(name, lines, kColumnWidth);
 	return GroupBuilder(GroupBuilder::Type::RightGroup);
@@ -478,7 +605,9 @@ menu::GroupBuilder menu::RightGroup(const char* name, int lines)
 void menu::EndRow()
 {
 	if (s_colActive) {
-		float maxY = (s_leftColY > s_rightColY) ? s_leftColY : s_rightColY;
+		float maxY = s_leftColY;
+		if (s_midColY > maxY) maxY = s_midColY;
+		if (s_rightColY > maxY) maxY = s_rightColY;
 		ImGui::SetCursorPosY(maxY);
 		s_colActive = false;
 	}
@@ -522,15 +651,36 @@ GB& GB::Combo(const char* label, int* current, const char* items, const char* to
 
 GB& GB::CheckboxCombo(const char* cbLabel, bool* v, const char* comboId, int* current, const char* items, const char* tooltip)
 {
-	if (cfg.settings.ToggleStyle)
-		detail::ToggleSwitch(cbLabel, v);
-	else
+	if (cfg.settings.ToggleStyle) {
+		// Custom layout: label left, combo center-right, toggle far right
+		ImGuiWindow* window = ImGui::GetCurrentWindow();
+		if (!window->SkipItems) {
+			ImGuiContext& g = *GImGui;
+			const ImGuiStyle& style = g.Style;
+			const float rowW = ImGui::CalcItemWidth();
+			const float height = ImGui::GetFrameHeight();
+			const float toggleW = height * 1.75f;
+			const float comboW = rowW * 0.35f;
+			const float comboX = rowW - toggleW - style.ItemInnerSpacing.x - comboW;
+
+			// Render the toggle (handles label + toggle drawing)
+			detail::ToggleSwitch(cbLabel, v, tooltip);
+
+			// Draw the combo overlaid between label and toggle
+			ImGui::SameLine(0, 0);
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() - rowW + comboX);
+			ImGui::PushItemWidth(comboW);
+			ImGui::Combo(comboId, current, items);
+			ImGui::PopItemWidth();
+		}
+	} else {
 		ImGui::Checkbox(cbLabel, v);
-	ImGui::SameLine();
-	ImGui::PushItemWidth(menu::kColumnWidth * 0.3f);
-	ImGui::Combo(comboId, current, items);
-	ImGui::PopItemWidth();
-	if (tooltip) menu::HelpMarker(tooltip);
+		ImGui::SameLine();
+		ImGui::PushItemWidth(menu::kColumnWidth * 0.3f);
+		ImGui::Combo(comboId, current, items);
+		ImGui::PopItemWidth();
+		if (tooltip) menu::HelpMarker(tooltip);
+	}
 	return *this;
 }
 
@@ -548,10 +698,6 @@ GB& GB::Hotkey(::Hotkey& hotKey)
 
 GB& GB::Text(const char* text)
 {
-	// Indent to align with checkbox/toggle labels
-	// Toggle switch width = height * 1.75f, then ItemInnerSpacing.x gap before label
-	float toggleWidth = ImGui::GetFrameHeight() * 1.75f;
-	ImGui::SetCursorPosX(ImGui::GetCursorPosX() + toggleWidth + ImGui::GetStyle().ItemInnerSpacing.x);
 	ImGui::Text(text);
 	return *this;
 }
@@ -633,7 +779,8 @@ GB& GB::GearPopup(const char* id, std::function<void(GroupBuilder&)> content)
 	storage->SetFloat(animKey, alpha);
 
 	if (alpha > 0.01f) {
-		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha);
+		// Multiply with current alpha to respect window fade + tab transition
+		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * alpha);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
 		ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, 6.f);
 
@@ -669,14 +816,22 @@ GB& GB::Custom(std::function<void()> fn)
 
 void GB::End()
 {
+	constexpr float kGroupGap = 10.0f; // Vertical spacing between groups
 	switch (type_) {
 	case Type::LeftGroup:
-		ImGui::EndChild();
-		s_leftColY = ImGui::GetCursorPosY();
+		detail::EndGroupChild();
+		ImGui::PopStyleVar(); // Group stagger alpha
+		s_leftColY = ImGui::GetCursorPosY() + kGroupGap;
+		break;
+	case Type::MidGroup:
+		detail::EndGroupChild();
+		ImGui::PopStyleVar(); // Group stagger alpha
+		s_midColY = ImGui::GetCursorPosY() + kGroupGap;
 		break;
 	case Type::RightGroup:
-		ImGui::EndChild();
-		s_rightColY = ImGui::GetCursorPosY();
+		detail::EndGroupChild();
+		ImGui::PopStyleVar(); // Group stagger alpha
+		s_rightColY = ImGui::GetCursorPosY() + kGroupGap;
 		break;
 	case Type::Section: menu::EndOutlineGroup(); break;
 	case Type::Inline:  break; // no-op for nested builders
@@ -827,6 +982,11 @@ void menu::SetupTheme()
 	ImGui::GetStyle().GrabRounding = 4.0f;
 	ImGui::GetStyle().ChildRounding = 6.f;
 	ImGui::GetStyle().WindowRounding = 6.f;
+	ImGui::GetStyle().ItemSpacing = ImVec2(8.f, 6.f);       // Horizontal and vertical spacing between widgets
+	ImGui::GetStyle().WindowPadding = ImVec2(10.f, 10.f);   // Padding inside windows/children
+	ImGui::GetStyle().FramePadding = ImVec2(6.f, 4.f);      // Padding inside widget frames
+	ImGui::GetStyle().ScrollbarSize = 6.f;                  // Slim scrollbar
+	ImGui::GetStyle().ScrollbarRounding = 3.f;
 
 	ImVec4* colors = ImGui::GetStyle().Colors;
 	colors[ImGuiCol_Text] = ImVec4(0.95f, 0.96f, 0.98f, 1.00f);

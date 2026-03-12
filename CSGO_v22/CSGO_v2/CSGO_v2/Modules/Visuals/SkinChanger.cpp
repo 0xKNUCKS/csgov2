@@ -11,8 +11,7 @@
 #include <random>
 
 static const std::vector<KnifeModel> kKnifeModels = {
-	{ WEAPON_KNIFE_CT, "Default CT", nullptr, nullptr },
-	{ WEAPON_KNIFE_T,  "Default T",  nullptr, nullptr },
+	{ WEAPON_NONE, "Default", nullptr, nullptr },  // Index 0 = auto-detect stock knife by team
 	{ KNIFE_BAYONET,         "Bayonet",          "models/weapons/v_knife_bayonet.mdl",          "models/weapons/w_knife_bayonet.mdl" },
 	{ KNIFE_FLIP,            "Flip Knife",        "models/weapons/v_knife_flip.mdl",             "models/weapons/w_knife_flip.mdl" },
 	{ KNIFE_GUT,             "Gut Knife",         "models/weapons/v_knife_gut.mdl",              "models/weapons/w_knife_gut.mdl" },
@@ -104,6 +103,7 @@ namespace skinoffsets {
 }
 
 static bool g_needsRefresh = false;
+static bool g_initialized = false;
 
 // Applied settings — only updated when user presses Apply.
 // ApplyToWeapon uses these, NOT cfg directly, so changes don't take effect
@@ -345,14 +345,41 @@ static const KnifeModel* GetSelectedKnife()
 {
 	int idx = g_applied.KnifeModel;
 	if (idx <= 0 || idx >= (int)kKnifeModels.size())
-		return nullptr;
+		return nullptr;  // Index 0 = Default, no custom knife
 	return &kKnifeModels[idx];
 }
 
-static void ApplyToWeapon(gEntity* weapon, int accountId)
+// Get the stock knife def index and model paths based on player team
+static short GetStockKnifeId(int team) {
+	return (team == 3) ? WEAPON_KNIFE_CT : WEAPON_KNIFE_T;
+}
+static const char* GetStockViewModel(int team) {
+	return (team == 3)
+		? "models/weapons/v_knife_default_ct.mdl"
+		: "models/weapons/v_knife_default_t.mdl";
+}
+static const char* GetStockWorldModel(int team) {
+	return (team == 3)
+		? "models/weapons/w_knife_default_ct.mdl"
+		: "models/weapons/w_knife_default_t.mdl";
+}
+
+static void ApplyToWeapon(gEntity* weapon, int accountId, int team)
 {
 	short* pDefIndex = (short*)((uintptr_t)weapon + offsets::m_iItemDefinitionIndex);
 	short defIndex = *pDefIndex;
+
+	bool isKnife = skinchanger::IsKnife(defIndex);
+	const KnifeModel* knife = GetSelectedKnife();  // nullptr = Default
+
+	// If default knife + default skin, don't modify knives at all
+	if (isKnife && !knife && g_applied.SkinPaintKit == 0)
+	{
+		// Reset defIndex to stock (in case we overrode it on a previous frame)
+		*pDefIndex = GetStockKnifeId(team);
+		*(int*)((uintptr_t)weapon + offsets::m_iEntityQuality) = 0;
+		return;  // Don't force fallback, let the game show the stock knife
+	}
 
 	// Force fallback path
 	*(int*)((uintptr_t)weapon + offsets::m_iItemIDHigh) = -1;
@@ -360,11 +387,11 @@ static void ApplyToWeapon(gEntity* weapon, int accountId)
 	*(int*)((uintptr_t)weapon + offsets::m_iAccountID) = accountId;
 
 	// Knife model override
-	if (skinchanger::IsKnife(defIndex))
+	if (isKnife)
 	{
-		const KnifeModel* knife = GetSelectedKnife();
 		if (knife)
 		{
+			// Custom knife selected
 			*pDefIndex = knife->id;
 			*(int*)((uintptr_t)weapon + offsets::m_iEntityQuality) = 3;
 
@@ -374,6 +401,12 @@ static void ApplyToWeapon(gEntity* weapon, int accountId)
 				weapon->setModelIndex(modelIdx);
 				*(int*)((uintptr_t)weapon + offsets::m_nModelIndex) = modelIdx;
 			}
+		}
+		else
+		{
+			// Default knife + custom skin: reset model but keep skin
+			*pDefIndex = GetStockKnifeId(team);
+			*(int*)((uintptr_t)weapon + offsets::m_iEntityQuality) = 0;
 		}
 	}
 
@@ -416,12 +449,8 @@ static void ForceItemUpdate(gEntity* weapon)
 	__try { weapon->onDataChanged(0); } __except (EXCEPTION_EXECUTE_HANDLER) {}
 }
 
-static void UpdateViewModel(gEntity* localPlayer)
+static void UpdateViewModel(gEntity* localPlayer, int team)
 {
-	const KnifeModel* knife = GetSelectedKnife();
-	if (!knife || !knife->model)
-		return;
-
 	int activeHandle = *(int*)((uintptr_t)localPlayer + offsets::m_hActiveWeapon);
 	if (!activeHandle || activeHandle == -1)
 		return;
@@ -434,19 +463,28 @@ static void UpdateViewModel(gEntity* localPlayer)
 	if (!skinchanger::IsKnife(defIdx))
 		return;
 
+	const KnifeModel* knife = GetSelectedKnife();
+
+	// Determine which model to use: custom knife or stock (auto-detect team)
+	const char* vmodel = knife ? knife->model : GetStockViewModel(team);
+	const char* wmodel = knife ? knife->wmodel : GetStockWorldModel(team);
+
+	if (!vmodel)
+		return;
+
 	int vmHandle = *(int*)((uintptr_t)localPlayer + offsets::m_hViewModel);
 	if (vmHandle && vmHandle != -1)
 	{
 		gEntity* viewModel = globals::g_interfaces.ClientEntity->GetClientEntity(vmHandle & 0xFFF);
 		if (viewModel)
 		{
-			int modelIdx = globals::g_interfaces.ModelInfo->GetModelIndex(knife->model);
+			int modelIdx = globals::g_interfaces.ModelInfo->GetModelIndex(vmodel);
 			viewModel->setModelIndex(modelIdx);
 			*(int*)((uintptr_t)viewModel + offsets::m_nModelIndex) = modelIdx;
 		}
 	}
 
-	if (knife->wmodel)
+	if (wmodel)
 	{
 		int wmodelHandle = *(int*)((uintptr_t)activeWeapon + offsets::m_hWeaponWorldModel);
 		if (wmodelHandle && wmodelHandle != -1)
@@ -454,7 +492,7 @@ static void UpdateViewModel(gEntity* localPlayer)
 			gEntity* worldModel = globals::g_interfaces.ClientEntity->GetClientEntity(wmodelHandle & 0xFFF);
 			if (worldModel)
 			{
-				int wmodelIdx = globals::g_interfaces.ModelInfo->GetModelIndex(knife->wmodel);
+				int wmodelIdx = globals::g_interfaces.ModelInfo->GetModelIndex(wmodel);
 				*(int*)((uintptr_t)worldModel + offsets::m_nModelIndex) = wmodelIdx;
 			}
 		}
@@ -477,10 +515,23 @@ void skinchanger::Run()
 	if (!alive)
 		return;
 
+	// On first run, sync g_applied from saved config so skins persist across reinjections
+	if (!g_initialized)
+	{
+		g_applied.KnifeModel = cfg.visuals.skinChanger.KnifeModel;
+		g_applied.SkinPaintKit = cfg.visuals.skinChanger.SkinPaintKit;
+		g_applied.SkinSeed = cfg.visuals.skinChanger.SkinSeed;
+		g_applied.SkinWear = cfg.visuals.skinChanger.SkinWear;
+		g_applied.StatTrak = cfg.visuals.skinChanger.StatTrak;
+		g_initialized = true;
+		g_needsRefresh = true;
+	}
+
 	player_info_s pinfo{};
 	if (!globals::g_interfaces.Engine->getPlayerInfo(globals::g_interfaces.Engine->GetLocalPlayerIdx(), pinfo))
 		return;
 	int accountId = (int)pinfo.xuidLow;
+	int team = *(int*)((uintptr_t)lp + offsets::m_iTeamNum);
 
 	bool doRefresh = g_needsRefresh;
 	if (doRefresh)
@@ -500,7 +551,7 @@ void skinchanger::Run()
 			continue;
 
 		__try {
-			ApplyToWeapon(weapon, accountId);
+			ApplyToWeapon(weapon, accountId, team);
 		} __except (EXCEPTION_EXECUTE_HANDLER) {
 			Log::Err("SkinChanger", "CRASH in ApplyToWeapon for weapon slot {}", i);
 		}
@@ -512,17 +563,8 @@ void skinchanger::Run()
 		}
 	}
 
-	// Update viewmodel + world model for knife changes
-	if (GetSelectedKnife())
-	{
-		__try {
-			UpdateViewModel(lp);
-		} __except (EXCEPTION_EXECUTE_HANDLER) {}
-	}
-
-	// After applying and updating items, trigger fullupdate for model changes
-	if (doRefresh)
-	{
-		globals::g_interfaces.Engine->ClientCmdUnrestricted("cl_fullupdate");
-	}
+	// Update viewmodel + world model for knife (always — handles both custom and stock reset)
+	__try {
+		UpdateViewModel(lp, team);
+	} __except (EXCEPTION_EXECUTE_HANDLER) {}
 }

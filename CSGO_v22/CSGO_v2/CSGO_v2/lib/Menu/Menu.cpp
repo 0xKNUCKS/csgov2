@@ -78,13 +78,19 @@ namespace detail
 		ImVec2 trackMax(pos.x + width, pos.y + height);
 		window->DrawList->AddRectFilled(trackMin, trackMax, ImGui::ColorConvertFloat4ToU32(bgColor), radius);
 
+		// Inner shadow on track (subtle depth effect)
+		window->DrawList->AddRectFilled(trackMin,
+			ImVec2(trackMax.x, trackMin.y + 3.f),
+			IM_COL32(0, 0, 0, 25), radius, ImDrawFlags_RoundCornersTop);
+
 		// Draw knob
 		float knobRadius = radius - 2.f;
 		float knobX = pos.x + radius + animVal * (width - height);
 		float knobY = pos.y + radius;
 		ImU32 knobColor = IM_COL32(255, 255, 255, 255);
-		// Subtle shadow
-		window->DrawList->AddCircleFilled(ImVec2(knobX + 0.5f, knobY + 1.f), knobRadius, IM_COL32(0, 0, 0, 40));
+		// Multi-layer shadow for depth
+		window->DrawList->AddCircleFilled(ImVec2(knobX + 0.5f, knobY + 2.f), knobRadius + 1.f, IM_COL32(0, 0, 0, 30));
+		window->DrawList->AddCircleFilled(ImVec2(knobX + 0.5f, knobY + 1.f), knobRadius, IM_COL32(0, 0, 0, 45));
 		window->DrawList->AddCircleFilled(ImVec2(knobX, knobY), knobRadius, knobColor);
 
 		// Label
@@ -111,20 +117,141 @@ namespace detail
 		return h ? std::string(label, h) : std::string(label);
 	}
 
+	// Custom slim slider: thin track (4px), accent fill, circular grab, label+value text above
+	static bool CustomSliderScalar(const char* label, ImGuiDataType data_type, void* p_data,
+		const void* p_min, const void* p_max, const char* displayFmt, const char* tooltip)
+	{
+		ImGuiWindow* window = ImGui::GetCurrentWindow();
+		if (window->SkipItems)
+			return false;
+
+		ImGuiContext& g = *GImGui;
+		const ImGuiStyle& style = g.Style;
+		const ImGuiID id = window->GetID(label);
+		const float w = ImGui::CalcItemWidth();
+
+		// Default format
+		if (displayFmt == nullptr)
+			displayFmt = ImGui::DataTypeGetInfo(data_type)->PrintFmt;
+
+		// Layout: text row on top, track row below
+		const float textH = ImGui::GetTextLineHeight();
+		constexpr float trackAreaH = 16.0f;   // Space for track + grab knob
+		constexpr float gap = 2.0f;
+		const float totalH = textH + gap + trackAreaH;
+
+		const ImVec2 pos = window->DC.CursorPos;
+		const ImRect total_bb(pos, ImVec2(pos.x + w, pos.y + totalH));
+
+		// The interaction frame covers the track area (where the grab lives)
+		const float trackAreaY = pos.y + textH + gap;
+		const ImRect frame_bb(ImVec2(pos.x, trackAreaY), ImVec2(pos.x + w, trackAreaY + trackAreaH));
+
+		ImGui::ItemSize(total_bb, style.FramePadding.y);
+		if (!ImGui::ItemAdd(total_bb, id, &frame_bb, ImGuiItemFlags_Inputable))
+			return false;
+
+		// Hover and input handling
+		const bool hovered = ImGui::ItemHoverable(frame_bb, id);
+
+		// CTRL+click to type
+		bool temp_input_is_active = ImGui::TempInputIsActive(id);
+		if (!temp_input_is_active) {
+			const bool input_requested_by_tabbing = (g.LastItemData.StatusFlags & ImGuiItemStatusFlags_FocusedByTabbing) != 0;
+			const bool clicked = (hovered && g.IO.MouseClicked[0]);
+			if (input_requested_by_tabbing || clicked || g.NavActivateId == id || g.NavActivateInputId == id) {
+				ImGui::SetActiveID(id, window);
+				ImGui::SetFocusID(id, window);
+				ImGui::FocusWindow(window);
+				g.ActiveIdUsingNavDirMask |= (1 << ImGuiDir_Left) | (1 << ImGuiDir_Right);
+				if (input_requested_by_tabbing || (clicked && g.IO.KeyCtrl) || g.NavActivateInputId == id)
+					temp_input_is_active = true;
+			}
+		}
+
+		if (temp_input_is_active)
+			return ImGui::TempInputScalar(frame_bb, id, label, data_type, p_data, displayFmt, p_min, p_max);
+
+		// Slider behavior (handles all input logic)
+		ImRect grab_bb;
+		const bool value_changed = ImGui::SliderBehavior(frame_bb, id, data_type, p_data, p_min, p_max, displayFmt, 0, &grab_bb);
+		if (value_changed)
+			ImGui::MarkItemEdited(id);
+
+		// --- Draw label text (left) + value text (right) ---
+		ImDrawList* dl = window->DrawList;
+		std::string displayLabel = DisplayName(label);
+		char valueBuf[64];
+		ImGui::DataTypeFormatString(valueBuf, IM_ARRAYSIZE(valueBuf), data_type, p_data, displayFmt);
+
+		dl->AddText(ImVec2(pos.x, pos.y), ImGui::GetColorU32(ImGuiCol_Text), displayLabel.c_str());
+		ImVec2 valSize = ImGui::CalcTextSize(valueBuf);
+		dl->AddText(ImVec2(pos.x + w - valSize.x, pos.y),
+			IM_COL32(140, 155, 170, 255), valueBuf);
+
+		// --- Draw track ---
+		const ImU32 accentCol = IM_COL32(71, 143, 255, 255);
+		const ImU32 accentActive = IM_COL32(90, 160, 255, 255);
+		const ImU32 trackBg = ImGui::GetColorU32(ImGuiCol_FrameBg);
+
+		constexpr float trackH = 4.0f;
+		float trackCenterY = trackAreaY + trackAreaH * 0.5f;
+		ImVec2 trackMin(pos.x, trackCenterY - trackH * 0.5f);
+		ImVec2 trackMax(pos.x + w, trackCenterY + trackH * 0.5f);
+		float trackRound = trackH * 0.5f;
+
+		// Background track
+		dl->AddRectFilled(trackMin, trackMax, trackBg, trackRound);
+
+		// Filled portion + grab knob
+		if (grab_bb.Max.x > grab_bb.Min.x) {
+			// Smooth grab animation
+			static ImGuiStorage s_sliderAnim;
+			float grabCenterX = (grab_bb.Min.x + grab_bb.Max.x) * 0.5f;
+			float targetOffset = grabCenterX - frame_bb.Min.x;
+
+			float* animOffset = s_sliderAnim.GetFloatRef(id, targetOffset);
+			float speed = g.IO.DeltaTime * 15.f;
+			if (speed > 1.f) speed = 1.f;
+			*animOffset += (targetOffset - *animOffset) * speed;
+			if (std::abs(*animOffset - targetOffset) < 0.5f) *animOffset = targetOffset;
+
+			float animX = frame_bb.Min.x + *animOffset;
+			bool isActive = g.ActiveId == id;
+
+			// Accent fill from left to grab
+			if (animX > trackMin.x)
+				dl->AddRectFilled(trackMin, ImVec2(animX, trackMax.y),
+					isActive ? accentActive : accentCol, trackRound);
+
+			// Circular grab knob
+			float grabR = isActive ? 7.0f : 6.0f;
+			// Shadow
+			dl->AddCircleFilled(ImVec2(animX + 0.5f, trackCenterY + 1.0f), grabR, IM_COL32(0, 0, 0, 50));
+			// Knob body
+			dl->AddCircleFilled(ImVec2(animX, trackCenterY), grabR,
+				isActive ? accentActive : accentCol);
+			// White center dot
+			dl->AddCircleFilled(ImVec2(animX, trackCenterY), 2.5f, IM_COL32(255, 255, 255, 220));
+		}
+
+		if (tooltip) menu::HelpMarker(tooltip);
+		return value_changed;
+	}
+
 	static void RenderSlider(const char* label, float* v, float min, float max, const char* fmt, const char* tooltip)
 	{
-		std::string format = DisplayName(label) + " " + fmt;
-		std::string id = std::format("##{}_slider", label);
-		ImGui::SliderFloat(id.c_str(), v, min, max, format.c_str());
-		if (tooltip) menu::HelpMarker(tooltip);
+		// Push display name into storage so CustomSliderScalar can find it
+		std::string displayName = DisplayName(label);
+		std::string id = std::format("{}##slider_{}", displayName.c_str(), label);
+		CustomSliderScalar(id.c_str(), ImGuiDataType_Float, v, &min, &max, fmt, tooltip);
 	}
 
 	static void RenderSliderInt(const char* label, int* v, int min, int max, const char* fmt, const char* tooltip)
 	{
-		std::string format = DisplayName(label) + " " + fmt;
-		std::string id = std::format("##{}_slider", label);
-		ImGui::SliderInt(id.c_str(), v, min, max, format.c_str());
-		if (tooltip) menu::HelpMarker(tooltip);
+		std::string displayName = DisplayName(label);
+		std::string id = std::format("{}##slider_{}", displayName.c_str(), label);
+		CustomSliderScalar(id.c_str(), ImGuiDataType_S32, v, &min, &max, fmt, tooltip);
 	}
 
 	static void RenderCombo(const char* label, int* current, const char* items, const char* tooltip)
@@ -175,12 +302,24 @@ namespace detail
 
 	static void RenderHotkey(Hotkey& hotKey)
 	{
+		// Pulsing accent border when listening for key
+		if (hotKey.searching) {
+			ImGuiContext& g = *GImGui;
+			float pulse = 0.5f + 0.5f * std::sinf((float)g.Time * 6.0f); // pulsing 0-1
+			ImVec4 accentVec(0.28f, 0.56f, 1.0f, 0.3f + 0.5f * pulse);
+			ImGui::PushStyleColor(ImGuiCol_Border, accentVec);
+			ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.5f);
+		}
+
 		// Key bind button
 		if (ImGui::Button(hotKey.label.c_str(), ImVec2(70, 0))) {
 			hotKey.searching = true;
 		}
 
 		if (hotKey.searching) {
+			ImGui::PopStyleVar();
+			ImGui::PopStyleColor();
+
 			hotKey.label = "...";
 			for (unsigned int i = 0x01; i <= 0xFE; i++) {
 				if (GetAsyncKeyState(i) & 0x8000) {
